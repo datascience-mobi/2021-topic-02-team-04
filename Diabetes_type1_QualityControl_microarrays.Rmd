@@ -22,6 +22,7 @@ library(hgu133plus2hsenstprobe)
 
 library(rstudioapi)
 library(tidyverse)
+library(stringr)
 ```
 
 ```{r}
@@ -126,8 +127,11 @@ diabetes.vsnrma.matrix <- exprs(diabetes.vsnrma)
 # normalized expression matrix with Ensemble IDs 
 # ------------------------------------------------
 
-rownames(diabetes.vsnrma.matrix) <- str_remove(rownames(diabetes.vsnrma.matrix),"_at")
-head(diabetes.vsnrma.matrix)
+rownames(diabetes.vsnrma.matrix) <- str_replace(rownames(diabetes.vsnrma.matrix),"\\..*","")  # cuts rownames of at "." 
+# "ENST00000000233.10_at"  becomes "ENST00000000233"
+
+diabetes.vsnrma.matrix[60:70,]
+
 ```
 
 
