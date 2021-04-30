@@ -46,9 +46,12 @@ Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
 setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
 data.diabetes <- ReadAffy()
 
+
+data.diabetes@cdfName <- "HGU133Plus2_Hs_ENST" # changed from "HG-U133_Plus_2"
+# changes gene Names: geneNames(data.diabetes) 
+
+
 diabetes.matrix <- as.data.frame(exprs(data.diabetes))
-
-
 ```
 
 
@@ -70,6 +73,10 @@ substr(colnames(diabetes.matrix), 1,10)
 # What does the expression table look like?
 head(diabetes.matrix)
 
+# probe set names (or Affymetrix IDs) - are changed when changing cdfName
+featureNames(data.diabetes)
+
+
 ```
 
 ```{r}
@@ -90,7 +97,7 @@ setwd(paste(projectPath, "plots", sep = "/"))
 
 for (i in 1:24){
   image(data.diabetes[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
-  file.name = paste0("diabetes_", str_remove(colnames(diabetes.matrix)[1],".CEL"),".pdf")
+  file.name = paste0("diabetes_", str_remove(colnames(diabetes.matrix)[i],".CEL"),".pdf")
   # dev.copy2pdf(file = file.name)
 }
 
@@ -100,6 +107,7 @@ for (i in 1:24){
 
 ```{r}
 head(pData(data.diabetes))
+
 ```
 
 # 3.0 Normalization
@@ -111,6 +119,15 @@ head(pData(data.diabetes))
 
 diabetes.vsnrma <- vsnrma(data.diabetes)
 diabetes.vsnrma.matrix <- exprs(diabetes.vsnrma)
+```
+
+```{r}
+# ------------------------------------------------
+# normalized expression matrix with Ensemble IDs 
+# ------------------------------------------------
+
+rownames(diabetes.vsnrma.matrix) <- str_remove(rownames(diabetes.vsnrma.matrix),"_at")
+head(diabetes.vsnrma.matrix)
 ```
 
 
