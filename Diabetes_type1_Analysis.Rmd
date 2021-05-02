@@ -112,9 +112,24 @@ diabetes_vsnrma_matrix_sub = diabetes_vsnrma_matrix[which(rownames(diabetes_vsnr
 dim(diabetes_vsnrma_matrix_sub)
 ```
 
+```{r}
+# ------------------------------------------------
+# small boxplot (shows only small part of the genes)
+# ------------------------------------------------
+
+par(las = 2)
+
+boxplot(t(diabetes_vsnrma_matrix_sub)[,1:30],
+         col = rainbow(100),
+         main="", 
+         horizontal = FALSE)
+
+```
+
+
 ```{r fig.height=150}
 # ------------------------------------------------
-# boxplot 
+# big boxplot 
 # (just to try putting it all in one boxplot, plot doesn't look great)
 # ------------------------------------------------
 
