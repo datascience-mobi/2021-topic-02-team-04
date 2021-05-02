@@ -1,0 +1,203 @@
+---
+title: "Pancreas Quality Control"
+author: "Bianca Greul"
+date: "28 4 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+### 1. Reading in pancreas data
+
+```{r}
+library(affy)
+library(vsn)
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+projectPath
+
+setwd(paste(projectPath, "rawdata", "GSE59761 PDAC Capan-1 Zellen", sep = "/"))
+data_pancreas <- ReadAffy()
+
+## Normalization
+
+pancreas_vsnrma <- vsnrma(data_pancreas)
+
+pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
+head(pancreas_vsnrma_matrix)
+```
+
+```{r}
+setwd(paste(projectPath, "sessions", "rda" ,sep = "/"))
+save.image(file = "rawdata.pancreas.rda")
+```
+
+```{r}
+## Overview of dataset
+
+summary(data_pancreas)
+str(data_pancreas)
+
+pancreas_chips_number <- length(colnames(pancreas_vsnrma_matrix))
+pancreas_chips_names <- colnames(pancreas_vsnrma_matrix)
+```
+
+
+### 2. Quality control: Single chip control
+
+```{r}
+## Quality control in pdf
+
+setwd(paste(projectPath, "plots", sep = "/"))
+
+
+for (i in 1:6){
+  
+  image(data_pancreas[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
+  
+  file.name <- paste(as.character(substr(pancreas_chips_names [i], 1, nchar(pancreas_chips_names [i])-4)),".pdf",
+                    sep = "")
+  
+  dev.copy2pdf(file = file.name)
+  
+}
+
+## all chips are fully functional
+
+```
+
+
+### 3. Renaming files
+
+```{r}
+## Remove ending from file names
+
+pData(data_pancreas)
+
+filenames <- rownames(pData(data_pancreas)) 
+pancreas_samples <- substr(filenames, 1, 10)
+pancreas_samples
+```
+
+
+### 4. Plots
+
+#### Boxplots
+
+```{r}
+## Rawdata
+
+par(las=2)
+
+mmi = c(0.7, 0.5, 0.5, 0.1)
+par(mai = mmi) 
+
+boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "Rawdata pancreas boxplot", cex.axis=0.42)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
+```
+
+```{r}
+## Normalized data
+
+par(las=2)
+
+mmi = c(0.7, 0.5, 0.5, 0.1)
+par(mai = mmi) 
+
+boxplot(pancreas_vsnrma_matrix, names = pancreas_samples, col = rainbow(6), main="Normalized PDAC data boxplot",cex.axis = 0.42)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_boxplot_vsnrma_normalized.pdf")
+```
+
+#### MeanSdPlot
+
+```{r}
+meanSdPlot(pancreas_vsnrma)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
+```
+
+#### Histogram
+
+```{r}
+## Rawdata
+
+hist(data_pancreas, col = rainbow(6), main = "Density function of log Intensity of PDAC data")
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
+
+```
+
+```{r}
+## Normalized
+
+plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log Intensity of normalized PDAC data")
+
+for (i in 1:ncol(pancreas_vsnrma_matrix)){
+  lines(density(pancreas_vsnrma_matrix[,i]), col = rainbow(6)[i])
+}
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_hist_vsnrma_normalized.pdf")
+
+```
+
+#### RNA Degradation 
+
+```{r}
+
+RNAdeg_PDAC <- AffyRNAdeg(data_pancreas)
+
+## shift and scale
+
+plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6))
+title(sub = "Pancreas Rawdata")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_rnadeg_rawdata.pdf")
+
+## shift
+
+plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6), transform = "shift.only")
+title(sub = "Pancreas Scaled")
+
+dev.copy2pdf(file = "pancreas_rnadeg_shift_rawdata.pdf")
+
+## No crossing of lines. Quality of the chips is good.
+```
+
+#### Scatter plot
+
+```{r}
+setwd(paste(projectPath, "plots" ,sep = "/"))
+
+for (i in 1:5) {
+  
+  plot(pancreas_vsnrma_matrix[,i], pancreas_vsnrma_matrix[,i+1], pch = ".")
+  abline(0, 1, col = "red")
+  
+  title(main = paste("Scatterplot of probe",
+                     substr(colnames(pancreas_vsnrma)[i], 1, nchar(colnames(pancreas_vsnrma)[i])-4),
+                     "and", 
+                     substr(colnames(pancreas_vsnrma)[i+1], 1, nchar(colnames(pancreas_vsnrma)[i+1])-4),
+                     sep = " ", collapse = NULL))
+  
+  file.name = paste("Scatterplot_",
+                    as.character(substr(colnames(pancreas_vsnrma)[i], 1, nchar(colnames(pancreas_vsnrma)[i])-4)), 
+                    "_", as.character(substr(colnames(pancreas_vsnrma)[i+1], 1, nchar(colnames(pancreas_vsnrma)[i+1])-4)), ".pdf", 
+                    sep =" ")
+  
+  dev.copy2pdf(file = file.name)
+
+}
+```
