@@ -1,0 +1,221 @@
+---
+title: "TRA Daten"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Project Path
+```{r}
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+projectPath
+```
+
+
+## TRA Daten einlesen
+
+```{r}
+# Einlesen der TRA Daten
+
+library(readr)
+
+setwd(paste(projectPath, "rawdata", "TRA Daten", sep = "/"))
+
+TRAs1_human <-read_csv("Human_protein_atlas_TRA_5median_genes_annotated.tsv")
+
+TRAs2_human <-read_tsv("tra.2014.human.5x.table.tsv")
+TRAs3_human <-read_tsv("tra.2014.human.roth.5x.table.tsv")
+TRAs4_mouse <-read_tsv("tra.2014.mouse.5x.table.tsv")
+TRAs5_mouse <-read_tsv("tra.2014.mouse.4301.5x.table.tsv")
+TRAs6_human <-read_tsv("tra.2017.human.gtex.5x.table.tsv",col_types = cols(ensembl.chrom=col_character()))
+#col_types to correct the parsing failure
+
+```
+
+## Pancreas Tabellen erstellen
+
+```{r}
+
+# Tabelle erstellen die nur die rows mit Pancreas enthalten über die grep Funktion
+PancreasTRAs1_human <- TRAs1_human[grep(x=TRAs1_human$Max_tissue,"panc"),]
+PancreasTRAs2_human <- TRAs2_human[grep(x=TRAs2_human$max.tissue,"Panc"),]
+PancreasTRAs3_human <- TRAs3_human[grep(x=TRAs3_human$max.tissue,"Panc"),]
+PancreasTRAs4_mouse <- TRAs4_mouse[grep(x=TRAs4_mouse$max.tissue,"panc"),]
+PancreasTRAs5_mouse <- TRAs5_mouse[grep(x=TRAs5_mouse$max.tissue,"panc"),]
+PancreasTRAs6_human <- TRAs6_human[grep(x=TRAs6_human$max.tissue,"Panc"),]
+
+```
+
+
+```{r}
+# Erstellen eines Vektors der alle in den TRA Tabellen enthaltenen Gensymbole enthält
+
+pancreas_gene_human <- unique(c(PancreasTRAs1_human$Symbol,PancreasTRAs2_human$gene.symbol,PancreasTRAs6_human$ensembl.symbol))
+
+pancreas_gene_mouse <- unique(c(PancreasTRAs4_mouse$gene.symbol,PancreasTRAs5_mouse$gene.symbol))
+```
+
+## Erstellen der Tabellen mit der Verteilung der TRA Gene auf die Gewebe
+
+```{r}
+
+# Erstellen einer Auflistung der Anzahl der jeweiligen Gewebe spezifischer Gene mithilfe der table function
+
+GewebeTabelle1 <- table(TRAs1_human[,11])
+GewebeTabelle2 <- table(TRAs2_human[,11])
+GewebeTabelle3 <- table(TRAs3_human[,11])
+GewebeTabelle4 <- table(TRAs4_mouse[,11])
+GewebeTabelle5 <- table(TRAs5_mouse[,11])
+GewebeTabelle6 <- table(TRAs6_human[,10])
+
+
+# Berechnung des Anteils am Datensatz
+
+Prozentsatz1 <- GewebeTabelle1/sum(GewebeTabelle1)
+Prozentsatz2 <- GewebeTabelle2/sum(GewebeTabelle2)
+Prozentsatz3 <- GewebeTabelle3/sum(GewebeTabelle3)
+Prozentsatz4 <- GewebeTabelle4/sum(GewebeTabelle4)
+Prozentsatz5 <- GewebeTabelle5/sum(GewebeTabelle5)
+Prozentsatz6 <- GewebeTabelle6/sum(GewebeTabelle6)
+
+# Zusammenfügen der # Gene im jeweiligen Gewebe + deren Anteil im Datensatz
+
+GewebeTabelleProzent1 <- matrix(c(GewebeTabelle1,Prozentsatz1),ncol=2)
+GewebeTabelleProzent2 <- matrix(c(GewebeTabelle2,Prozentsatz2),ncol=2)
+GewebeTabelleProzent3 <- matrix(c(GewebeTabelle3,Prozentsatz3),ncol=2)
+GewebeTabelleProzent4 <- matrix(c(GewebeTabelle4,Prozentsatz4),ncol=2)
+GewebeTabelleProzent5 <- matrix(c(GewebeTabelle5,Prozentsatz5),ncol=2)
+GewebeTabelleProzent6 <- matrix(c(GewebeTabelle6,Prozentsatz6),ncol=2)
+
+# Benennung der Reihen und Spalten
+
+rownames(GewebeTabelleProzent1) <- rownames(GewebeTabelle1)
+rownames(GewebeTabelleProzent2) <- rownames(GewebeTabelle2)
+rownames(GewebeTabelleProzent3) <- rownames(GewebeTabelle3)
+rownames(GewebeTabelleProzent4) <- rownames(GewebeTabelle4)
+rownames(GewebeTabelleProzent5) <- rownames(GewebeTabelle5)
+rownames(GewebeTabelleProzent6) <- rownames(GewebeTabelle6)
+
+colnames(GewebeTabelleProzent1) <- c("Anzahl TRAs in Gewebe", "Anteil")
+colnames(GewebeTabelleProzent2) <- c("Anzahl TRAs in Gewebe", "Anteil")
+colnames(GewebeTabelleProzent3) <- c("Anzahl TRAs in Gewebe", "Anteil")
+colnames(GewebeTabelleProzent4) <- c("Anzahl TRAs in Gewebe", "Anteil")
+colnames(GewebeTabelleProzent5) <- c("Anzahl TRAs in Gewebe", "Anteil")
+colnames(GewebeTabelleProzent6) <- c("Anzahl TRAs in Gewebe", "Anteil")
+
+#sortieren der Matrix in absteigender Reihenfolge
+
+GewebeTabelleProzent1 <- GewebeTabelleProzent1[order(GewebeTabelleProzent1[,1],decreasing=TRUE),]
+GewebeTabelleProzent2 <- GewebeTabelleProzent2[order(GewebeTabelleProzent2[,1],decreasing=TRUE),]
+GewebeTabelleProzent3 <- GewebeTabelleProzent3[order(GewebeTabelleProzent3[,1],decreasing=TRUE),]
+GewebeTabelleProzent4 <- GewebeTabelleProzent4[order(GewebeTabelleProzent4[,1],decreasing=TRUE),]
+GewebeTabelleProzent5 <- GewebeTabelleProzent5[order(GewebeTabelleProzent5[,1],decreasing=TRUE),]
+GewebeTabelleProzent6 <- GewebeTabelleProzent6[order(GewebeTabelleProzent6[,1],decreasing=TRUE),]
+
+#Ausgabe einer Tabelle mit geordneter Verteilung der TRAs auf die Gewebe
+GewebeTabelleProzent1
+
+```
+
+## Erstellen einer Piechart zu Verteilung der Gene auf die Gewebe
+
+```{r}
+# Pie Chart für Tabelle 1
+
+pie(GewebeTabelleProzent1[,1],labels = rownames(GewebeTabelleProzent1), col = hcl.colors(10), cex = 0.4, radius =1.08)
+
+# Pie Chart für Tabelle 2
+
+pie(GewebeTabelleProzent2[,1],labels = rownames(GewebeTabelleProzent2), col = hcl.colors(10), cex = 0.4, radius =1.08)
+
+# Pie Chart für Tabelle 3
+
+pie(GewebeTabelleProzent3[,1],labels = rownames(GewebeTabelleProzent3), col = hcl.colors(10), cex = 0.4, radius =1.08)
+
+# Pie Chart für Tabelle 4
+
+pie(GewebeTabelleProzent4[,1],labels = rownames(GewebeTabelleProzent4), col = hcl.colors(10), cex = 0.4, radius =1.08)
+
+# Pie Chart für Tabelle 5
+
+pie(GewebeTabelleProzent5[,1],labels = rownames(GewebeTabelleProzent5), col = hcl.colors(10), cex = 0.4, radius =1.08)
+
+# Pie Chart für Tabelle 6
+
+pie(GewebeTabelleProzent6[,1],labels = rownames(GewebeTabelleProzent6), col = hcl.colors(10), cex = 0.4, radius =1.08)
+
+
+```
+
+
+## Verteilung über die Chromosome
+
+
+### Menschliche Gene
+
+```{r}
+# Verteilung der Gene (aus Tabelle TRAs1) auf die Chromosome
+
+PancreasTRAs1ChromX <- gsub(x=PancreasTRAs1_human$Chromosome,pattern="X",replacement="23")
+PancreasTRAs1ChromX <- as.integer(PancreasTRAs1ChromX)
+PancreasTRAs1ChromXorder <- PancreasTRAs1ChromX[order(PancreasTRAs1ChromX)]
+
+plot(table(PancreasTRAs1ChromXorder),main="Verteilung der TRAs1 über die Chromosomen",xlab="Chromosom")
+
+## ihrgendwie kann ich die Daten nicht richtig mit hist() darstellen, wenn mit table verglichen kommt es zu einer falschen Aufzählung
+
+
+
+#Verteilung der Gene (aus Tabelle TRAs2) auf die Chromosome
+
+PancreasTRAs2ChromX <- gsub(x=PancreasTRAs2_human$chrom,pattern="X",replacement="23")
+PancreasTRAs2ChromX <- as.integer(PancreasTRAs2ChromX)
+PancreasTRAs2ChromXorder <- PancreasTRAs2ChromX[order(PancreasTRAs2ChromX)]
+plot(table(PancreasTRAs2ChromXorder),main="Verteilung der TRAs2 über die Chromosomen",xlab="Chromosom")
+
+## Problem: Spalte chrom enthält noch unzugeteilte Elemente z.B HG7_PATCH --> werden bis jetzt noch zu NAs umgewandelt
+
+
+
+
+#Verteilung der Gene (aus Tabelle TRAs6) auf die Chromosome
+
+PancreasTRAs6ChromX <- gsub(x=PancreasTRAs6_human$ensembl.chrom,pattern="X",replacement="23")
+PancreasTRAs6ChromX <- as.integer(PancreasTRAs6ChromX)
+PancreasTRAs6ChromXorder <- PancreasTRAs6ChromX[order(PancreasTRAs6ChromX)]
+
+plot(table(PancreasTRAs6ChromXorder),main="Verteilung der TRAs6 über die Chromosomen",xlab="Chromosom")
+
+```
+
+
+
+### Maus Gene
+
+```{r}
+#Verteilung der Gene (aus Tabelle TRAs4) auf die Chromosome
+PancreasTRAs5_mouse$chrom
+PancreasTRAs4ChromX <- gsub(x=PancreasTRAs4_mouse$chrom,pattern="X",replacement="20")
+PancreasTRAs4ChromX <- as.integer(PancreasTRAs4ChromX)
+PancreasTRAs4ChromXorder <- PancreasTRAs4ChromX[order(PancreasTRAs4ChromX)]
+
+plot(table(PancreasTRAs4ChromXorder),main="Verteilung der TRAs4 über die Chromosomen",xlab="Chromosom")
+
+
+#Verteilung der Gene (aus Tabelle TRAs5) auf die Chromosome
+
+## mice have 20 Chromosomes --> replacing X with 20
+PancreasTRAs5ChromX <- gsub(x=PancreasTRAs5_mouse$chrom,pattern="X",replacement="20")
+PancreasTRAs5ChromX <- as.integer(PancreasTRAs5ChromX)
+PancreasTRAs5ChromXorder <- PancreasTRAs5ChromX[order(PancreasTRAs5ChromX)]
+
+plot(table(PancreasTRAs5ChromXorder),main="Verteilung der TRAs5 über die Chromosomen",xlab="Chromosom")
+
+```
+
+
