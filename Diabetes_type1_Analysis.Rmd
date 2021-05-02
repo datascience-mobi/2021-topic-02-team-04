@@ -1,0 +1,135 @@
+---
+title: "Analysis of diabetes data set"
+author: "Selina Ernst"
+date: "2 5 2021"
+output: html_document
+---
+
+```{r libraries, include=FALSE}
+
+library(affy)
+library(vsn)
+library(AnnotationDbi)
+library(hgu133plus2hsenstcdf)
+library(hgu133plus2hsenstprobe)
+
+library(rstudioapi)
+library(tidyverse)
+```
+
+```{r}
+# ------------------------------------------------
+# steps already done in Quality Control
+# ------------------------------------------------
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+# get CEL files
+setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
+data_diabetes <- ReadAffy()
+# change cdf
+data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
+# create expression matrix
+diabetes_matrix <- as.data.frame(exprs(data_diabetes))
+# vsnrm normalization
+diabetes_vsnrma <- vsnrma(data_diabetes)
+# expression matrix of vsnrm normalized data set
+diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
+# cut rownames at "." ("ENST00000000233.10_at"  becomes "ENST00000000233")
+rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")
+
+```
+
+# Processing of data
+
+```{r}
+# ------------------------------------------------
+# remove control probes from normalized data set
+# ------------------------------------------------
+
+diabetes_transcript_names = rownames(diabetes_vsnrma_matrix)
+
+diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(diabetes_transcript_names, "AFFX")),] # remove control probes (AFFX) 
+
+```
+
+```{r}
+# ------------------------------------------------
+# convert Affymetrix IDs to gene symbols
+# ------------------------------------------------
+
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+annotation = read.csv("ensemble.103.txt") 
+# file comes from www.ensembl.org/biomart
+
+ensemble_genes = annotation[,"Gene.stable.ID"]
+ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
+ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
+ensemble_symbol = annotation[,"HGNC.symbol"]
+
+# ------------------------------------------------
+# select only those symbols that are in the diabetes data set
+# ------------------------------------------------
+
+names(ensemble_symbol) = ensemble_transcripts 
+diabetes_symbol =  ensemble_symbol[rownames(diabetes_vsnrma_matrix)]
+# symbols already in right order vor diabetes_vsnrma_matrix
+
+# ------------------------------------------------
+# name the probes according to gene symbol
+# ------------------------------------------------
+
+diabetes_symbol <- unname(diabetes_symbol)
+rownames(diabetes_vsnrma_matrix) <- diabetes_symbol
+
+
+head(diabetes_vsnrma_matrix)[,1:2]
+```
+
+```{r}
+# check for NAs or "" 
+
+#apply(diabetes_vsnrma_matrix, 2, function(x){sum(is.na(x))})
+#apply(diabetes_vsnrma_matrix, 2, function(x){sum(x == 0)})
+
+sum(sapply(rownames(diabetes_vsnrma_matrix), function(x){sum(is.na(x))})) # 112 are NA
+
+sum(sapply(rownames(diabetes_vsnrma_matrix), function(x){sum(x == "", na.rm = TRUE)})) # 1096 are ""
+
+```
+
+```{r}
+alphabetical = rownames(diabetes_vsnrma_matrix)[order(rownames(diabetes_vsnrma_matrix))]
+#diabetes_vsnrma_matrix[order(rownames(diabetes_vsnrma_matrix)),]
+```
+
+
+```{r}
+# get the tissue specifc genes from TRA Daten
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+pancreas_specific_genes = read.csv("pancreas.specific.genes.csv")
+# create a expression matrix with only those genes
+diabetes_vsnrma_matrix_sub = diabetes_vsnrma_matrix[which(rownames(diabetes_vsnrma_matrix) %in% pancreas_specific_genes),]
+dim(diabetes_vsnrma_matrix_sub)
+```
+
+```{r fig.height=150}
+# ------------------------------------------------
+# boxplot 
+# (just to try putting it all in one boxplot, plot doesn't look great)
+# ------------------------------------------------
+
+#par(las = 2)
+par(mai = c(0.5,2,5,0.1))
+
+boxplot(t(diabetes_vsnrma_matrix_sub)[,1:1493],
+         col = rainbow(100), axes = FALSE,
+         main="", 
+         horizontal = TRUE)
+axis(3, at = 1:16, cex.axis = 13)
+```
+
+
+
+
+
+
