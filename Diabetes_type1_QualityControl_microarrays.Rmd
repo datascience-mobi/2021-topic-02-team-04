@@ -22,7 +22,6 @@ library(hgu133plus2hsenstprobe)
 
 library(rstudioapi)
 library(tidyverse)
-library(stringr)
 ```
 
 ```{r}
@@ -43,16 +42,15 @@ Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
 # ------------------------------------------------
 # read CEL files from rawdata/GSE53454 Diabetes type 1
 # ------------------------------------------------
-
 setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
-data.diabetes <- ReadAffy()
+data_diabetes <- ReadAffy()
 
 
-data.diabetes@cdfName <- "HGU133Plus2_Hs_ENST" # changed from "HG-U133_Plus_2"
-# changes gene Names: geneNames(data.diabetes) 
+data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST" # changed from "HG-U133_Plus_2"
+# changes gene Names: featureNames(data_diabetes) 
 
 
-diabetes.matrix <- as.data.frame(exprs(data.diabetes))
+diabetes_matrix <- as.data.frame(exprs(data_diabetes))
 ```
 
 
@@ -62,32 +60,75 @@ diabetes.matrix <- as.data.frame(exprs(data.diabetes))
 # ------------------------------------------------
 
 # how many microarrays are there?
-dim(diabetes.matrix)[2]
+dim(diabetes_matrix)[2]
 
 # how many genes?
-dim(diabetes.matrix)[1]
+dim(diabetes_matrix)[1]
 
 # What are the names of the samples?
-colnames(data.diabetes)
-substr(colnames(diabetes.matrix), 1,10)
+colnames(data_diabetes)
+substr(colnames(diabetes_matrix), 1,10)
 
 # What does the expression table look like?
-head(diabetes.matrix)
+head(diabetes_matrix)
 
 # probe set names (or Affymetrix IDs) - are changed when changing cdfName
-featureNames(data.diabetes)
-
+featureNames(data_diabetes)[1:10]
 
 ```
 
 ```{r}
-setwd(paste(projectPath, "sessions", "rda" ,sep = "/"))
-save.image(file = "rawdata.diabetes.rda")
+# check for NAs or "" 
+
+apply(diabetes_matrix, 2, function(x){sum(is.na(x))})
+apply(diabetes_matrix, 2, function(x){sum(x == 0)})
+sum(sapply(rownames(diabetes_matrix), function(x){sum(x == "")}))
 
 ```
 
-# 2.0 Quality control
-## 2.1 Single chip control
+
+
+```{r}
+setwd(paste(projectPath, "sessions", "rda" ,sep = "/"))
+save.image(file = "rawdata_diabetes.rda")
+
+```
+
+# 2.0 Normalization
+
+```{r}
+# ------------------------------------------------
+# vsnrma normalization
+# ------------------------------------------------
+
+diabetes_vsnrma <- vsnrma(data_diabetes)
+diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
+
+
+```
+
+
+```{r}
+# ------------------------------------------------
+# normalized expression matrix with Ensemble IDs 
+# ------------------------------------------------
+
+rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")  # cuts rownames of at "." 
+# "ENST00000000233.10_at"  becomes "ENST00000000233"
+
+diabetes_vsnrma_matrix[60:70,1:2]
+
+```
+
+
+```{r}
+setwd(paste(projectPath, "sessions", "rda" ,sep = "/"))
+save.image(file = "rawdata_diabetes.rda")
+```
+
+
+# 3.0 Quality control
+## 3.1 Single chip control
 
 ```{r}
 # ------------------------------------------------
@@ -97,47 +138,17 @@ save.image(file = "rawdata.diabetes.rda")
 setwd(paste(projectPath, "plots", sep = "/"))
 
 for (i in 1:24){
-  image(data.diabetes[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
-  file.name = paste0("diabetes_", str_remove(colnames(diabetes.matrix)[i],".CEL"),".pdf")
+  image(data_diabetes[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
+  file.name = paste0("diabetes_", str_remove(colnames(diabetes_matrix)[1],".CEL"),".pdf")
   # dev.copy2pdf(file = file.name)
 }
 
 ```
 
-## 2.2 pheno data
+## 3.2 pheno data
 
 ```{r}
-head(pData(data.diabetes))
-
-```
-
-# 3.0 Normalization
-
-```{r}
-# ------------------------------------------------
-# vsnrma normalization
-# ------------------------------------------------
-
-diabetes.vsnrma <- vsnrma(data.diabetes)
-diabetes.vsnrma.matrix <- exprs(diabetes.vsnrma)
-```
-
-```{r}
-# ------------------------------------------------
-# normalized expression matrix with Ensemble IDs 
-# ------------------------------------------------
-
-rownames(diabetes.vsnrma.matrix) <- str_replace(rownames(diabetes.vsnrma.matrix),"\\..*","")  # cuts rownames of at "." 
-# "ENST00000000233.10_at"  becomes "ENST00000000233"
-
-diabetes.vsnrma.matrix[60:70,]
-
-```
-
-
-```{r}
-setwd(paste(projectPath, "sessions", "rda" ,sep = "/"))
-save.image(file = "rawdata.diabetes.rda")
+(pData(data_diabetes))
 ```
 
 
@@ -149,7 +160,7 @@ save.image(file = "rawdata.diabetes.rda")
 # meanSdPlot of vsnrma normalized data 
 # ------------------------------------------------
 
-meanSdPlot(diabetes.vsnrma)
+meanSdPlot(diabetes_vsnrma)
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "diabetes_meanSdPlot_vsnrma_normalized.pdf")
@@ -170,13 +181,13 @@ par(las = 2) #axis labels always perpendicular to the axis
 
 par(mai = c(0.5,1,0.5,0.1))
 
-boxplot(data.diabetes, names = substr(colnames(diabetes.matrix), 1,10),
+boxplot(data_diabetes, names = substr(colnames(diabetes_matrix), 1,10),
         col = rainbow(24), cex.axis=0.6, 
         main="sample expression diabetes type 1", 
         horizontal = TRUE)
 
-dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
 setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
 
 ```
 
@@ -190,7 +201,7 @@ setwd(paste(projectPath, "plots" ,sep = "/"))
 par(las = 2)
 par(mai = c(0.5,1,0.5,0.1))
 
-boxplot(diabetes.vsnrma.matrix, names = substr(colnames(diabetes.matrix), 1,10),
+boxplot(diabetes_vsnrma_matrix, names = substr(colnames(diabetes_matrix), 1,10),
         col = rainbow(24), cex.axis=0.6, 
         main="normalized sample expression diabetes type 1", 
         horizontal = TRUE)
@@ -210,7 +221,7 @@ dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf")
 # histogram of rawdata 
 # ------------------------------------------------
 
-hist(data.diabetes, 
+hist(data_diabetes, 
      col = rainbow(24), 
      main = "Density function of log Intensity of diabetes type 1 data")
 
@@ -225,13 +236,14 @@ dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
 # ------------------------------------------------
 # histogram of vsnrma normalized data 
 # ------------------------------------------------
+par(mai = c(1,1,1,0.5))
 
-plot(density(diabetes.vsnrma.matrix), 
-     type = "n", xlab = "log Intensity", ylim = c(0,0.7), 
-     main = "Density function of log Intensity of normalized diabetes type 1 data")
+plot(density(diabetes_vsnrma_matrix), 
+     type = "n", xlab = "log Intensity", ylim = c(0,0.5), 
+     main = "Density function of log Intensity of \n normalized diabetes type 1 data")
 
-for (i in 1:ncol(diabetes.vsnrma.matrix)){
-  lines(density(diabetes.vsnrma.matrix[,i]), col = rainbow(24)[i])
+for (i in 1:ncol(diabetes_vsnrma_matrix)){
+  lines(density(diabetes_vsnrma_matrix[,i]), col = rainbow(24)[i])
 }
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
@@ -245,7 +257,7 @@ dev.copy2pdf(file = "diabetes_hist_vsnrma_normalized.pdf")
 # RNA degeneration  
 # ------------------------------------------------
 
-rnadeg.raw = AffyRNAdeg(data.diabetes)
+rnadeg.raw = AffyRNAdeg(data_diabetes)
 
 # use of shift & scale
 plotAffyRNAdeg(rnadeg.raw, col=rainbow(24), transform = "shift.scale")
@@ -266,8 +278,7 @@ setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 
 # when lines cross then quality of the chip has to be checked
-
-```
+``
 
 ## 4.5 Scatter plot
 
@@ -280,19 +291,19 @@ dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 setwd(paste(projectPath, "plots" ,sep = "/"))
 
 for (i in 1:23){
-  plot(exprs(diabetes.vsnrma)[,i], exprs(diabetes.vsnrma)[,i+1], pch = ".")
+  plot(exprs(diabetes_vsnrma)[,i], exprs(diabetes_vsnrma)[,i+1], pch = ".")
   abline(0,1,col="red")
   
   title(main = paste("Scatterplot of probe", 
-                     substr(colnames(diabetes.matrix), 1,10)[i],
+                     substr(colnames(diabetes_matrix), 1,10)[i],
                      "and",
-                     substr(colnames(diabetes.matrix), 1,10)[i+1],
+                     substr(colnames(diabetes_matrix), 1,10)[i+1],
                      sep = " ", collapse = NULL))
   
   file.name = paste("diabetes_scatterplot_",
-                    substr(colnames(diabetes.matrix), 1,10)[i],
+                    substr(colnames(diabetes_matrix), 1,10)[i],
                      "_",
-                    substr(colnames(diabetes.matrix), 1,10)[i+1],
+                    substr(colnames(diabetes_matrix), 1,10)[i+1],
                     ".pdf",
                     sep = "")
   dev.copy2pdf(file = file.name)
@@ -301,9 +312,6 @@ for (i in 1:23){
 # question: GSM1293806 & GSM1293821
 
 ```
-
-
-
 
 
 
