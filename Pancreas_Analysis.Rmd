@@ -1,0 +1,153 @@
+---
+title: "Analysis of PDAC data set"
+date: "2 5 2021"
+output: html_document
+---
+
+# libraries
+
+```{r libraries, include=FALSE}
+
+library(affy)
+library(vsn)
+library(AnnotationDbi)
+library(hgu133plus2hsenstcdf)
+library(hgu133plus2hsenstprobe)
+
+library(rstudioapi)
+library(tidyverse)
+library(ggplot2)
+library(pheatmap)
+```
+
+# expression data
+
+```{r}
+# ------------------------------------------------
+# steps already done in Quality Control
+# ------------------------------------------------
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+# get CEL files
+setwd(paste(projectPath, "rawdata", "GSE59761 PDAC Capan-1 Zellen", sep = "/"))
+data_pancreas <- ReadAffy()
+# change cdf
+data_pancreas@cdfName <- "HGU133Plus2_Hs_ENST"
+# create expression matrix
+pancreas_matrix <- as.data.frame(exprs(data_pancreas))
+# store colnames (microarray)
+pancreas_microarray_information <- colnames(pancreas_matrix)
+# vsnrm normalization
+pancreas_vsnrma <- vsnrma(data_pancreas)
+# expression matrix of vsnrm normalized data set
+pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
+# cut rownames at "." 
+rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix),"\\..*","")
+
+```
+
+# information about microarray samples
+
+```{r}
+pancreas_microarrays <- data.frame(number = substr(pancreas_microarray_information, 1,10), 
+                                   version = substr(pancreas_microarray_information, 24,27),
+                                   siRNA = c("TBL1", "TBL1", "TBL1", "NC", "NC", "NC"), 
+                                   time = rep("24h",6),
+                                   Affymetrix = rep("G-U133_Plus_2",6),
+                                   row.names = c(1:6))
+
+colnames(pancreas_matrix) <- pancreas_microarrays[,"number"]
+colnames(pancreas_vsnrma_matrix) <- pancreas_microarrays[,"number"]
+pancreas_microarrays
+```
+
+
+# Processing of data
+
+```{r}
+# ------------------------------------------------
+# remove control probes from normalized data set
+# ------------------------------------------------
+
+pancreas_transcript_names = rownames(pancreas_vsnrma_matrix)
+pancreas_vsnrma_matrix = pancreas_vsnrma_matrix[which(!startsWith(pancreas_transcript_names, "AFFX")),] # remove control probes (AFFX) 
+
+```
+
+```{r}
+# ------------------------------------------------
+# convert Affymetrix IDs to gene symbols
+# ------------------------------------------------
+
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+annotation = read.csv("ensemble.103.txt") 
+# file comes from www.ensembl.org/biomart
+
+ensemble_genes = annotation[,"Gene.stable.ID"]
+ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
+ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
+ensemble_symbol = annotation[,"HGNC.symbol"]
+
+# ------------------------------------------------
+# select only those symbols that are in the pancreatic cancer data set
+# ------------------------------------------------
+
+names(ensemble_symbol) = ensemble_transcripts 
+pancreas_symbol =  ensemble_symbol[rownames(pancreas_vsnrma_matrix)]
+# symbols already in right order for pancreas_vsnrma_matrix
+
+# ------------------------------------------------
+# name the probes according to gene symbol
+# ------------------------------------------------
+
+pancreas_symbol <- unname(pancreas_symbol)
+rownames(pancreas_vsnrma_matrix) <- pancreas_symbol
+
+
+head(pancreas_vsnrma_matrix)[,1:2]
+
+```
+
+
+```{r}
+
+pheatmap(t(pancreas_vsnrma_matrix[grep("TBL1", rownames(pancreas_vsnrma_matrix)),]), labels_row = pancreas_microarrays[,"number"])
+
+```
+
+
+
+```{r}
+# check for NAs or "" 
+
+#apply(pancreas_vsnrma_matrix, 2, function(x){sum(is.na(x))})
+#apply(pancreas_vsnrma_matrix, 2, function(x){sum(x == 0)})
+
+sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(is.na(x))})) # 112 are NA (just like diabetes data set)
+
+sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(x == "", na.rm = TRUE)})) # 1096 are "" (just like diabetes data set)
+
+```
+
+```{r}
+
+# get the tissue specifc genes from TRA Daten
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+pancreas_specific_genes = read.csv("pancreas_specific_genes_human.csv")
+#sort(pancreas_specific_genes) # alphabetically  sorted 
+
+# create a expression matrix with only those genes
+pancreas_vsnrma_matrix_sub = pancreas_vsnrma_matrix[which(rownames(pancreas_vsnrma_matrix) %in% pancreas_specific_genes),]
+dim(pancreas_vsnrma_matrix_sub)
+
+```
+
+```{r}
+
+pheatmap(t(pancreas_vsnrma_matrix_sub),
+         labels_row = pancreas_microarrays[,"siRNA"],
+         labels_col = rep("",nrow(pancreas_vsnrma_matrix_sub)))
+
+```
+
+
