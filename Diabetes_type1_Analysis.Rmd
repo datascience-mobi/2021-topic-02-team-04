@@ -5,8 +5,9 @@ date: "2 5 2021"
 output: html_document
 ---
 
+# libraries
 ```{r libraries, include=FALSE}
-
+# Bioconductor
 library(affy)
 library(vsn)
 library(AnnotationDbi)
@@ -15,8 +16,12 @@ library(hgu133plus2hsenstprobe)
 
 library(rstudioapi)
 library(tidyverse)
+library(ggplot2)
+library(pheatmap)
+library(stats)
 ```
 
+# expression data sets
 ```{r}
 # ------------------------------------------------
 # steps already done in Quality Control
@@ -30,6 +35,8 @@ data_diabetes <- ReadAffy()
 data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
 # create expression matrix
 diabetes_matrix <- as.data.frame(exprs(data_diabetes))
+# store colnames (microarray)
+diabetes_microarray_information <- colnames(diabetes_matrix)
 # vsnrm normalization
 diabetes_vsnrma <- vsnrma(data_diabetes)
 # expression matrix of vsnrm normalized data set
@@ -37,6 +44,25 @@ diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
 # cut rownames at "." ("ENST00000000233.10_at"  becomes "ENST00000000233")
 rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")
 
+```
+
+# information about microarray samples
+
+```{r}
+diabetes_microarrays = t(as.data.frame(
+  sapply(diabetes_microarray_information, function(x){
+    s = str_replace(x,"\\..*","")
+    str_split(s, "_")
+    })
+  ))[,-c(2,3)]
+colnames(diabetes_microarrays) <- c("number", "treatment", "time")
+rownames(diabetes_microarrays) <- c(1:24)
+diabetes_microarrays <- as.data.frame(diabetes_microarrays)
+
+diabetes_microarrays
+
+colnames(diabetes_matrix) <- diabetes_microarrays[,"number"]
+colnames(diabetes_vsnrma_matrix) <- diabetes_microarrays[,"number"]
 ```
 
 # Processing of data
@@ -106,10 +132,22 @@ alphabetical = rownames(diabetes_vsnrma_matrix)[order(rownames(diabetes_vsnrma_m
 ```{r}
 # get the tissue specifc genes from TRA Daten
 setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
-pancreas_specific_genes = read.csv("pancreas.specific.genes.csv")
+pancreas_specific_genes = read.csv("pancreas_specific_genes_human.csv")
+
 # create a expression matrix with only those genes
 diabetes_vsnrma_matrix_sub = diabetes_vsnrma_matrix[which(rownames(diabetes_vsnrma_matrix) %in% pancreas_specific_genes),]
 dim(diabetes_vsnrma_matrix_sub)
+
+```
+
+# plots
+
+```{r}
+pheatmap(t(diabetes_vsnrma_matrix_sub), 
+         labels_row = paste(diabetes_microarrays[,"time"],",",diabetes_microarrays[,"treatment"]),
+         labels_col = rep("",nrow(diabetes_vsnrma_matrix_sub)))
+
+
 ```
 
 ```{r}
@@ -125,25 +163,6 @@ boxplot(t(diabetes_vsnrma_matrix_sub)[,1:30],
          horizontal = FALSE)
 
 ```
-
-```{r fig.height=150}
-# ------------------------------------------------
-# boxplot 
-# (just to try putting it all in one boxplot, plot doesn't look great)
-# ------------------------------------------------
-
-#par(las = 2)
-par(mai = c(0.5,2,5,0.1))
-
-boxplot(t(diabetes_vsnrma_matrix_sub)[,1:1493],
-         col = rainbow(100), axes = FALSE,
-         main="", 
-         horizontal = TRUE)
-axis(3, at = 1:16, cex.axis = 13)
-```
-
-
-
 
 
 
