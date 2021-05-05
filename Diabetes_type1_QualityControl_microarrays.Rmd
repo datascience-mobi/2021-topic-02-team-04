@@ -19,6 +19,7 @@ library(vsn)
 library(AnnotationDbi)
 library(hgu133plus2hsenstcdf)
 library(hgu133plus2hsenstprobe)
+library(hexbin)
 
 library(rstudioapi)
 library(tidyverse)
@@ -278,7 +279,7 @@ setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 
 # when lines cross then quality of the chip has to be checked
-``
+```
 
 ## 4.5 Scatter plot
 
@@ -291,7 +292,9 @@ dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 setwd(paste(projectPath, "plots" ,sep = "/"))
 
 for (i in 1:23){
-  plot(exprs(diabetes_vsnrma)[,i], exprs(diabetes_vsnrma)[,i+1], pch = ".")
+  plot(exprs(diabetes_vsnrma)[,i], exprs(diabetes_vsnrma)[,i+1], pch = ".",
+       xlab = substr(colnames(diabetes_matrix), 1,10)[i],
+       ylab = substr(colnames(diabetes_matrix), 1,10)[i+1])
   abline(0,1,col="red")
   
   title(main = paste("Scatterplot of probe", 
