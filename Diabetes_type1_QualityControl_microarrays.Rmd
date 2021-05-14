@@ -233,10 +233,10 @@ dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf")
 # ------------------------------------------------
 # histogram of rawdata 
 # ------------------------------------------------
-
+par(mai = c(1,1,1,0.5))
 hist(data_diabetes, 
      col = rainbow(24), 
-     main = "Histogram of beta cell data set (GSE53454) \n before normalization")
+     main = "Density function of log intensity of beta cells (GSE53454) \n before normalization")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
@@ -252,8 +252,8 @@ dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
 par(mai = c(1,1,1,0.5))
 
 plot(density(diabetes_vsnrma_matrix), 
-     type = "n", xlab = "log Intensity", ylim = c(0,0.5), 
-     main = "Histogram of beta cell data set (GSE53454) \n after normalization")
+     type = "n", xlab = "log Intensity", ylim = c(0,0.7), 
+     main = "Density function of log intensity of beta cells (GSE53454) \n after normalization")
 
 for (i in 1:ncol(diabetes_vsnrma_matrix)){
   lines(density(diabetes_vsnrma_matrix[,i]), col = rainbow(24)[i])
@@ -297,6 +297,8 @@ dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 ## 4.5 Scatter plot
 
 ```{r}
+setwd(paste(projectPath, "plots" ,sep = "/"))
+
 par(mai = c(0.8,0.8,0.6,0.1), pty = "s")
 for (i in 1:23){
   for (j in (i+1):24){
@@ -310,7 +312,14 @@ for (i in 1:23){
                        "and",
                        substr(colnames(diabetes_matrix), 1,10)[j],
                        sep = " ", collapse = NULL))
-  
+    
+    file.name = paste("diabetes_scatterplot_",
+                    substr(colnames(diabetes_matrix), 1,10)[i], 
+                    "_",  
+                    substr(colnames(diabetes_matrix), 1,10)[i+1], 
+                    ".pdf", 
+                    sep = "")
+    # dev.copy2pdf(file = file.name)
 }}
 
 ``` 

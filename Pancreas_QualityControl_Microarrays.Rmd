@@ -15,6 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### 1. Reading in pancreas data
 
+PDAC (pancreatic cancer) data set, GSE59761, downloaded from GEO database
+
 ```{r}
 library(affy)
 library(vsn)
@@ -24,6 +26,7 @@ projectPath
 
 setwd(paste(projectPath, "rawdata", "GSE59761 PDAC Capan-1 Zellen", sep = "/"))
 data_pancreas <- ReadAffy()
+
 
 ## Normalization
 
@@ -56,15 +59,16 @@ pancreas_chips_names <- colnames(pancreas_vsnrma_matrix)
 
 setwd(paste(projectPath, "plots", sep = "/"))
 
+par(pty = "s")
 
 for (i in 1:6){
-  
+
   image(data_pancreas[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
   
   file.name <- paste(as.character(substr(pancreas_chips_names [i], 1, nchar(pancreas_chips_names [i])-4)),".pdf",
                     sep = "")
   
-  dev.copy2pdf(file = file.name)
+  #dev.copy2pdf(file = file.name)
   
 }
 
@@ -95,10 +99,9 @@ pancreas_samples
 
 par(las=2)
 
-mmi = c(0.7, 0.5, 0.5, 0.1)
-par(mai = mmi) 
+par(mai = c(0.9,0.4,0.6,0.1))
 
-boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "Rawdata pancreas boxplot", cex.axis=0.42)
+boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "microarray gene expression of PDAC data set (GSE59761) \n before normalization", cex.axis=0.6)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
@@ -109,10 +112,9 @@ dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
 
 par(las=2)
 
-mmi = c(0.7, 0.5, 0.5, 0.1)
-par(mai = mmi) 
+par(mai = c(0.9,0.4,0.6,0.1))
 
-boxplot(pancreas_vsnrma_matrix, names = pancreas_samples, col = rainbow(6), main="Normalized PDAC data boxplot",cex.axis = 0.42)
+boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "microarray gene expression of PDAC data set (GSE59761) \n after normalization", cex.axis=0.6)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "pancreas_boxplot_vsnrma_normalized.pdf")
@@ -121,7 +123,7 @@ dev.copy2pdf(file = "pancreas_boxplot_vsnrma_normalized.pdf")
 #### MeanSdPlot
 
 ```{r}
-meanSdPlot(pancreas_vsnrma)
+meanSdPlot(pancreas_vsnrma, plot = FALSE)$gg + theme(aspect.ratio = 1) 
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
@@ -132,7 +134,8 @@ dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
 ```{r}
 ## Rawdata
 
-hist(data_pancreas, col = rainbow(6), main = "Density function of log Intensity of PDAC data")
+par(mai = c(0.9,0.9,0.6,0.1))
+hist(data_pancreas, col = rainbow(6), main = "Density function of log intensity of PDAC cells (GSE53454) \n before normalization")
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
@@ -142,7 +145,8 @@ dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
 ```{r}
 ## Normalized
 
-plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log Intensity of normalized PDAC data")
+par(mai = c(0.9,0.9,0.6,0.1))
+plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log intensity of PDAC cells (GSE53454) \n after normalization", ylim = c(0,0.7))
 
 for (i in 1:ncol(pancreas_vsnrma_matrix)){
   lines(density(pancreas_vsnrma_matrix[,i]), col = rainbow(6)[i])
@@ -160,7 +164,7 @@ dev.copy2pdf(file = "pancreas_hist_vsnrma_normalized.pdf")
 RNAdeg_PDAC <- AffyRNAdeg(data_pancreas)
 
 ## shift and scale
-
+par(pty = "s")
 plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6))
 title(sub = "Pancreas Rawdata")
 
@@ -168,7 +172,7 @@ setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "pancreas_rnadeg_rawdata.pdf")
 
 ## shift
-
+par(pty = "s")
 plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6), transform = "shift.only")
 title(sub = "Pancreas Scaled")
 
@@ -182,24 +186,30 @@ dev.copy2pdf(file = "pancreas_rnadeg_shift_rawdata.pdf")
 ```{r}
 setwd(paste(projectPath, "plots" ,sep = "/"))
 
-for (i in 1:5) {
-  
-  plot(pancreas_vsnrma_matrix[,i], pancreas_vsnrma_matrix[,i+1], pch = ".")
-  abline(0, 1, col = "red")
-  
-  title(main = paste("Scatterplot of probe",
-                     substr(colnames(pancreas_vsnrma)[i], 1, nchar(colnames(pancreas_vsnrma)[i])-4),
-                     "and", 
-                     substr(colnames(pancreas_vsnrma)[i+1], 1, nchar(colnames(pancreas_vsnrma)[i+1])-4),
-                     sep = " ", collapse = NULL))
-  
-  file.name = paste("Scatterplot_",
-                    as.character(substr(colnames(pancreas_vsnrma)[i], 1, nchar(colnames(pancreas_vsnrma)[i])-4)), 
-                    "_", as.character(substr(colnames(pancreas_vsnrma)[i+1], 1, nchar(colnames(pancreas_vsnrma)[i+1])-4)), ".pdf", 
-                    sep =" ")
-  
-  dev.copy2pdf(file = file.name)
+par(mai = c(0.8,0.8,0.6,0.1), pty = "s")
 
-}
+for (i in 1:5) {
+  for (j in (i+1):6){
+    plot(pancreas_vsnrma_matrix[,i], pancreas_vsnrma_matrix[,j], pch = ".",
+         xlab = pancreas_samples[i],
+         ylab = pancreas_samples[j])
+    abline(0, 1, col = "red")
+  
+    title(main = paste("Scatterplot of microarrays \n", 
+                       pancreas_samples[i],
+                       "and",
+                       pancreas_samples[j],
+                       sep = " ", collapse = NULL))
+    
+    file.name = paste("pancreas_scatterplot_",
+                      pancreas_samples[i], 
+                      "_",  
+                      pancreas_samples[j], 
+                      ".pdf", 
+                      sep = "")
+  
+  # dev.copy2pdf(file = file.name)
+
+}}
 
 ```
