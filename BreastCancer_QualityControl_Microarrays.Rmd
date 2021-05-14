@@ -1,0 +1,233 @@
+---
+title: "Breast Cancer Quality Control"
+author: "Bianca Greul"
+date: "25 4 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+### 1. Reading in breast cancer data
+
+```{r}
+library(affy)
+library(vsn)
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+projectPath
+
+setwd(paste(projectPath, "rawdata", "rawdata breast GSE27830", sep = "/"))
+data_breast <- ReadAffy()
+
+# Change gene names
+
+data_breast@cdfName <- "HGU133Plus2_Hs_ENST"
+
+```
+
+```{r}
+setwd(paste(projectPath, "sessions", "rda" ,sep = "/"))
+save.image(file = "rawdata_breast.rda")
+```
+
+```{r}
+# Overview of data set
+
+breast_matrix <- as.data.frame(exprs(data_breast))
+
+summary(breast_matrix)
+
+## number of genes
+dim(breast_matrix)[1]
+
+chips_number_breast <- length(colnames(breast_matrix))
+
+## sample names
+chip_names <- colnames(breast_matrix)
+chips_names_breast <- substr(chip_names, 1, nchar(chip_names)-4)
+
+```
+
+
+### 2. Normalization 
+
+```{r}
+# Normalization
+
+breast_vsnrma <- vsnrma(data_breast)
+
+breast_vsnrma_matrix <- exprs(breast_vsnrma)
+head(breast_vsnrma_matrix)
+```
+
+```{r}
+setwd(paste(projectPath, "sessions", "rda" ,sep = "/"))
+save.image(file = "normalized_breast.rda")
+```
+
+
+### 3. Quality control: Single chip control
+
+```{r}
+setwd(paste(projectPath, "plots", sep = "/"))
+
+for (i in 1:10){
+  
+  image(data_breast[,i], col = rainbow (100, start = 0, end = 0.75)[100:1])
+  
+  file.name <- paste(as.character(chips_names_breast)[i],".pdf",
+                    sep = "")
+  
+  dev.copy2pdf(file = file.name)
+  
+}
+
+## chip GSM687021 might be faulty: green on left side
+```
+
+
+### 4. Pheno data
+
+```{r}
+
+pData(data_breast)
+
+```
+
+
+### 5. Plots
+
+#### Boxplots
+
+```{r}
+## Rawdata
+
+par(las=2)
+
+mmi = c(1, 0.5, 0.5, 0.1)
+par(mai = mmi) 
+
+boxplot(data_breast, names = chips_names_breast, 
+        col = rainbow(10), 
+        main = "Rawdata Breast Cancer Boxplot", 
+        cex.axis=0.8)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "breast_boxplot_rawdata.pdf")
+
+```
+
+```{r}
+## Normalized data
+
+par(las=2)
+
+mmi = c(1, 0.5, 0.5, 0.1)
+par(mai = mmi) 
+
+boxplot(breast_vsnrma_matrix, names = chips_names_breast, 
+        col = rainbow(10), 
+        main = "Normalized Breast Cancer Boxplot", 
+        cex.axis=0.8)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "breast_boxplot_vsnrma_normalized.pdf")
+
+```
+
+#### MeanSdPlot
+
+```{r}
+meanSdPlot(breast_vsnrma)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "breast_meanSdPlot_vsnrma_normalized.pdf")
+```
+
+#### Histogram
+
+```{r}
+## Rawdata
+
+hist(data_breast, col = rainbow(10), main = "Density function of log Intensity of breast cancer data")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "breast_hist_rawdata.pdf")
+```
+
+```{r}
+## Normalized
+
+par(mai = c(1,1,1,0.5))
+
+plot(density(breast_vsnrma_matrix), 
+     type = "n", xlab = "log Intensity", ylim = c(0, 1.05),
+     main = "Density function of log Intensity of normalized breast cancer data")
+
+for (i in 1:ncol(breast_vsnrma_matrix)){
+  lines(density(breast_vsnrma_matrix[,i]), col = rainbow(10)[i])
+}
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "breast_hist_vsnrma_normalized.pdf")
+
+## one chip seems to be faulty
+```
+
+#### RNA Degradation 
+
+```{r}
+
+RNAdeg_breast <- AffyRNAdeg(data_breast)
+
+# Shift and scale
+
+plotAffyRNAdeg(RNAdeg_breast, col = rainbow(10))
+title(sub = "Breast Cancer Rawdata")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "breast_rnadeg_rawdata.pdf")
+
+# Shift
+
+plotAffyRNAdeg(RNAdeg_breast, col = rainbow(10), transform = "shift.only")
+title(sub = "Breast Cancer Scaled")
+
+dev.copy2pdf(file = "breast_rnadeg_shift_rawdata.pdf")
+
+## No crossing of lines. Quality of the chips is good.
+```
+
+#### Scatter plot
+
+```{r}
+setwd(paste(projectPath, "plots" ,sep = "/"))
+
+par(mai = c(0.9, 0.9, 0.7, 0.3))
+
+for (i in 1:9) {
+  
+  plot(breast_vsnrma_matrix[,i], breast_vsnrma_matrix[,i+1], pch = ".",
+       xlab = chips_names_breast[i], ylab = chips_names_breast[i+1])
+  abline(0, 1, col = "red")
+  
+  title(main = paste("Scatterplot of probe",
+                     chips_names_breast [i],
+                     "and", 
+                     chips_names_breast [i+1],
+                     sep = " ", collapse = NULL))
+  
+  file.name = paste("Scatterplot_",
+                    as.character(chips_names_breast [i], 
+                    "_", as.character(chips_names_breast[i+1]), ".pdf", 
+                    sep =" "))
+  
+  dev.copy2pdf(file = file.name)
+
+}
+```
