@@ -7,21 +7,62 @@ output: html_document
 # libraries
 
 ```{r libraries, include=FALSE}
-
+# Bioconductor
 library(affy)
 library(vsn)
 library(AnnotationDbi)
 library(hgu133plus2hsenstcdf)
 library(hgu133plus2hsenstprobe)
+library(hexbin)
 
 library(rstudioapi)
 library(tidyverse)
 library(ggplot2)
 library(pheatmap)
+library(stats)
+library(dbplyr)
 ```
 
-# expression data
+# functions
+## combineGeneExprs
+```{r}
+# ------------------------------------------------
+# function: genes in expression matrix that are mentioned more than once are combined (is mean or median better?)
+# ------------------------------------------------
 
+combineGeneExprs <- function(exprsmatrix){
+  
+  # no genes mentioned multile times
+  a = unique(rownames(exprsmatrix)) 
+  # list of indices where genes from a are mentioned
+  id = sapply(a, function(x){
+    which(rownames(exprsmatrix) == x)
+  })  
+  
+  # create empty matrix 
+  h = matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # fill matrix with combined expression for genes from a
+  for (i in c(1:length(id))){
+    m = exprsmatrix[id[[i]],]
+    if (length(id[[i]]) > 1){
+      # combine values (mean)
+      v = apply(m,2,function(x){mean(x)})
+      h = rbind(h,v)
+    }else if (length(id[[i]]) == 1){
+      h = rbind(h,m)
+    }
+  }
+  # change rownames to gene symbols
+  rownames(h) = a
+  # output
+  h
+}
+
+```
+
+# expression data sets
+## create vsn normalized expression matrix
+PDAC dataset, GSE59761, data is downloaded from the GEO database
 ```{r}
 # ------------------------------------------------
 # steps already done in Quality Control
@@ -46,9 +87,14 @@ rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix)
 
 ```
 
-# information about microarray samples
+
+## information about microarray samples
 
 ```{r}
+# ------------------------------------------------
+# create data frame with information about microarray samples
+# ------------------------------------------------
+
 pancreas_microarrays <- data.frame(number = substr(pancreas_microarray_information, 1,10), 
                                    version = substr(pancreas_microarray_information, 24,27),
                                    siRNA = c("TBL1", "TBL1", "TBL1", "NC", "NC", "NC"), 
@@ -56,24 +102,34 @@ pancreas_microarrays <- data.frame(number = substr(pancreas_microarray_informati
                                    Affymetrix = rep("G-U133_Plus_2",6),
                                    row.names = c(1:6))
 
+# replace old IDs sample names
 colnames(pancreas_matrix) <- pancreas_microarrays[,"number"]
 colnames(pancreas_vsnrma_matrix) <- pancreas_microarrays[,"number"]
+rownames(data_pancreas@phenoData) <- pancreas_microarrays[,"number"]
+rownames(data_pancreas@protocolData) <- pancreas_microarrays[,"number"]
+
+# how does the data frame look?
 pancreas_microarrays
 ```
 
 
 # Processing of data
+## remove control probes
 
 ```{r}
 # ------------------------------------------------
 # remove control probes from normalized data set
 # ------------------------------------------------
+dim(pancreas_vsnrma_matrix) # before
+# 95721     6
 
 pancreas_transcript_names = rownames(pancreas_vsnrma_matrix)
 pancreas_vsnrma_matrix = pancreas_vsnrma_matrix[which(!startsWith(pancreas_transcript_names, "AFFX")),] # remove control probes (AFFX) 
 
+dim(pancreas_vsnrma_matrix) # after
+# 95659     6
 ```
-
+## convert transcript IDs to gene symbols
 ```{r}
 # ------------------------------------------------
 # convert Affymetrix IDs to gene symbols
@@ -83,70 +139,168 @@ setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
 annotation = read.csv("ensemble.103.txt") 
 # file comes from www.ensembl.org/biomart
 
+```
+
+
+```{r}
 ensemble_genes = annotation[,"Gene.stable.ID"]
 ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
 ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
 ensemble_symbol = annotation[,"HGNC.symbol"]
 
+# which transcripts from the microarray are not listed in the ensemble.103.txt file?
+pancreas_nomatchesIDs <- rownames(pancreas_vsnrma_matrix)[!(rownames(pancreas_vsnrma_matrix) %in% ensemble_transcripts)]
+length(pancreas_nomatchesIDs)
+# 112
+
+# remove these 112 transcripts from expression data
+pancreas_vsnrma_matrix <- pancreas_vsnrma_matrix[rownames(pancreas_vsnrma_matrix) %in% ensemble_transcripts,]
+dim(pancreas_vsnrma_matrix)
+# 95547     6
+
 # ------------------------------------------------
 # select only those symbols that are in the pancreatic cancer data set
 # ------------------------------------------------
 
-names(ensemble_symbol) = ensemble_transcripts 
-pancreas_symbol =  ensemble_symbol[rownames(pancreas_vsnrma_matrix)]
+names(ensemble_symbol) <- ensemble_transcripts 
+pancreas_symbol <- ensemble_symbol[rownames(pancreas_vsnrma_matrix)]
 # symbols already in right order for pancreas_vsnrma_matrix
 
 # ------------------------------------------------
 # name the probes according to gene symbol
 # ------------------------------------------------
 
-pancreas_symbol <- unname(pancreas_symbol)
-rownames(pancreas_vsnrma_matrix) <- pancreas_symbol
+rownames(pancreas_vsnrma_matrix) <- as.character(pancreas_symbol)
 
-
-head(pancreas_vsnrma_matrix)[,1:2]
-
-```
-
-
-```{r}
-
-pheatmap(t(pancreas_vsnrma_matrix[grep("TBL1", rownames(pancreas_vsnrma_matrix)),]), labels_row = pancreas_microarrays[,"number"])
-
-```
-
-
-
-```{r}
+# ------------------------------------------------
 # check for NAs or "" 
+# ------------------------------------------------
 
-#apply(pancreas_vsnrma_matrix, 2, function(x){sum(is.na(x))})
 #apply(pancreas_vsnrma_matrix, 2, function(x){sum(x == 0)})
 
-sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(is.na(x))})) # 112 are NA (just like diabetes data set)
+sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(is.na(x))})) # 0 are NA
 
-sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(x == "", na.rm = TRUE)})) # 1096 are "" (just like diabetes data set)
+sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(x == "", na.rm = TRUE)})) # 1096 are ""
 
 ```
 
+## sort gene symbols alphabetically 
 ```{r}
+# ------------------------------------------------
+# alphabetical order + deletion of all rows with "" as gene symbol (1096)
+# ------------------------------------------------
+
+pancreas_GeneExprs <-pancreas_vsnrma_matrix[order(rownames(pancreas_vsnrma_matrix)),][1097:nrow(pancreas_vsnrma_matrix),] 
+
+dim(pancreas_GeneExprs)
+# 94451     6
+
+head(pancreas_GeneExprs)
+```
+
+## select only pancreas specific TRAs
+```{r}
+# ------------------------------------------------
+# minimize expression matrix: only pancreas TRAs 
+# ------------------------------------------------
 
 # get the tissue specifc genes from TRA Daten
 setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
 pancreas_specific_genes = read.csv("pancreas_specific_genes_human.csv")
-#sort(pancreas_specific_genes) # alphabetically  sorted 
+pancreas_specific_genes = sort(pancreas_specific_genes) 
 
 # create a expression matrix with only those genes
-pancreas_vsnrma_matrix_sub = pancreas_vsnrma_matrix[which(rownames(pancreas_vsnrma_matrix) %in% pancreas_specific_genes),]
-dim(pancreas_vsnrma_matrix_sub)
+pancreas_GeneExprs_sub = pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) %in% pancreas_specific_genes),]
+
+
+length(unique(rownames(pancreas_GeneExprs_sub)))
+# 250
+dim(pancreas_GeneExprs_sub)
+# 1569    6
+head(pancreas_GeneExprs_sub)
 
 ```
 
+## combine genes
+```{r}
+# ------------------------------------------------
+# use of own function to combine values of genes that are mentioned more than once
+# ------------------------------------------------
+
+dim(combineGeneExprs(pancreas_GeneExprs_sub))
+# 250  24
+
+dim(combineGeneExprs(pancreas_GeneExprs))
+# 18062    24
+```
+
+# plots
+## distributions
+
+```{r fig.height=12}
+par(mfrow = c(2,3), mai = c(0.6,0.6,0.5,0.1))
+
+for(x in 1:6){
+  hist(pancreas_GeneExprs[,x], 
+       xlab = "gene expression values", cex.main = 2, cex.lab = 1.5,
+       main = paste("Histogram of", pancreas_microarrays[x,"number"],
+                    "\n", "data set: GSE59761"))
+  abline(v = c(mean(pancreas_GeneExprs[,x]), median(pancreas_GeneExprs[,x])), 
+         col = c("red", "blue"), lwd = 2)
+  legend("topright", legend = c("mean", "median"), fill = c("red", "blue"), cex = 1.5)
+}
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
+
+```
+
+## heatmap of TBL1X gene
+```{r}
+# check if the knockout of TBL1X can be seen
+par(mai = c(1,0.1,2,1))
+pheatmap(pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) == "TBL1X"),], 
+         labels_col = paste(pancreas_microarrays[,"number"], 
+                            "\n siRNA:", pancreas_microarrays[,"siRNA"]),
+         main = "Heatmap of TBL1X gene expression in pancreatic cancer cells \n data set: GSE59761",
+         cluster_rows = TRUE, treeheight_row = 0)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_analysis_heatmap_TBL1X.pdf")
+
+
+```
+
+
+## heatmap of TRAs
+
 ```{r}
 
-pheatmap(t(pancreas_vsnrma_matrix_sub),
-         labels_row = pancreas_microarrays[,"siRNA"],
-         labels_col = rep("",nrow(pancreas_vsnrma_matrix_sub)))
+pheatmap(pancreas_GeneExprs_sub,
+         labels_col = paste(pancreas_microarrays[,"number"],"\n", "siRNA:", pancreas_microarrays[,"siRNA"]),
+         labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
+         cluster_rows = TRUE, treeheight_row = 0,
+         main = "Heatmap of TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_analysis_heatmap_allTRAs.pdf")
+```
+
+
+## heatmap of TRAs
+```{r fig.height=12}
+# ------------------------------------------------
+# boxplot (very unfinished, just to get an overview)
+# ------------------------------------------------
+
+par(las = 2)
+
+boxplot(t(combineGeneExprs(pancreas_GeneExprs_sub)),
+         col = rainbow(250),
+         main="",
+         horizontal = TRUE)
+abline(v =  median(apply(pancreas_vsnrma_matrix, 1,median)))
+
 
 ```
 

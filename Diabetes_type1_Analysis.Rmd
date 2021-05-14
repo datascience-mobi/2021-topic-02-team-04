@@ -22,7 +22,46 @@ library(pheatmap)
 library(stats)
 ```
 
+# functions
+## combineGeneExprs
+```{r}
+# ------------------------------------------------
+# function: genes in expression matrix that are mentioned more than once are combined (is mean or median better?)
+# ------------------------------------------------
+
+combineGeneExprs <- function(exprsmatrix){
+  
+  # no genes mentioned multile times
+  a = unique(rownames(exprsmatrix)) 
+  # list of indices where genes from a are mentioned
+  id = sapply(a, function(x){
+    which(rownames(exprsmatrix) == x)
+  })  
+  
+  # create empty matrix 
+  h = matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # fill matrix with combined expression for genes from a
+  for (i in c(1:length(id))){
+    m = exprsmatrix[id[[i]],]
+    if (length(id[[i]]) > 1){
+      # combine values (mean)
+      v = apply(m,2,function(x){mean(x)})
+      h = rbind(h,v)
+    }else if (length(id[[i]]) == 1){
+      h = rbind(h,m)
+    }
+  }
+  # change rownames to gene symbols
+  rownames(h) = a
+  # output
+  h
+}
+
+```
+
 # expression data sets
+## create vsn normalized expression matrix
+Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
 ```{r}
 # ------------------------------------------------
 # steps already done in Quality Control
@@ -47,9 +86,13 @@ rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix)
 
 ```
 
-# information about microarray samples
+## information about microarray samples
 
 ```{r}
+# ------------------------------------------------
+# create data frame with information about microarray samples
+# ------------------------------------------------
+
 diabetes_microarrays = t(as.data.frame(
   sapply(diabetes_microarray_information, function(x){
     s = str_replace(x,"\\..*","")
@@ -60,6 +103,7 @@ colnames(diabetes_microarrays) <- c("number", "treatment", "time")
 rownames(diabetes_microarrays) <- c(1:24)
 diabetes_microarrays <- as.data.frame(diabetes_microarrays)
 
+# how does the data frame look?
 diabetes_microarrays
 
 # replace old IDs sample names
@@ -72,19 +116,22 @@ rownames(data_diabetes@protocolData) <- diabetes_microarrays[,"number"]
 
 # Processing of data
 
+## remove control probes
 ```{r}
 # ------------------------------------------------
 # remove control probes from normalized data set
 # ------------------------------------------------
+dim(diabetes_vsnrma_matrix) # before
+# 95721    24
 
 diabetes_transcript_names = rownames(diabetes_vsnrma_matrix)
 
 diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(diabetes_transcript_names, "AFFX")),] # remove control probes (AFFX) 
 
-dim(diabetes_vsnrma_matrix)
-# 95659    24
+dim(diabetes_vsnrma_matrix) # after
+# 95659    24 
 ```
-
+## convert transcript IDs to gene symbols
 ```{r}
 # ------------------------------------------------
 # convert Affymetrix IDs to gene symbols
@@ -94,101 +141,150 @@ setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
 annotation = read.csv("ensemble.103.txt") 
 # file comes from www.ensembl.org/biomart
 
+```
+
+
+```{r}
 ensemble_genes = annotation[,"Gene.stable.ID"]
 ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
 ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
 ensemble_symbol = annotation[,"HGNC.symbol"]
-```
 
-```{r}
 # which transcripts from the microarray are not listed in the ensemble.103.txt file?
 diabetes_nomatchesIDs <- rownames(diabetes_vsnrma_matrix)[!(rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts)]
 length(diabetes_nomatchesIDs)
-# 112
+# 112  (these trancscripts dont occur in the txt file)
 
 # remove these 112 transcripts from expression data
 diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts,]
 dim(diabetes_vsnrma_matrix)
 # 95547    24
-```
 
-```{r}
-# ------------------------------------------------
+
 # select only those symbols that are in the diabetes data set
-# ------------------------------------------------
-
 names(ensemble_symbol) <- ensemble_transcripts 
 diabetes_symbol <- ensemble_symbol[rownames(diabetes_vsnrma_matrix)]
-# symbols already in right order vor diabetes_vsnrma_matrix
+# symbols already in right order for diabetes_vsnrma_matrix
 
-# ------------------------------------------------
+
 # name the probes according to gene symbol
-# ------------------------------------------------
-
 rownames(diabetes_vsnrma_matrix) <- as.character(diabetes_symbol)
 
-
-head(diabetes_vsnrma_matrix)[,1:2]
-```
-
-```{r}
+# ------------------------------------------------
 # check for NAs or "" 
+# ------------------------------------------------
 
 #apply(diabetes_vsnrma_matrix, 2, function(x){sum(x == 0)})
 
-sum(sapply(rownames(diabetes_vsnrma_matrix), function(x){sum(is.na(x))})) # 0 are NA
+sum(is.na(rownames(diabetes_vsnrma_matrix)))
+# 0 are NA
 
-sum(sapply(rownames(diabetes_vsnrma_matrix), function(x){sum(x == "", na.rm = TRUE)})) # 1096 are ""
+sum(rownames(diabetes_vsnrma_matrix) == "")
+# 1096 are ""
 
 ```
 
+## sort gene symbols alphabetically 
 ```{r}
-# alphabetical order
-diabetes_vsnrma_matrix <- as.data.frame(diabetes_vsnrma_matrix)
-diabetes_GeneExprs = diabetes_vsnrma_matrix[order(rownames(diabetes_vsnrma_matrix)),]
-head(diabetes_GeneExprs)
+# ------------------------------------------------
+# alphabetical order + deletion of all rows with "" as gene symbol (1096)
+# ------------------------------------------------
+
+diabetes_GeneExprs <- diabetes_vsnrma_matrix[order(rownames(diabetes_vsnrma_matrix)),][1097:nrow(diabetes_vsnrma_matrix),] 
+
 dim(diabetes_GeneExprs)
+# 94451    24
+
+head(diabetes_GeneExprs)
 ```
 
-
+## select only pancreas specific TRAs
 ```{r}
-# get the tissue specifc genes from TRA Daten
+# ------------------------------------------------
+# minimize expression matrix: only pancreas TRAs 
+# ------------------------------------------------
+
+# get the tissue specific genes from "TRA Daten"
 setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
 pancreas_specific_genes = read.csv("pancreas_specific_genes_human.csv")
+pancreas_specific_genes = sort(pancreas_specific_genes)
 
 # create a expression matrix with only those genes
 diabetes_GeneExprs_sub = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% pancreas_specific_genes),]
-dim(diabetes_GeneExprs_sub) 
-(diabetes_GeneExprs_sub)
-# have to check again if everything makes sense here 
 
-diabetes_vsnrma_matrix_sub = diabetes_vsnrma_matrix[which(rownames(diabetes_vsnrma_matrix) %in% pancreas_specific_genes),]
-dim(diabetes_vsnrma_matrix_sub)
+dim(diabetes_GeneExprs_sub) 
+# 1569   24 
+length(unique(rownames(diabetes_GeneExprs_sub)))
+# 250 (number of TRA genes in the expression matrix)
+head(diabetes_GeneExprs_sub)
+
 ```
 
-# plots
-
+## combine genes 
 ```{r}
+# ------------------------------------------------
+# use of own function to combine values of genes that are mentioned more than once
+# ------------------------------------------------
+
+dim(combineGeneExprs(diabetes_GeneExprs_sub))
+# 250  24
+
+dim(combineGeneExprs(diabetes_GeneExprs))
+# 18062    24
+```
+
+
+# plots
+## distributions
+
+```{r fig.height=12}
+par(mfrow = c(5,5), mai = c(0.6,0.6,0.5,0.1))
+
+for(x in 1:24){
+  hist(diabetes_GeneExprs[,x], 
+       xlab = "gene expression values",
+       main = paste("Histogram of", diabetes_microarrays[x,"number"],"\n", "data set: GSE53454"))
+  abline(v = c(mean(diabetes_GeneExprs[,x]), median(diabetes_GeneExprs[,x])), 
+         col = c("red", "blue"), lwd = 2)
+}
+plot.new()
+legend("center", legend = c("mean", "median"), fill = c("red", "blue"), cex = 2)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
+
+```
+
+
+
+## heatmap of TRAs
+```{r}
+
 pheatmap(t(diabetes_GeneExprs_sub), 
          labels_row = paste(diabetes_microarrays[,"time"],",",diabetes_microarrays[,"treatment"]),
          labels_col = rep("",nrow(diabetes_GeneExprs_sub)))
 
+# after combining
+pheatmap(t(combineGeneExprs(diabetes_GeneExprs_sub)), 
+         labels_row = paste(diabetes_microarrays[,"time"],",",diabetes_microarrays[,"treatment"]),
+         labels_col = rep("",nrow(diabetes_GeneExprs_sub)))
+
+
 
 ```
+## boxplot of TRAs
 
-```{r}
+```{r fig.height=20}
 # ------------------------------------------------
-# small boxplot (shows only small part of the genes)
+# boxplot (very unfinished, just to get an overview)
 # ------------------------------------------------
-
 par(las = 2)
-
-boxplot(t(diabetes_vsnrma_matrix_sub)[,1:30],
-         col = rainbow(100),
+boxplot(t(combineGeneExprs(diabetes_GeneExprs_sub)),
+         col = rainbow(250),
          main="", 
-         horizontal = FALSE)
+         horizontal = TRUE)
+abline(v = median(apply(diabetes_vsnrma_matrix, 1,median)))
 
 ```
-
 
 
