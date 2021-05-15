@@ -98,7 +98,6 @@ pancreas_samples
 ## Rawdata
 
 par(las=2)
-
 par(mai = c(0.9,0.4,0.6,0.1))
 
 boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "microarray gene expression of PDAC data set (GSE59761) \n before normalization", cex.axis=0.6)
@@ -111,7 +110,6 @@ dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
 ## Normalized data
 
 par(las=2)
-
 par(mai = c(0.9,0.4,0.6,0.1))
 
 boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "microarray gene expression of PDAC data set (GSE59761) \n after normalization", cex.axis=0.6)
@@ -135,7 +133,7 @@ dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
 ## Rawdata
 
 par(mai = c(0.9,0.9,0.6,0.1))
-hist(data_pancreas, col = rainbow(6), main = "Density function of log intensity of PDAC cells (GSE53454) \n before normalization")
+hist(data_pancreas, col = rainbow(6), main = "Density function of log intensity of PDAC cells (GSE59761) \n before normalization")
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
@@ -146,7 +144,7 @@ dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
 ## Normalized
 
 par(mai = c(0.9,0.9,0.6,0.1))
-plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log intensity of PDAC cells (GSE53454) \n after normalization", ylim = c(0,0.7))
+plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log intensity of PDAC cells (GSE59761) \n after normalization", ylim = c(0,0.4))
 
 for (i in 1:ncol(pancreas_vsnrma_matrix)){
   lines(density(pancreas_vsnrma_matrix[,i]), col = rainbow(6)[i])
@@ -164,17 +162,17 @@ dev.copy2pdf(file = "pancreas_hist_vsnrma_normalized.pdf")
 RNAdeg_PDAC <- AffyRNAdeg(data_pancreas)
 
 ## shift and scale
-par(pty = "s")
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
 plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6))
 title(sub = "Pancreas Rawdata")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "pancreas_rnadeg_rawdata.pdf")
+dev.copy2pdf(file = "PDAC data set (GSE59761) rawdata")
 
 ## shift
-par(pty = "s")
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
 plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6), transform = "shift.only")
-title(sub = "Pancreas Scaled")
+title(sub = "PDAC data set (GSE59761) rawdata")
 
 dev.copy2pdf(file = "pancreas_rnadeg_shift_rawdata.pdf")
 
