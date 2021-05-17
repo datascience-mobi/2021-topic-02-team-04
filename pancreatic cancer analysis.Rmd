@@ -1,0 +1,170 @@
+---
+title: "Untitled"
+author: "Anna Boot"
+date: "17 5 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+`
+
+##pancreas TRA expression analyis of all pancreatic cancer sets
+```{r}
+pancreas_GeneExprs_sub_combined <- combineGeneExprs(pancreas_GeneExprs_sub)
+
+head(pancreas_GeneExprs_sub_combined)
+dim(pancreas_GeneExprs_sub_combined)
+##250
+```
+
+```{r}
+### mean insgesamt und für jedes Set einzelnd
+mean(pancreas_GeneExprs_sub_combined)
+##7.354877
+apply(pancreas_GeneExprs_sub_combined, 2, mean)
+
+### median insgesamt und für jedes Set einzelnd
+median(pancreas_GeneExprs_sub_combined)
+## 6.760999
+apply(pancreas_GeneExprs_sub_combined, 2, median)
+
+### sd ingesamt und für jedes Set einzelnd
+sd(pancreas_GeneExprs_sub_combined)
+## 1.612396
+apply(pancreas_GeneExprs_sub_combined, 2, sd)
+
+```
+
+
+
+```{r}
+## lowest expressed Gene each set
+### different ALB, TRHDE, RBM20, ALB, CPA1, GATM
+
+for(i in 1:6)
+{min_value <- min(pancreas_GeneExprs_sub_combined[,i])
+min_gene <- row.names(pancreas_GeneExprs_sub_combined)[pancreas_GeneExprs_sub_combined[,i] == min_value]
+print(min_value)
+print(min_gene)}
+```
+```{r}
+### highest expressed Gene each set
+## always RPL5
+for(i in 1:6)
+{max_value <- max(pancreas_GeneExprs_sub_combined[,i])
+max_gene <- row.names(pancreas_GeneExprs_sub_combined)[pancreas_GeneExprs_sub_combined[,i] == max_value]
+print(max_value)
+print(max_gene)}
+
+```
+```{r}
+
+```
+
+
+## 
+```{r}
+barplot(pancreas_GeneExprs_sub_combined[,1], main = "pancreatic TRA expression GSM1446171", xlab= "genes", )
+barplot(pancreas_GeneExprs_sub_combined[,2], main = "pancreatic TRA expression GSM1446172", xlab= "genes")
+barplot(pancreas_GeneExprs_sub_combined[,3], main = "pancreatic TRA expression GSM1446173", xlab= "genes")
+barplot(pancreas_GeneExprs_sub_combined[,4], main = "pancreatic TRA expression GSM1446174", xlab= "genes")
+barplot(pancreas_GeneExprs_sub_combined[,5], main = "pancreatic TRA expression GSM1446175", xlab= "genes")
+barplot(pancreas_GeneExprs_sub_combined[,6], main = "pancreatic TRA expression GSM1446176", xlab= "genes")
+```
+
+
+## all TRA genes expression analyis of all pancreatic cancer sets
+```{r}
+all_TRA_GeneExprs_sub_combined <- combineGeneExprs(all_TRA_GeneExprs_sub)
+head(all_TRA_GeneExprs_sub_combined)
+dim(all_TRA_GeneExprs_sub_combined)
+##14374
+```
+
+```{r}
+### mean insgesamt und für jedes Set einzelnd
+mean(all_TRA_GeneExprs_sub_combined)
+#7.543215
+apply(all_TRA_GeneExprs_sub_combined, 2, mean)
+
+### median insgesamt und für jedes Set einzelnd
+median(all_TRA_GeneExprs_sub_combined)
+#7.00126
+apply(pancreas_GeneExprs_sub_combined, 2, median)
+
+### sd ingesamt und für jedes Set einzelnd
+sd(all_TRA_GeneExprs_sub_combined)
+1.624345
+apply(all_TRA_GeneExprs_sub_combined, 2, sd)
+
+```
+
+```{r}
+## lowest expressed Gene each set
+### "MSTN", "TCF24", "ZNF486", "TCF24", "MICU3", "PITX2"
+### auch um 5.3 warum sind die nicht niedriger als die Minima der reinen pancreatic TRA???
+##kann es sein das die niedristen pancreatic TRAs in dem Zelltyp nichht vorkommen?
+
+for(i in 1:6)
+{min_value <- min(all_TRA_GeneExprs_sub_combined[,i])
+min_gene <- row.names(all_TRA_GeneExprs_sub_combined)[all_TRA_GeneExprs_sub_combined[,i] == min_value]
+print(min_value)
+print(min_gene)}
+
+```
+```{r}
+## highest expressed Gene each set
+## "S100A4" & "ARPC1B"
+#warum mit 14. höher als pancreas TRA mit nur 13.???
+## kann es sein, dass S100A4 und ARPC1B in anderen Geweben so unlaublich hoch exprimiert werden, dass sie diesen zugeordnet werden, obwohl sie auch in anderen Geweben noch sehr hoch exprimiert werden?
+for(i in 1:6)
+{max_value <- max(all_TRA_GeneExprs_sub_combined[,i])
+max_gene <- row.names(all_TRA_GeneExprs_sub_combined)[all_TRA_GeneExprs_sub_combined[,i] == max_value]
+print(max_value)
+print(max_gene)}
+
+```
+
+```{r}
+
+barplot(all_TRA_GeneExprs_sub_combined[,1], main = "TRA expression GSM1446171", xlab= "genes", )
+barplot(all_TRA_GeneExprs_sub_combined[,2], main = "TRA expression GSM1446172", xlab= "genes")
+barplot(all_TRA_GeneExprs_sub_combined[,3], main = "TRA expression GSM1446173", xlab= "genes")
+barplot(all_TRA_GeneExprs_sub_combined[,4], main = "TRA expression GSM1446174", xlab= "genes")
+barplot(all_TRA_GeneExprs_sub_combined[,5], main = "TRA expression GSM1446175", xlab= "genes")
+barplot(all_TRA_GeneExprs_sub_combined[,6], main = "TRA expression GSM1446176", xlab= "genes")
+```
+```{r}
+## boxplot only pancreatic TRAs
+par(las = 2)
+
+boxplot(t(pancreas_GeneExprs_sub_combined),
+         col = rainbow(250),
+         main="",
+         horizontal = TRUE)
+abline(v =  median(apply(pancreas_vsnrma_matrix, 1,median)))
+abline(v =  2*median(apply(pancreas_vsnrma_matrix, 1,median)))
+```
+
+## highly expressed genes
+### definition: min. 2xmedian 
+
+```{r}
+### only pancreatic TRA
+
+high_expr_genes <- row.names(pancreas_GeneExprs_sub_combined)[pancreas_GeneExprs_sub_combined > 2*median(pancreas_GeneExprs_sub_combined)]
+high_expr_genes
+
+```
+
+```{r}
+### all TRA
+high_expr_genes <- row.names(all_TRA_GeneExprs_sub_combined)[all_TRA_GeneExprs_sub_combined > 2*median(all_TRA_GeneExprs_sub_combined)]
+high_expr_genes
+```
+
+## lowly expressed genes
+## how to define? highly expressed (5x median does not work)
+

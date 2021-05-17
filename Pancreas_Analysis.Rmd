@@ -32,7 +32,7 @@ library(dbplyr)
 
 combineGeneExprs <- function(exprsmatrix){
   
-  # no genes mentioned multile times
+  # no genes mentioned multiple times
   a = unique(rownames(exprsmatrix)) 
   # list of indices where genes from a are mentioned
   id = sapply(a, function(x){
@@ -233,6 +233,38 @@ dim(combineGeneExprs(pancreas_GeneExprs_sub))
 dim(combineGeneExprs(pancreas_GeneExprs))
 # 18062    24
 ```
+## select only all TRAs
+```{r}
+# ------------------------------------------------
+# minimize expression matrix: only all TRAs 
+# ------------------------------------------------
+
+# get TRA gene Daten
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+all_TRA_genes = read.csv("TRA_genes_human.csv")
+all_TRA_genes = sort(all_TRA_genes) 
+
+# create a expression matrix with only those genes
+all_TRA_GeneExprs_sub = pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) %in% all_TRA_genes),]
+
+
+length(unique(rownames(all_TRA_GeneExprs_sub)))
+dim(all_TRA_GeneExprs_sub)
+head(all_TRA_GeneExprs_sub)
+```
+
+```{r}
+## combine
+#funktioniert bei mir hier nicht
+# ------------------------------------------------
+# use of own function to combine values of genes that are mentioned more than once
+# ------------------------------------------------
+
+dim(combineGeneExprs(all_TRA_GeneExprs_sub))
+
+dim(combineGeneExprs(all_TRA_GeneExprs))
+```
+
 
 # plots
 ## distributions

@@ -37,6 +37,20 @@ TRAs6_human <-read_tsv("tra.2017.human.gtex.5x.table.tsv",col_types = cols(ensem
 
 ```
 
+## Tabelle mit allen TRAs erstellen
+```{r}
+# Erstellen eines Vektors der alle in den TRA Tabellen enthaltenen Gensymbole enthält
+TRA_genes_human <- unique(c(TRAs1_human$Symbol,TRAs2_human$gene.symbol,TRAs6_human$ensembl.symbol))
+
+TRA_genes_mouse <- unique(c(TRAs4_mouse$gene.symbol,TRAs5_mouse$gene.symbol))
+
+
+# als .csv Dateien unter rawdata/table abspeichern
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+write.csv(matrix(TRA_genes_human, nrow=1), file = "TRA_genes_human.csv", row.names = FALSE)
+write.csv(matrix(TRA_genes_mouse, nrow=1), file = "TRA_genes_mouse.csv", row.names = FALSE)
+```
+
 ## Pancreas Tabellen erstellen
 
 ```{r}
@@ -53,7 +67,7 @@ PancreasTRAs6_human <- TRAs6_human[grep(x=TRAs6_human$max.tissue,"Panc"),]
 
 
 ```{r}
-# Erstellen eines Vektors der alle in den TRA Tabellen enthaltenen Gensymbole enthält
+# Erstellen eines Vektors der alle in den pancreas TRA Tabellen enthaltenen Gensymbole enthält
 
 pancreas_gene_human <- unique(c(PancreasTRAs1_human$Symbol,PancreasTRAs2_human$gene.symbol,PancreasTRAs6_human$ensembl.symbol))
 
@@ -176,7 +190,7 @@ dev.copy2pdf(file = "TRA4_mouse_piechart.pdf")
 # Pie Chart für Tabelle 5 (mouse)
 
 par(mai = c(0,0,0.5,0))
-pie(GewebeTabelleProzent5[,1],labels = label5, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in mouse tissues")
+pie(GewebeTabelleProzent5[,1],labels = label5, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise=TRUE, border = FALSE, main = "TRA expression in mouse tissues")
 
 # Pie Chart für Tabelle 6
 
