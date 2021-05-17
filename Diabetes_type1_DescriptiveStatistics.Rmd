@@ -1,0 +1,217 @@
+---
+title: "Diabetes: High Variance and Descriptive Statistics"
+author: "Bianca Greul"
+date: "15 5 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{r libraries, include=FALSE}
+# Bioconductor
+library(affy)
+library(vsn)
+library(AnnotationDbi)
+library(hgu133plus2hsenstcdf)
+library(hgu133plus2hsenstprobe)
+library(hexbin)
+
+library(rstudioapi)
+library(tidyverse)
+library(ggplot2)
+library(pheatmap)
+library(stats)
+```
+
+Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
+
+```{r}
+
+# steps already done in Quality Control/Analysis
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+# get CEL files
+setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
+data_diabetes <- ReadAffy()
+# change cdf
+data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
+
+# create expression matrix
+diabetes_matrix <- as.data.frame(exprs(data_diabetes))
+# store colnames (microarray)
+diabetes_microarray_information <- colnames(diabetes_matrix)
+# vsnrm normalization
+diabetes_vsnrma <- vsnrma(data_diabetes)
+# expression matrix of vsnrm normalized data set
+diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
+# cut rownames at "." ("ENST00000000233.10_at"  becomes "ENST00000000233")
+rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")
+# remove control probes from normalized data set
+diabetes_transcript_names <- rownames(diabetes_vsnrma_matrix)
+diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[which(!startsWith(diabetes_transcript_names, "AFFX")),]
+
+# convert to gene symbols
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+annotation = read.csv("ensemble.103.txt") 
+
+ensemble_genes = annotation[,"Gene.stable.ID"]
+ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
+ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
+ensemble_symbol = annotation[,"HGNC.symbol"]
+
+diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts,]
+names(ensemble_symbol) <- ensemble_transcripts 
+diabetes_symbol <- ensemble_symbol[rownames(diabetes_vsnrma_matrix)]
+rownames(diabetes_vsnrma_matrix) <- as.character(diabetes_symbol)
+
+diabetes_GeneExprs <- diabetes_vsnrma_matrix[order(rownames(diabetes_vsnrma_matrix)),][1097:nrow(diabetes_vsnrma_matrix),] 
+
+## Something does not quite work the way it is supposed to. There are always different results for the same line of code.
+
+summary(diabetes_GeneExprs)
+```
+
+
+## Chips for further analysis
+
+```{r}
+
+diabetes_ctrl <- diabetes_vsnrma_matrix[, 1:13]
+diabetes_treat <- diabetes_vsnrma_matrix[, 14:24]
+
+## The Control group has two additional chips. That might lead to problems down the line. Therefore, we might have to removed those two chips.
+
+col_diab <- c(2:11, 13)
+diabetes_ctrl_same_chips <- diabetes_vsnrma_matrix[, col_diab]
+
+## We discussed removing two chips due to unsatisfactory results in the quality control. Here are control and treatment group with the two chips and those linked to each other removed.
+col_ctrl <- c(3, 5:8, 10:13)
+diabetes_crtl_finished <- diabetes_vsnrma_matrix[, col_ctrl]
+
+col_treat <- c(14, 16, 18:24)
+diabetes_treat_finished <- diabetes_vsnrma_matrix[, col_treat]
+
+```
+
+
+## High variance genes
+
+### Top 5% of variance
+
+```{r}
+
+## Calculate variance of rows (genes)
+
+var_diab <- apply(diabetes_GeneExprs, 1, var, na.rm=TRUE)
+
+## Create function to filter out the top 5% of variance.
+
+top5 <- function(x) {
+  x >= quantile(x, 0.95)
+}
+
+## Apply function to variance set, to determine the top 5% of variance.
+
+top5_diab <- top5(var_diab)
+
+top5_diab_names <- which(top5_diab == "TRUE")
+
+high_var_diabetes <- diabetes_GeneExprs[top5_diab_names, , drop = FALSE]
+
+dim(high_var_diabetes)
+
+## data set complete: 94451 genes
+## data set high variance: 4743 genes
+```
+
+
+## Median gene expression
+
+### Median expression of genes that is more than twice that of the general median.
+
+```{r}
+## Search for genes, whose median gene expression are more than two times that of the median.
+
+med_diab <- apply(diabetes_GeneExprs, 1, median, na.rm=TRUE)
+
+## Names of genes that fit this criteria: 2 in total (some are doubled).
+## INS, PRSS2
+
+which(med_diab > (2 * median(med_diab)))
+
+## Expression values of those genes.
+
+diab_above2med <- diabetes_GeneExprs[which(med_diab > (2 * median(med_diab)))]
+diab_above2med
+```
+
+### Median gene expression comparison treatment vs control
+
+```{r}
+## separate Control and Treatment group to compare median gene expression levels.
+
+median_ctrl <- apply(diabetes_ctrl, 1, median, na.rm=TRUE)
+median_treat <- apply(diabetes_treat, 1, median, na.rm=TRUE)
+
+
+## Search for genes, whose median gene expression have been increased 1.5 times during treatment in comparison to control
+
+median_1_5 <- which(median_treat > (1.5 * median_ctrl))
+median_1_5
+
+## This is true for the following genes: IDO1, CXCL9, CXCL10, CXCL11, GBP1, CCL8, GBP5 
+
+## Their gene expression changed from...
+median_ctrl[median_1_5]
+## ... to:
+median_treat[median_1_5]
+
+
+
+## Search for genes in treatment group, whose median gene expression is reduced by 1.2 times compared to the control group
+
+median_reduced <- which((1.2 * median_treat) < (median_ctrl))
+head(median_reduced)
+
+## Following genes have a reduced median gene expression after treatment: OLFM4, AKR1B10
+
+```
+
+
+## Variance
+
+### Variance of Microarrays: Control vs Treatment
+
+```{r}
+## Expected results: Control Microarrays only have a small variance compared to Treatment Microarrays with a higher variance.
+
+var_ctrl <- apply(diabetes_ctrl, 1, var, na.rm=TRUE)
+var_treat <- apply(diabetes_treat, 1, var, na.rm=TRUE)
+
+## Control should have a smaller variance than treatment group. Length should be small.
+var_t_smaller_c <- which(var_treat < var_ctrl)
+length(var_t_smaller_c)
+
+## Treatment should have a larger variance than control group. Length should be large.
+var_t_greater_c <- which(var_treat > var_ctrl)
+length(var_t_greater_c)
+
+## Surprising results: Only roughly two thirds of the genes have a higher variance of their gene expression after treatment.
+```
+
+
+## Checking normality
+
+```{r}
+qqnorm(diabetes_ctrl, main = "Normal QQ-Plot of Diabetes Control", ylab = "Diabetes Control"); qqline(diabetes_ctrl)
+
+qqnorm(diabetes_treat, main = "Normal QQ-Plot of Diabetes Treatment", ylab = "Diabetes Treatment"); qqline(diabetes_treat)
+
+## Control and treatment group are not normally distributed.
+
+```
