@@ -74,8 +74,12 @@ diabetes_GeneExprs <- diabetes_vsnrma_matrix[order(rownames(diabetes_vsnrma_matr
 ## Something does not quite work the way it is supposed to. There are always different results for the same line of code.
 
 summary(diabetes_GeneExprs)
+
+dim(combineGeneExprs(diabetes_GeneExprs))
 ```
 
+
+# Microarray Analysis
 
 ## Chips for further analysis
 
@@ -214,4 +218,104 @@ qqnorm(diabetes_treat, main = "Normal QQ-Plot of Diabetes Treatment", ylab = "Di
 
 ## Control and treatment group are not normally distributed.
 
+```
+
+
+
+# TRA Analysis 
+
+Steps already taken in Analysis:
+
+```{r}
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+pancreas_specific_genes = read.csv("pancreas_specific_genes_human.csv")
+pancreas_specific_genes = sort(pancreas_specific_genes)
+
+
+# create a expression matrix with only those genes
+diabetes_GeneExprs_sub = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% pancreas_specific_genes),]
+
+dim(diabetes_GeneExprs_sub) 
+# 1569   24 
+length(unique(rownames(diabetes_GeneExprs_sub)))
+# 250 (number of TRA genes in the expression matrix)
+head(diabetes_GeneExprs_sub)
+```
+
+
+## Diabetes TRA expression analyis of all pancreatic cancer sets
+
+```{r}
+diabetes_GeneExprs_sub_combined <- combineGeneExprs(diabetes_GeneExprs_sub)
+
+head(diabetes_GeneExprs_sub_combined)
+dim(diabetes_GeneExprs_sub_combined)
+##250
+```
+
+```{r}
+### mean insgesamt und für jedes Set einzelnd
+mean(diabetes_GeneExprs_sub_combined)
+## 8.79089
+apply(pancreas_GeneExprs_sub_combined, 2, mean)
+
+### median insgesamt und für jedes Set einzelnd
+median(diabetes_GeneExprs_sub_combined)
+## 7.996373
+apply(pancreas_GeneExprs_sub_combined, 2, median)
+
+### sd ingesamt und für jedes Set einzelnd
+sd(pancreas_GeneExprs_sub_combined)
+##  1.6099
+apply(pancreas_GeneExprs_sub_combined, 2, sd)
+
+```
+
+```{r}
+## lowest expressed Gene each chip:
+
+for(i in 1:24)
+{min_value <- min(diabetes_GeneExprs_sub_combined[,i])
+min_gene <- row.names(diabetes_GeneExprs_sub_combined)[diabetes_GeneExprs_sub_combined[,i] == min_value]
+print(min_value)
+print(min_gene)}
+```
+
+```{r}
+### highest expressed Gene each chip:
+
+for(i in 1:24)
+{max_value <- max(diabetes_GeneExprs_sub_combined[,i])
+max_gene <- row.names(diabetes_GeneExprs_sub_combined)[diabetes_GeneExprs_sub_combined[,i] == max_value]
+print(max_value)
+print(max_gene)}
+
+```
+
+
+## High Variance TRA genes in diabetes data set
+
+```{r}
+## Calculate variance of rows (genes)
+
+var_di <- apply(diabetes_GeneExprs_sub_combined, 1, var, na.rm=TRUE)
+
+## Create function to filter out the top 25% of variance.
+
+top5 <- function(x) {
+  x >= quantile(x, 0.75)
+}
+
+## Apply function to variance set, to determine the top 5% of variance.
+
+top5_di <- top5(var_di)
+
+top5_di_names <- which(top5_di == "TRUE")
+
+high_var_diabetes_sub <- diabetes_GeneExprs_sub_combined[top5_di_names, , drop = FALSE]
+
+dim(high_var_diabetes_sub)
+
+## data set complete: 250 genes
+## data set high variance: 63 genes
 ```
