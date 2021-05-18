@@ -257,17 +257,17 @@ dim(diabetes_GeneExprs_sub_combined)
 ### mean insgesamt und für jedes Set einzelnd
 mean(diabetes_GeneExprs_sub_combined)
 ## 8.79089
-apply(pancreas_GeneExprs_sub_combined, 2, mean)
+apply(diabetes_GeneExprs_sub_combined, 2, mean)
 
 ### median insgesamt und für jedes Set einzelnd
 median(diabetes_GeneExprs_sub_combined)
 ## 7.996373
-apply(pancreas_GeneExprs_sub_combined, 2, median)
+apply(diabetes_GeneExprs_sub_combined, 2, median)
 
 ### sd ingesamt und für jedes Set einzelnd
-sd(pancreas_GeneExprs_sub_combined)
+sd(diabetes_GeneExprs_sub_combined)
 ##  1.6099
-apply(pancreas_GeneExprs_sub_combined, 2, sd)
+apply(diabetes_GeneExprs_sub_combined, 2, sd)
 
 ```
 
