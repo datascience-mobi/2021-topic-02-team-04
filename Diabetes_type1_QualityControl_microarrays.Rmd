@@ -192,12 +192,13 @@ dev.copy2pdf(file = "diabetes_meanSdPlot_vsnrma_normalized.pdf")
 
 par(las = 2) #axis labels always perpendicular to the axis
 
-par(mai = c(1,0.5,1,0.1))
+par(mai = c(1.2,0.8,1,0.1))
 
 boxplot(data_diabetes, names = substr(colnames(diabetes_matrix), 1,10),
-        col = rainbow(24), cex.axis=0.6, 
-        main="microarray gene expression of beta cell data set (GSE53454) \n before normalization", 
+        col = rainbow(24), cex.axis=0.6, ylab = "Intensity values", 
+        main="Gene expression in mircoarrays (beta cell data set: GSE53454)\nbefore vsnrma normalization", 
         horizontal = FALSE)
+title(sub = "data is from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
@@ -212,12 +213,13 @@ dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
 # ------------------------------------------------
 
 par(las = 2)
-par(mai = c(1,0.5,1,0.1))
+par(mai = c(1.2,0.8,1,0.1))
 
 boxplot(diabetes_vsnrma_matrix, names = substr(colnames(diabetes_matrix), 1,10),
-        col = rainbow(24), cex.axis = 0.6, 
-        main= "microarray gene expression of beta cell data set (GSE53454) \n after normalization", 
+        col = rainbow(24), cex.axis = 0.6, ylab = "Intensity values",
+        main= "Gene expression in mircoarrays (beta cell data set: GSE53454)\nafter vsnrma normalization", 
         horizontal = FALSE, outline = FALSE) # outliers are not drawn
+title(sub = "data is from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf") 
@@ -233,10 +235,11 @@ dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf")
 # ------------------------------------------------
 # histogram of rawdata 
 # ------------------------------------------------
-par(mai = c(1,1,1,0.5))
+par(mai = c(1.2,1,1,0.5))
 hist(data_diabetes, 
      col = rainbow(24), 
-     main = "Density function of log intensity of beta cells (GSE53454) \n before normalization")
+     main = "Density function of log intensity of beta cells (data set: GSE53454)\nbefore normalization")
+title(sub = "data is from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")

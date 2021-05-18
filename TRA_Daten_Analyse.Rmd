@@ -144,7 +144,7 @@ GewebeTabelleProzent1
 
 ## Erstellen einer Piechart zu Verteilung der Gene auf die Gewebe
 
-```{r fig.height=10}
+```{r}
 library(RColorBrewer)
 
 label1 = paste0(rownames(GewebeTabelleProzent1), " (", as.character(round(GewebeTabelleProzent1[,"Anteil"],3)*100), "%)")
@@ -154,48 +154,48 @@ label4 = paste0(rownames(GewebeTabelleProzent4), " (", as.character(round(Gewebe
 label5 = paste0(rownames(GewebeTabelleProzent5), " (", as.character(round(GewebeTabelleProzent5[,"Anteil"],3)*100), "%)")
 label6 = paste0(rownames(GewebeTabelleProzent6), " (", as.character(round(GewebeTabelleProzent6[,"Anteil"],3)*100), "%)")
 
-label1[c(11:26,28:33)] = "" # pancreas is [27]
-label2[c(11:15,17:61)] = ""
-label3[c(11:64)] = "" # no pancreas mentioned here
-label4[c(11:42,44:60)] = ""
-label5[c(11:59,61:91)] = ""
-label6[c(11:20,22:53)] = ""
+label1[c(10:26,28:33)] = "" # pancreas is [27]
+label2[c(10:15,17:61)] = ""
+label3[c(10:64)] = "" # no pancreas mentioned here
+label4[c(10:42,44:60)] = ""
+label5[c(10:59,61:91)] = ""
+label6[c(10:20,22:53)] = ""
 
 # Pie Chart für Tabelle 1
 
-par(mai = c(0,0,0.5,0))
-pie(GewebeTabelleProzent1[,1], labels = label1, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues (atlas)")
+par(mai = c(0.1,0,0.4,0))
+pie(GewebeTabelleProzent1[,1], labels = label1, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.45, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "TRA1_human_piechart.pdf")
 
 # Pie Chart für Tabelle 2
 
-par(mai = c(0,0,0.5,0))
-pie(GewebeTabelleProzent2[,1],labels = label2, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues")
+par(mai = c(0.1,0,0.4,0))
+pie(GewebeTabelleProzent2[,1],labels = label2, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.45, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues")
 
 # Pie Chart für Tabelle 3
 
-par(mai = c(0,0,0.5,0))
-pie(GewebeTabelleProzent3[,1],labels = label3, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues (roth)")
+par(mai = c(0.1,0,0.4,0))
+pie(GewebeTabelleProzent3[,1],labels = label3, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.45, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues")
 
 # Pie Chart für Tabelle 4 (mouse)
 
-par(mai = c(0,0,0.5,0))
-pie(GewebeTabelleProzent4[,1],labels = label4, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in mouse tissues")
+par(mai = c(0.1,0,0.4,0))
+pie(GewebeTabelleProzent4[,1],labels = label4, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.45, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in mouse tissues")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "TRA4_mouse_piechart.pdf")
 
 # Pie Chart für Tabelle 5 (mouse)
 
-par(mai = c(0,0,0.5,0))
-pie(GewebeTabelleProzent5[,1],labels = label5, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise=TRUE, border = FALSE, main = "TRA expression in mouse tissues")
+par(mai = c(0.1,0,0.4,0))
+pie(GewebeTabelleProzent5[,1],labels = label5, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.45, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in mouse tissues")
 
 # Pie Chart für Tabelle 6
 
-par(mai = c(0,0,0.5,0))
-pie(GewebeTabelleProzent6[,1],labels = label6, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues (gtex)")
+par(mai = c(0.1,0,0.4,0))
+pie(GewebeTabelleProzent6[,1],labels = label6, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.45, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues")
 
 ```
 

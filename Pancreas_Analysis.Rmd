@@ -83,7 +83,7 @@ pancreas_vsnrma <- vsnrma(data_pancreas)
 # expression matrix of vsnrm normalized data set
 pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
 # cut rownames at "." 
-rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix),"\\..*","")
+rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix),"\\..*","") 
 
 ```
 
@@ -228,10 +228,10 @@ head(pancreas_GeneExprs_sub)
 # ------------------------------------------------
 
 dim(combineGeneExprs(pancreas_GeneExprs_sub))
-# 250  24
+# 250  6
 
 dim(combineGeneExprs(pancreas_GeneExprs))
-# 18062    24
+# 18062    6
 ```
 ## select only all TRAs
 ```{r}
@@ -251,6 +251,7 @@ all_TRA_GeneExprs_sub = pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) %i
 length(unique(rownames(all_TRA_GeneExprs_sub)))
 dim(all_TRA_GeneExprs_sub)
 head(all_TRA_GeneExprs_sub)
+
 ```
 
 ```{r}
@@ -263,6 +264,7 @@ head(all_TRA_GeneExprs_sub)
 dim(combineGeneExprs(all_TRA_GeneExprs_sub))
 
 dim(combineGeneExprs(all_TRA_GeneExprs))
+
 ```
 
 
@@ -294,11 +296,12 @@ par(mai = c(1,0.1,2,1))
 pheatmap(pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) == "TBL1X"),], 
          labels_col = paste(pancreas_microarrays[,"number"], 
                             "\n siRNA:", pancreas_microarrays[,"siRNA"]),
-         main = "Heatmap of TBL1X gene expression in pancreatic cancer cells \n data set: GSE59761",
-         cluster_rows = TRUE, treeheight_row = 0)
+         main = "TBL1X - Gene expression in pancreatic cancer cells\ndata set: GSE59761 (Stoy et al., 2015)",
+         cluster_rows = TRUE, treeheight_row = 0, 
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9)
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_analysis_heatmap_TBL1X.pdf")
+dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
 
 
 ```
@@ -312,10 +315,11 @@ pheatmap(pancreas_GeneExprs_sub,
          labels_col = paste(pancreas_microarrays[,"number"],"\n", "siRNA:", pancreas_microarrays[,"siRNA"]),
          labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
          cluster_rows = TRUE, treeheight_row = 0,
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9,
          main = "Heatmap of TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_analysis_heatmap_allTRAs.pdf")
+dev.copy2pdf(file = "pancreas_heatmap_allTRAs.pdf")
 ```
 
 
