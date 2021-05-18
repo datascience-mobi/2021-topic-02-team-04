@@ -198,6 +198,29 @@ dim(pancreas_GeneExprs)
 head(pancreas_GeneExprs)
 ```
 
+
+```{r}
+# ------------------------------------------------
+# save as .csv file 
+# ------------------------------------------------
+
+# create excel table with columns: genenames, gene expression values for each mircoarray
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+write.csv2(pancreas_GeneExprs, file = "pancreas_GeneExprs_allgenes.csv", sep = ";", dec = ",", col.names = NA, row.names = TRUE)
+# can be read by using read.csv2
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+test = read.csv2("pancreas_GeneExprs_allgenes.csv", col.names = c("GeneSymbols", pancreas_microarrays[,"number"]))
+sym = test[,"GeneSymbols"]
+test = as.matrix(test[,pancreas_microarrays[,"number"]])
+rownames(test) <- sym 
+# some smaller changes made to the actual values, but still nearly equal
+all.equal(test,pancreas_GeneExprs)
+# variable test is not really needed
+remove(sym)
+remove(test)
+
+```
+
 ## select only pancreas specific TRAs
 ```{r}
 # ------------------------------------------------
@@ -262,8 +285,9 @@ head(all_TRA_GeneExprs_sub)
 # ------------------------------------------------
 
 dim(combineGeneExprs(all_TRA_GeneExprs_sub))
+# 14388     6 
 
-dim(combineGeneExprs(all_TRA_GeneExprs))
+# dim(combineGeneExprs(all_TRA_GeneExprs)) # WHAT is all_TRA_GeneExprs?
 
 ```
 
