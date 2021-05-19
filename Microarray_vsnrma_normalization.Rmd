@@ -1,0 +1,78 @@
+---
+title: "vsnrma normalization"
+author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
+output: html_document
+---
+
+
+```{r}
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+projectPath
+```
+PDAC dataset, GSE59761, data is downloaded from the GEO database.
+Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database.
+
+```{r}
+# get CEL files
+setwd(paste(projectPath, "rawdata", "GSE59761 PDAC Capan-1 Zellen", sep = "/"))
+data_pancreas <- ReadAffy()
+setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
+data_diabetes <- ReadAffy()
+# change cdf
+data_pancreas@cdfName <- "HGU133Plus2_Hs_ENST"
+data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
+# create expression matrix
+pancreas_matrix <- as.data.frame(exprs(data_pancreas))
+diabetes_matrix <- as.data.frame(exprs(data_diabetes))
+# store colnames (microarray)
+pancreas_microarray_information <- colnames(pancreas_matrix)
+# vsnrm normalization
+pancreas_vsnrma <- vsnrma(data_pancreas)
+diabetes_vsnrma <- vsnrma(data_diabetes)
+# expression matrix of vsnrm normalized data set
+pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
+diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
+# cut rownames at "." 
+rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix),"\\..*","") 
+rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")
+# remove ending .CEL from colnames
+colnames(pancreas_vsnrma_matrix) <- str_replace(colnames(pancreas_vsnrma_matrix),"\\..*","")
+colnames(diabetes_vsnrma_matrix) <- str_replace(colnames(diabetes_vsnrma_matrix),"\\..*","")
+# remove control probes (AFFX) 
+pancreas_transcript_names = rownames(pancreas_vsnrma_matrix)
+pancreas_vsnrma_matrix = pancreas_vsnrma_matrix[which(!startsWith(pancreas_transcript_names, "AFFX")),]
+diabetes_transcript_names = rownames(diabetes_vsnrma_matrix)
+diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(diabetes_transcript_names, "AFFX")),]
+# 
+dim(diabetes_vsnrma_matrix)
+dim(pancreas_vsnrma_matrix)
+```
+
+
+```{r}
+# after vsnrma normalization + editing transcript IDs + removing controls (AFFX) + removing .CEL ending
+
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+write.csv2(diabetes_vsnrma_matrix, file = "diabetes_vsnrma_matrix.csv", sep = ";", dec = ",")
+
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+write.csv2(pancreas_vsnrma_matrix, file = "pancreas_vsnrma_matrix.csv", sep = ";", dec = ",")
+
+
+# reading (problem: values can differ a little from original)
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+test = read.csv2("diabetes_vsnrma_matrix.csv")
+IDs = test[,"X"]
+diabetes_vsnrma_matrix = as.matrix(test[,2:ncol(test)])
+rownames(diabetes_vsnrma_matrix) <- IDs
+remove(IDs); remove(test)
+
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+test = read.csv2("pancreas_vsnrma_matrix.csv")
+IDs = test[,"X"]
+pancreas_vsnrma_matrix = as.matrix(test[,2:ncol(test)])
+rownames(pancreas_vsnrma_matrix) <- IDs
+remove(IDs); remove(test)
+
+```
+
