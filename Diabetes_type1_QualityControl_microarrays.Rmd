@@ -139,6 +139,8 @@ save.image(file = "rawdata_diabetes.rda")
 
 setwd(paste(projectPath, "plots", sep = "/"))
 
+par(pty = "s")
+
 for (i in 1:24){
   image(data_diabetes[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
   file.name = paste0("diabetes_", str_remove(colnames(diabetes_matrix)[i],".CEL"),".pdf")
@@ -198,7 +200,7 @@ boxplot(data_diabetes, names = substr(colnames(diabetes_matrix), 1,10),
         col = rainbow(24), cex.axis=0.6, ylab = "Intensity values", 
         main="Gene expression in mircoarrays (beta cell data set: GSE53454)\nbefore vsnrma normalization", 
         horizontal = FALSE)
-title(sub = "data is from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
@@ -219,7 +221,7 @@ boxplot(diabetes_vsnrma_matrix, names = substr(colnames(diabetes_matrix), 1,10),
         col = rainbow(24), cex.axis = 0.6, ylab = "Intensity values",
         main= "Gene expression in mircoarrays (beta cell data set: GSE53454)\nafter vsnrma normalization", 
         horizontal = FALSE, outline = FALSE) # outliers are not drawn
-title(sub = "data is from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf") 
@@ -239,7 +241,7 @@ par(mai = c(1.2,1,1,0.5))
 hist(data_diabetes, 
      col = rainbow(24), 
      main = "Density function of log intensity of beta cells (data set: GSE53454)\nbefore normalization")
-title(sub = "data is from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
@@ -252,11 +254,12 @@ dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
 # ------------------------------------------------
 # histogram of vsnrma normalized data 
 # ------------------------------------------------
-par(mai = c(1,1,1,0.5))
+par(mai = c(1.2,1,1,0.5))
 
 plot(density(diabetes_vsnrma_matrix), 
      type = "n", xlab = "log Intensity", ylim = c(0,0.7), 
      main = "Density function of log intensity of beta cells (GSE53454) \n after normalization")
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 for (i in 1:ncol(diabetes_vsnrma_matrix)){
   lines(density(diabetes_vsnrma_matrix[,i]), col = rainbow(24)[i])
@@ -273,11 +276,11 @@ dev.copy2pdf(file = "diabetes_hist_vsnrma_normalized.pdf")
 # RNA degeneration  
 # ------------------------------------------------
 
-rnadeg.raw = AffyRNAdeg(data_diabetes)
+RNAdeg_diabetes = AffyRNAdeg(data_diabetes)
 
 # use of shift & scale
-par(pty = "s")
-plotAffyRNAdeg(rnadeg.raw, col=rainbow(24), transform = "shift.scale")
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_diabetes, col=rainbow(24), transform = "shift.scale")
 title(sub = "beta cell data set (GSE53454) rawdata")
 
 
@@ -287,7 +290,8 @@ dev.copy2pdf(file = "diabetes_rnadeg_rawdata.pdf")
 # ------------------------------------------------
 
 # use only shift
-plotAffyRNAdeg(rnadeg.raw, col = rainbow(24), transform = "shift.only")
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_diabetes, col = rainbow(24), transform = "shift.only")
 title(sub = "beta cell data set (GSE53454) rawdata")
 
 
@@ -310,7 +314,7 @@ for (i in 1:23){
          ylab = substr(colnames(diabetes_matrix), 1,10)[j])
     abline(0,1,col="red")
 
-    title(main = paste("scatterplot of microarrays from beta cell data set (GSE53454) \n", 
+    title(main = paste("Scatterplot of microarrays from beta cell data set (GSE53454\n", 
                        substr(colnames(diabetes_matrix), 1,10)[i],
                        "and",
                        substr(colnames(diabetes_matrix), 1,10)[j],
@@ -319,7 +323,7 @@ for (i in 1:23){
     file.name = paste("diabetes_scatterplot_",
                     substr(colnames(diabetes_matrix), 1,10)[i], 
                     "_",  
-                    substr(colnames(diabetes_matrix), 1,10)[i+1], 
+                    substr(colnames(diabetes_matrix), 1,10)[j, 
                     ".pdf", 
                     sep = "")
     # dev.copy2pdf(file = file.name)

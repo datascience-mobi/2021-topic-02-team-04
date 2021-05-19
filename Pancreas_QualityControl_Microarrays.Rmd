@@ -97,10 +97,11 @@ pancreas_samples
 ```{r}
 ## Rawdata
 
-par(las=2)
-par(mai = c(0.9,0.4,0.6,0.1))
+par(las = 2)
+par(mai = c(1.2,0.8,1,0.1))
 
-boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "microarray gene expression of PDAC data set (GSE59761) \n before normalization", cex.axis=0.6)
+boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "Gene expression in mircoarrays (PDAC data set: GSE59761)\nbefore normalization", cex.axis=0.6, ylab = "Intensity values")
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
@@ -109,10 +110,11 @@ dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
 ```{r}
 ## Normalized data
 
-par(las=2)
-par(mai = c(0.9,0.4,0.6,0.1))
+par(las = 2)
+par(mai = c(1.2,0.8,1,0.1))
 
-boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "microarray gene expression of PDAC data set (GSE59761) \n after normalization", cex.axis=0.6)
+boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "Gene expression in mircoarrays (PDAC data set: GSE59761)\nafter normalization", cex.axis=0.6, ylab = "Intensity values")
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "pancreas_boxplot_vsnrma_normalized.pdf")
@@ -132,8 +134,10 @@ dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
 ```{r}
 ## Rawdata
 
-par(mai = c(0.9,0.9,0.6,0.1))
-hist(data_pancreas, col = rainbow(6), main = "Density function of log intensity of PDAC cells (GSE59761) \n before normalization")
+par(mai = c(1.2,1,1,0.5))
+hist(data_pancreas, col = rainbow(6), main = "Density function of log intensity of PDAC cells (data set: GSE59761)\nbefore normalization")
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
+
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
@@ -143,8 +147,9 @@ dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
 ```{r}
 ## Normalized
 
-par(mai = c(0.9,0.9,0.6,0.1))
-plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log intensity of PDAC cells (GSE59761) \n after normalization", ylim = c(0,0.4))
+par(mai = c(1.2,1,1,0.5))
+plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log intensity of PDAC cells (data set: GSE59761)\nafter normalization", ylim = c(0,0.4))
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 for (i in 1:ncol(pancreas_vsnrma_matrix)){
   lines(density(pancreas_vsnrma_matrix[,i]), col = rainbow(6)[i])
@@ -164,10 +169,10 @@ RNAdeg_PDAC <- AffyRNAdeg(data_pancreas)
 ## shift and scale
 par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
 plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6))
-title(sub = "Pancreas Rawdata")
+title(sub = "PDAC data set (GSE59761) rawdata")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "PDAC data set (GSE59761) rawdata")
+dev.copy2pdf(file = "pancreas_rnadeg_shiftt_scale_rawdata.pdf")
 
 ## shift
 par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
@@ -193,7 +198,7 @@ for (i in 1:5) {
          ylab = pancreas_samples[j])
     abline(0, 1, col = "red")
   
-    title(main = paste("Scatterplot of microarrays \n", 
+    title(main = paste("Scatterplot of microarrays\n", 
                        pancreas_samples[i],
                        "and",
                        pancreas_samples[j],
