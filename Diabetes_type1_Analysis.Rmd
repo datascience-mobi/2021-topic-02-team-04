@@ -15,46 +15,82 @@ library(hgu133plus2hsenstcdf)
 library(hgu133plus2hsenstprobe)
 library(hexbin)
 
-library(rstudioapi)
-library(tidyverse)
-library(ggplot2)
+library(rstudioapi) 
+library(tidyverse) 
+library(ggplot2) 
 library(pheatmap)
 library(stats)
+library(dplyr)
+library(ggfortify) #new
+library(reshape2) #new
+library(ggrepel) #new
+
 ```
 
 # functions
 ## combineGeneExprs
 ```{r}
 # ------------------------------------------------
-# function: genes in expression matrix that are mentioned more than once are combined (is mean or median better?)
+# function: genes in expression matrix that are mentioned more than once are combined (is sum or median better?)
 # ------------------------------------------------
 
-combineGeneExprs <- function(exprsmatrix){
-  
-  # no genes mentioned multile times
-  a = unique(rownames(exprsmatrix)) 
-  # list of indices where genes from a are mentioned
-  id = sapply(a, function(x){
-    which(rownames(exprsmatrix) == x)
-  })  
-  
-  # create empty matrix 
-  h = matrix(ncol = ncol(exprsmatrix), nrow = 0)
-  # fill matrix with combined expression for genes from a
-  for (i in c(1:length(id))){
-    m = exprsmatrix[id[[i]],]
-    if (length(id[[i]]) > 1){
-      # combine values (mean)
-      v = apply(m,2,function(x){mean(x)})
-      h = rbind(h,v)
-    }else if (length(id[[i]]) == 1){
-      h = rbind(h,m)
-    }
+combineGeneExprs_median <- function(exprsmatrix){
+  # all unique genes
+  genes <- unique(rownames(exprsmatrix))
+  # empty matrix
+  result <- matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # for each gene: find indices, combine rows by using median
+  for (i in genes){
+    indices <- which(rownames(exprsmatrix) == i)
+    gene_matrix <- exprsmatrix[indices,]
+    # combine values only if gene_matrix has 2 or more rows
+    if (length(indices) > 1){
+      # for each microarray: compute median of gene expression for certain gene 
+      combined <-  apply(gene_matrix,2,function(x){median(x)})
+      result <- rbind(result, combined, deparse.level = 1)}
+    # if there is only one row: no need to combine values
+    else if (length(indices) == 1){result = rbind(result, gene_matrix)}
   }
-  # change rownames to gene symbols
-  rownames(h) = a
+  rownames(result) = genes
   # output
-  h
+  result
+}
+
+combineGeneExprs_sum <- function(exprsmatrix){
+  # all unique genes
+  genes <- unique(rownames(exprsmatrix))
+  # empty matrix
+  result <- matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # for each gene: find indices, combine rows by using sum
+  for (i in genes){
+    indices <- which(rownames(exprsmatrix) == i)
+    gene_matrix <- exprsmatrix[indices,]
+    # combine values only if gene_matrix has 2 or more rows
+    if (length(indices) > 1){
+      # for each microarray: compute sum of gene expression for certain gene 
+      combined <-  apply(gene_matrix,2,function(x){sum(x)})
+      result <- rbind(result, combined, deparse.level = 1)}
+    # if there is only one row: no need to combine values
+    else if (length(indices) == 1){result = rbind(result, gene_matrix)}
+  }
+  rownames(result) = genes
+  # output
+  result
+} 
+
+combineGeneExprs_median2 <- function(exprsmatrix){
+  # create data frame with a column of all the gene symbols
+  data <- data.frame(geneSymbols = rownames(exprsmatrix),
+                     exprsmatrix, 
+                     row.names = NULL)
+  # group data frame by gene symbols and combine values of one gene by median
+  combined <- aggregate(data[-1], by = list(data$geneSymbols) , FUN = median)
+  # convert data frame to matrix (only expression values, no row names)
+  result <- as.matrix(combined[,-1])
+  # use gene symbols as row names
+  rownames(result) <- combined[,1]
+  # output
+  result
 }
 
 ```
@@ -99,7 +135,8 @@ diabetes_microarrays = t(as.data.frame(
     str_split(s, "_")
     })
   ))[,-c(2,3)]
-colnames(diabetes_microarrays) <- c("number", "treatment", "time")
+colnames(diabetes_microarrays) <- c("number", "treatment", "time_h")
+diabetes_microarrays <- transform(diabetes_microarrays, time_h = as.integer(str_remove(diabetes_microarrays[,"time_h"],"h")))
 rownames(diabetes_microarrays) <- c(1:24)
 diabetes_microarrays <- as.data.frame(diabetes_microarrays)
 
@@ -153,7 +190,7 @@ ensemble_symbol = annotation[,"HGNC.symbol"]
 # which transcripts from the microarray are not listed in the ensemble.103.txt file?
 diabetes_nomatchesIDs <- rownames(diabetes_vsnrma_matrix)[!(rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts)]
 length(diabetes_nomatchesIDs)
-# 112  (these trancscripts dont occur in the txt file)
+# 112  (these transcripts dont occur in the txt file)
 
 # remove these 112 transcripts from expression data
 diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts,]
@@ -173,8 +210,6 @@ rownames(diabetes_vsnrma_matrix) <- as.character(diabetes_symbol)
 # ------------------------------------------------
 # check for NAs or "" 
 # ------------------------------------------------
-
-#apply(diabetes_vsnrma_matrix, 2, function(x){sum(x == 0)})
 
 sum(is.na(rownames(diabetes_vsnrma_matrix)))
 # 0 are NA
@@ -197,6 +232,27 @@ dim(diabetes_GeneExprs)
 
 head(diabetes_GeneExprs)
 ```
+
+```{r}
+# ------------------------------------------------
+# save as .csv file 
+# ------------------------------------------------
+
+# create excel table with columns: genenames, gene expression values for each mircoarray
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+write.csv2(diabetes_GeneExprs, file = "diabetes_GeneExprs.csv", sep = ";", dec = ",")
+
+# # can be read by using read.csv2
+# setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+# test = read.csv2("diabetes_GeneExprs.csv")
+# sym = test[,"X"]
+# diabetes_GeneExprs = as.matrix(test[,2:ncol(test)])
+# rownames(diabetes_GeneExprs) <- sym 
+# diabetes_GeneExprs
+# remove(sym)
+# remove(test)
+```
+
 
 ## select only pancreas specific TRAs
 ```{r}
@@ -226,10 +282,11 @@ head(diabetes_GeneExprs_sub)
 # use of own function to combine values of genes that are mentioned more than once
 # ------------------------------------------------
 
-dim(combineGeneExprs(diabetes_GeneExprs_sub))
+diabetes_GeneExprs_specifcTRA <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
+dim(combineGeneExprs_median2(diabetes_GeneExprs_sub))
 # 250  24
 
-dim(combineGeneExprs(diabetes_GeneExprs))
+dim(combineGeneExprs_median2(diabetes_GeneExprs))
 # 18062    24
 ```
 
@@ -261,12 +318,12 @@ dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
 ```{r}
 
 pheatmap(t(diabetes_GeneExprs_sub), 
-         labels_row = paste(diabetes_microarrays[,"time"],",",diabetes_microarrays[,"treatment"]),
+         labels_row = paste(diabetes_microarrays[,"time_h"],",",diabetes_microarrays[,"treatment"]),
          labels_col = rep("",nrow(diabetes_GeneExprs_sub)))
 
 # after combining
-pheatmap(t(combineGeneExprs(diabetes_GeneExprs_sub)), 
-         labels_row = paste(diabetes_microarrays[,"time"],",",diabetes_microarrays[,"treatment"]),
+pheatmap(t(combineGeneExprs_median2(diabetes_GeneExprs_sub)), 
+         labels_row = paste(diabetes_microarrays[,"time_h"],",",diabetes_microarrays[,"treatment"]),
          labels_col = rep("",nrow(diabetes_GeneExprs_sub)))
 
 
@@ -279,12 +336,175 @@ pheatmap(t(combineGeneExprs(diabetes_GeneExprs_sub)),
 # boxplot (very unfinished, just to get an overview)
 # ------------------------------------------------
 par(las = 2)
-boxplot(t(combineGeneExprs(diabetes_GeneExprs_sub)),
+boxplot(t(combineGeneExprs_median2(diabetes_GeneExprs_sub)),
          col = rainbow(250),
          main="", 
          horizontal = TRUE)
 abline(v = median(apply(diabetes_vsnrma_matrix, 1,median)))
 
 ```
+
+# control vs. treatment
+
+## PCA & kmeans
+```{r}
+# ------------------------------------------------
+# PCA & kmeans
+# ------------------------------------------------
+# create a data frame (columns = treatment, time_h, median combined pancreas specifc TRAs)
+diabetes_df <- cbind(treatment = diabetes_microarrays[,"treatment"], 
+            time_h = diabetes_microarrays[,"time_h"],
+            data.frame(t(diabetes_GeneExprs_specifcTRA)))
+# PCA on the TRA expressions
+diabetes_pca <- prcomp(diabetes_df[,-c(1,2)])
+# elbow plot 
+plot(x = 1:10, y = sapply(1:10, function(i){kmeans(diabetes_pca$x,i)$tot.withinss}), 
+     type = "l", xlab = "number of clusters", ylab = "total within-cluster sum of squares")
+# result is not clear: k = 2 or k = 4
+
+# plot PC1 against PC2 and show the eigenvectors (loadings)
+autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", main = "Principal Component Analysis on beta cell data set", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
+autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3, main = "Principal Component Analysis on beta cell data set", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
+# plot kmeans for k = 2 and k = 4
+autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on beta cell data set") 
+autoplot(kmeans(diabetes_pca$x,4), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=4) on beta cell data set") 
+```
+
+```{r}
+# add cluster numbers to already existing data frame (rows = microarrays)
+diabetes_pca_kmeans2 <- kmeans(diabetes_pca$x,2)
+diabetes_pca_kmeans4 <- kmeans(diabetes_pca$x,4)
+diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_pca_kmeans4$cluster, diabetes_df)
+diabetes_df
+
+```
+
+
+```{r}
+# plot eigenvector values (PC1 vs PC2)
+ggplot(diabetes_pca$rotation, aes(PC1, PC2, label = rownames(diabetes_pca$rotation))) + 
+  geom_point() + 
+  geom_label_repel(max.overlaps = 120, size = 2) +
+  coord_equal(xlim = c(-0.6,0.6), ylim = c(-0.6,0.6))
+
+
+# select the genes that contribute the most to PC1 & PC2
+treshhold = 0.1 
+diabetes_pca_importantGenes = rownames(filter(data.frame(diabetes_pca$rotation), PC1 > treshhold | PC1 < -treshhold | PC2 > treshhold | PC2 < -treshhold ))
+
+# plot only the genes that strongly influence PC1 & PC2
+ggplot(diabetes_pca$rotation[diabetes_pca_importantGenes,], aes(PC1, PC2, label = diabetes_pca_importantGenes)) + 
+  geom_point() +   
+  geom_label_repel(max.overlaps = 100, size = 2) +
+  coord_equal(xlim = c(-0.6,0.6), ylim = c(-0.6,0.6))
+
+
+```
+
+## high variance
+```{r}
+# ------------------------------------------------
+# find genes with high variance between the microarrays 
+# (can be caused by different treatment or different time point)
+# ------------------------------------------------
+
+# compute variance of each gene (each gene: 24 values)
+diabetes_var = sort(apply(diabetes_GeneExprs_specifcTRA,1,var), decreasing = TRUE)
+
+# are these high variance genes the same as the genes that strongly contribute to PCA?
+
+diabetes_pca_importantGenes %in% names(diabetes_var[diabetes_var > 2*median(diabetes_var)])
+# all genes from PCA have 2x higher than the median variance
+
+names(diabetes_var)[1:20] %in% diabetes_pca_importantGenes
+# all top 20 high variance gene also contribute strongly in PCA
+```
+
+```{r}
+# look at gene with highest variance (CXCL11)
+diabetes_CXCL11 <- data.frame(diabetes_microarrays[,c("number","treatment", "time_h")], CXCL11 = diabetes_GeneExprs_specifcTRA["CXCL11",])
+ggplot(diabetes_CXCL11, aes(x = treatment, y = CXCL11)) + 
+  geom_boxplot()
+```
+
+## genes that differ with treatment / time)
+
+```{r}
+# ------------------------------------------------
+# boxplot of high variance genes (grouped by treatment / time)
+# ------------------------------------------------
+
+# melt expression values of top50 high variance genes
+mel = melt(t(diabetes_GeneExprs_specifcTRA[names(diabetes_var)[1:50],]))
+# vector to annotate the values from mel with treatment 
+tr = diabetes_microarrays[,"treatment"]
+names(tr) = diabetes_microarrays[,"number"]
+tr = unname(tr[as.character(mel$Var1)])
+# vector to annotate the values from mel with time (only two groups, based on kmeans2)  
+ti = c(1:nrow(diabetes_microarrays))
+ti[diabetes_microarrays[,"time_h"] <= 36] = "1-36"
+ti[diabetes_microarrays[,"time_h"] > 36] = "48-96"
+names(ti) = diabetes_microarrays[,"number"]
+ti = unname(ti[as.character(mel$Var1)])
+
+# create data frame (used for ggplot)
+diabetes_highvariance <- cbind(treatment = tr, time = ti, mel)
+diabetes_highvariance
+remove(tr,ti,mel) # remove these variables from Environment (not needed)
+
+# plot boxplots of top50 high variance genes (grouped by treatment)
+ggplot(diabetes_highvariance, aes(x = Var2, y = value, colour = treatment)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 90, size = 5)) +
+  xlab("Genes")
+# plot boxplots of top50 high variance genes (grouped by time)
+ggplot(diabetes_highvariance, aes(x = Var2, y = value, colour = time)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 90, size = 5))+
+  xlab("Genes")
+```
+
+## wilcoxon rank sum test 
+```{r}
+# ------------------------------------------------
+# wilcoxon rank sum test
+# ------------------------------------------------
+# two sided wilcoxon rank sum exact test
+## H1 (treatment): treatment does not change gene expression
+## H1 (time): time does not change gene expression
+
+diabetes_highvariance_wilcox <- t(sapply(names(diabetes_var)[1:50], function(i){
+  p_treatment = wilcox.test(filter(diabetes_highvariance, treatment == "Control" & Var2 == i)$value, filter(diabetes_highvariance, treatment == "Cytok" & Var2 == i)$value)$p.value
+  
+  p_time = wilcox.test(filter(diabetes_highvariance, time == "1-36" & Var2 == i)$value, filter(diabetes_highvariance, time == "48-96" & Var2 == i)$value)$p.value
+  
+  c(p_treatment = p_treatment, p_time = p_time, 
+    H1_treatment = p_treatment < 0.05, H1_time = p_time < 0.05)
+}))
+
+# p values 
+diabetes_highvariance_wilcox
+
+# which genes have a significant p value for treatment?
+diabetes_highvariance_wilcox[which(diabetes_highvariance_wilcox[,"H1_treatment"] == 1),]
+# nrow = 11
+
+# which genes have a significant p value for time?
+diabetes_highvariance_wilcox[which(diabetes_highvariance_wilcox[,"H1_time"] == 1),]
+# nrow = 33
+
+# which genes have a significant p value for both treatment & time?
+diabetes_highvariance_wilcox[which(apply(diabetes_highvariance_wilcox[,c(3,4)],1, function(x){x[1]==1 & x[2]==1})),]
+# PNLIPRP2   PABPC4    REG1A 
+## not part of the diabetes_pca_importantGenes (PCA contributor )
+# instead of 5% use 20% 
+diabetes_highvariance_wilcox[which(apply(diabetes_highvariance_wilcox[,c(1,2)],1, function(x){x[1]<0.2 & x[2]<0.2})),]
+
+diabetes_highvariance_wilcox[c("PNLIPRP2","REG1A","PABPC4"),]
+# time is more significant 
+
+
+```
+
 
 

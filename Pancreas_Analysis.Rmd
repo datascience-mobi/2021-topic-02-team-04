@@ -21,52 +21,82 @@ library(ggplot2)
 library(pheatmap)
 library(stats)
 library(dbplyr)
+library(ggfortify) #new
+library(reshape2) #new
+library(ggrepel) #new
 ```
 
 # functions
 ## combineGeneExprs
 ```{r}
 # ------------------------------------------------
-# function: genes in expression matrix that are mentioned more than once are combined (is mean or median better?)
+# function: genes in expression matrix that are mentioned more than once are combined (is sum or median better?)
 # ------------------------------------------------
 
-combineGeneExprs <- function(exprsmatrix){
-  
-  # no genes mentioned multiple times
-  a = unique(rownames(exprsmatrix)) 
-  # list of indices where genes from a are mentioned
-  id = sapply(a, function(x){
-    which(rownames(exprsmatrix) == x)
-  })  
-  
-  # create empty matrix 
-  h = matrix(ncol = ncol(exprsmatrix), nrow = 0)
-  # fill matrix with combined expression for genes from a
-  for (i in c(1:length(id))){
-    m = exprsmatrix[id[[i]],]
-    if (length(id[[i]]) > 1){
-      # combine values (mean)
-      v = apply(m,2,function(x){mean(x)})
-      h = rbind(h,v)
-    }else if (length(id[[i]]) == 1){
-      h = rbind(h,m)
-    }
+combineGeneExprs_median <- function(exprsmatrix){
+  # all unique genes
+  genes <- unique(rownames(exprsmatrix))
+  # empty matrix
+  result <- matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # for each gene: find indices, combine rows by using median
+  for (i in genes){
+    indices <- which(rownames(exprsmatrix) == i)
+    gene_matrix <- exprsmatrix[indices,]
+    # combine values only if gene_matrix has 2 or more rows
+    if (length(indices) > 1){
+      # for each microarray: compute median of gene expression for certain gene 
+      combined <-  apply(gene_matrix,2,function(x){median(x)})
+      result <- rbind(result, combined, deparse.level = 1)}
+    # if there is only one row: no need to combine values
+    else if (length(indices) == 1){result = rbind(result, gene_matrix)}
   }
-  # change rownames to gene symbols
-  rownames(h) = a
+  rownames(result) = genes
   # output
-  h
+  result
 }
 
+combineGeneExprs_sum <- function(exprsmatrix){
+  # all unique genes
+  genes <- unique(rownames(exprsmatrix))
+  # empty matrix
+  result <- matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # for each gene: find indices, combine rows by using sum
+  for (i in genes){
+    indices <- which(rownames(exprsmatrix) == i)
+    gene_matrix <- exprsmatrix[indices,]
+    # combine values only if gene_matrix has 2 or more rows
+    if (length(indices) > 1){
+      # for each microarray: compute sum of gene expression for certain gene 
+      combined <-  apply(gene_matrix,2,function(x){sum(x)})
+      result <- rbind(result, combined, deparse.level = 1)}
+    # if there is only one row: no need to combine values
+    else if (length(indices) == 1){result = rbind(result, gene_matrix)}
+  }
+  rownames(result) = genes
+  # output
+  result
+}
+
+combineGeneExprs_median2 <- function(exprsmatrix){
+  # create data frame with a column of all the gene symbols
+  data <- data.frame(geneSymbols = rownames(exprsmatrix),
+                     exprsmatrix, 
+                     row.names = NULL)
+  # group data frame by gene symbols and combine values of one gene by median
+  combined <- aggregate(data[-1], by = list(data$geneSymbols) , FUN = median)
+  # convert data frame to matrix (only expression values, no row names)
+  result <- as.matrix(combined[,-1])
+  # use gene symbols as row names
+  rownames(result) <- combined[,1]
+  # output
+  result
+}
 ```
 
 # expression data sets
 ## create vsn normalized expression matrix
 PDAC dataset, GSE59761, data is downloaded from the GEO database
 ```{r}
-# ------------------------------------------------
-# steps already done in Quality Control
-# ------------------------------------------------
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 # get CEL files
@@ -82,8 +112,18 @@ pancreas_microarray_information <- colnames(pancreas_matrix)
 pancreas_vsnrma <- vsnrma(data_pancreas)
 # expression matrix of vsnrm normalized data set
 pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
-# cut rownames at "." 
-rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix),"\\..*","") 
+# cut rownames at "."
+rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix),"\\..*","")
+
+
+# # get expression matrix 
+# # steps already done: vsnrma normalization + editing transcript IDs + removing controls (AFFX) + removing .CEL ending
+# setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+# test = read.csv2("pancreas_vsnrma_matrix.csv")
+# IDs = test[,"X"]
+# pancreas_vsnrma_matrix = as.matrix(test[,2:ncol(test)])
+# rownames(pancreas_vsnrma_matrix) <- IDs
+# remove(IDs); remove(test)
 
 ```
 
@@ -128,6 +168,7 @@ pancreas_vsnrma_matrix = pancreas_vsnrma_matrix[which(!startsWith(pancreas_trans
 
 dim(pancreas_vsnrma_matrix) # after
 # 95659     6
+
 ```
 ## convert transcript IDs to gene symbols
 ```{r}
@@ -158,29 +199,25 @@ pancreas_vsnrma_matrix <- pancreas_vsnrma_matrix[rownames(pancreas_vsnrma_matrix
 dim(pancreas_vsnrma_matrix)
 # 95547     6
 
-# ------------------------------------------------
-# select only those symbols that are in the pancreatic cancer data set
-# ------------------------------------------------
 
+# select only those symbols that are in the pancreatic cancer data set
 names(ensemble_symbol) <- ensemble_transcripts 
 pancreas_symbol <- ensemble_symbol[rownames(pancreas_vsnrma_matrix)]
 # symbols already in right order for pancreas_vsnrma_matrix
 
-# ------------------------------------------------
-# name the probes according to gene symbol
-# ------------------------------------------------
 
+# name the probes according to gene symbol
 rownames(pancreas_vsnrma_matrix) <- as.character(pancreas_symbol)
 
 # ------------------------------------------------
 # check for NAs or "" 
 # ------------------------------------------------
 
-#apply(pancreas_vsnrma_matrix, 2, function(x){sum(x == 0)})
+sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(is.na(x))})) 
+# 0 are NA
 
-sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(is.na(x))})) # 0 are NA
-
-sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(x == "", na.rm = TRUE)})) # 1096 are ""
+sum(sapply(rownames(pancreas_vsnrma_matrix), function(x){sum(x == "", na.rm = TRUE)})) 
+# 1096 are "" 
 
 ```
 
@@ -206,19 +243,16 @@ head(pancreas_GeneExprs)
 
 # create excel table with columns: genenames, gene expression values for each mircoarray
 setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
-write.csv2(pancreas_GeneExprs, file = "pancreas_GeneExprs_allgenes.csv", sep = ";", dec = ",", col.names = NA, row.names = TRUE)
-# can be read by using read.csv2
-setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
-test = read.csv2("pancreas_GeneExprs_allgenes.csv", col.names = c("GeneSymbols", pancreas_microarrays[,"number"]))
-sym = test[,"GeneSymbols"]
-test = as.matrix(test[,pancreas_microarrays[,"number"]])
-rownames(test) <- sym 
-# some smaller changes made to the actual values, but still nearly equal
-all.equal(test,pancreas_GeneExprs)
-# variable test is not really needed
-remove(sym)
-remove(test)
+write.csv2(pancreas_GeneExprs, file = "pancreas_GeneExprs.csv", sep = ";", dec = ",")
 
+# # can be read by using read.csv2
+# setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+# test = read.csv2("pancreas_GeneExprs.csv")
+# sym = test[,"X"]
+# pancreas_GeneExprs = as.matrix(test[,2:ncol(test)])
+# rownames(pancreas_GeneExprs) <- sym 
+# pancreas_GeneExprs
+# remove(sym); remove(test)
 ```
 
 ## select only pancreas specific TRAs
@@ -250,10 +284,11 @@ head(pancreas_GeneExprs_sub)
 # use of own function to combine values of genes that are mentioned more than once
 # ------------------------------------------------
 
-dim(combineGeneExprs(pancreas_GeneExprs_sub))
+pancreas_GeneExprs_specifcTRA <- combineGeneExprs_median2(pancreas_GeneExprs_sub)
+dim(combineGeneExprs_median2(pancreas_GeneExprs_sub))
 # 250  6
 
-dim(combineGeneExprs(pancreas_GeneExprs))
+dim(combineGeneExprs_median2(pancreas_GeneExprs))
 # 18062    6
 ```
 ## select only all TRAs
@@ -284,10 +319,8 @@ head(all_TRA_GeneExprs_sub)
 # use of own function to combine values of genes that are mentioned more than once
 # ------------------------------------------------
 
-dim(combineGeneExprs(all_TRA_GeneExprs_sub))
+dim(combineGeneExprs_median2(all_TRA_GeneExprs_sub))
 # 14388     6 
-
-# dim(combineGeneExprs(all_TRA_GeneExprs)) # WHAT is all_TRA_GeneExprs?
 
 ```
 
@@ -336,7 +369,8 @@ dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
 ```{r}
 
 pheatmap(pancreas_GeneExprs_sub,
-         labels_col = paste(pancreas_microarrays[,"number"],"\n", "siRNA:", pancreas_microarrays[,"siRNA"]),
+         labels_col = paste(pancreas_microarrays[,"number"],"\n", "siRNA:",
+                            pancreas_microarrays[,"siRNA"]),
          labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
          cluster_rows = TRUE, treeheight_row = 0,
          fontsize_row = 8, fontsize_col = 7, fontsize = 9,
@@ -355,7 +389,7 @@ dev.copy2pdf(file = "pancreas_heatmap_allTRAs.pdf")
 
 par(las = 2)
 
-boxplot(t(combineGeneExprs(pancreas_GeneExprs_sub)),
+boxplot(t(pancreas_GeneExprs_specifcTRA),
          col = rainbow(250),
          main="",
          horizontal = TRUE)
@@ -363,5 +397,129 @@ abline(v =  median(apply(pancreas_vsnrma_matrix, 1,median)))
 
 
 ```
+
+
+# control vs. treatment
+
+## PCA & kmeans
+```{r}
+# ------------------------------------------------
+# PCA & kmeans
+# ------------------------------------------------
+
+# create a data frame (columns = treatment, median combined pancreas specifc TRAs)
+pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
+            data.frame(t(pancreas_GeneExprs_specifcTRA)))
+# PCA on the TRA expressions
+pancreas_pca <- prcomp(pancreas_df[,-c(1,2)])
+# elbow plot 
+plot(x = 1:5, y = sapply(1:5, function(i){kmeans(pancreas_pca$x,i)$tot.withinss}), 
+     type = "l", xlab = "number of clusters", ylab = "total within-cluster sum of squares")
+# result: k = 2 
+
+# plot PC1 against PC2 and show the eigenvectors (loadings)
+autoplot(prcomp(pancreas_df[,-c(1,2)]), data = pancreas_df, colour = "treatment", main = "Principal Component Analysis on beta cell data set", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
+autoplot(prcomp(pancreas_df[,-c(1,2)]), data = pancreas_df, colour = "treatment", loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3, main = "Principal Component Analysis on beta cell data set", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
+
+autoplot(kmeans(pancreas_pca$x,2), data = pancreas_pca$x, frame = TRUE,  xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1, main = "kmeans clustering (k=2) on beta cell data set")
+
+# add cluster numbers to already existing data frame (rows = microarrays)
+pancreas_df <- cbind(kmeans2 = kmeans(pancreas_pca$x,2)$cluster, pancreas_df)
+pancreas_df
+```
+
+```{r}
+# plot eigenvector values (PC1 vs PC2)
+ggplot(pancreas_pca$rotation, aes(PC1, PC2, label = rownames(pancreas_pca$rotation))) + 
+  geom_point() + 
+  geom_label_repel(max.overlaps = 50, size = 2)
+pancreas_pca$rotation["FBXL8",]
+# select the genes that contribute the most to PC1 & PC2
+treshhold1 = 0.1
+treshhold2 = 0.15
+pancreas_pca_importantGenes = rownames(filter(data.frame(pancreas_pca$rotation), PC1 > treshhold1 | PC1 < -treshhold1 | PC2 > treshhold2 | PC2 < -treshhold2 ))
+
+# plot only the genes that strongly influence PC1 & PC2
+ggplot(pancreas_pca$rotation[pancreas_pca_importantGenes,], aes(PC1, PC2, label = pancreas_pca_importantGenes)) + 
+  geom_point() + 
+  geom_label_repel(max.overlaps = 50, size = 2)
+```
+
+## high variance
+```{r}
+# ------------------------------------------------
+# find genes with high variance between the microarrays 
+# (can be caused by different treatment or different time point)
+# ------------------------------------------------
+
+# compute variance of each gene (each gene: 6 values)
+pancreas_var = sort(apply(pancreas_GeneExprs_specifcTRA,1,var), decreasing = TRUE)
+
+# are these high variance genes the same as the mediangenes that strongly contribute to PCA?
+pancreas_pca_importantGenes %in% names(pancreas_var[pancreas_var > 2*median(pancreas_var)])
+# all PCA contributing genes have a 2x variance higher than  variance
+names(pancreas_var)[1:9] %in% pancreas_pca_importantGenes
+# all top 9 high variance genes contribute strongly in PCA
+# (there are genes with high variance that don't really contribute to PC1/PC2)
+```
+
+```{r}
+# look at gene with highest variance (CHST4)
+pancreas_CHST4 <- data.frame(pancreas_microarrays[,c("number","siRNA")], CHST4 = pancreas_GeneExprs_specifcTRA["CHST4",])
+ggplot(pancreas_CHST4, aes(x = siRNA, y = CHST4)) + 
+  geom_boxplot()
+```
+
+## genes that differ with treatment / time)
+```{r}
+# ------------------------------------------------
+# boxplot of high variance genes (grouped by treatment / time)
+# ------------------------------------------------
+
+# melt expression values of top10 high variance genes
+mel = melt(t(pancreas_GeneExprs_specifcTRA[names(pancreas_var)[1:10],]))
+# vector to annotate the values from mel with treatment 
+tr = pancreas_microarrays[,"siRNA"]
+names(tr) = pancreas_microarrays[,"number"]
+tr = unname(tr[as.character(mel$Var1)])
+
+# create data frame (used for ggplot)
+pancreas_highvariance <- cbind(treatment = tr, mel)
+remove(tr,mel)
+
+# plot boxplots of top10 high variance genes (grouped by treatment)
+ggplot(pancreas_highvariance, aes(x = Var2, y = value, colour = treatment)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 90, size = 5))+
+  xlab("Genes")
+
+```
+
+## wilcoxon rank sum test 
+```{r}
+# ------------------------------------------------
+# wilcoxon rank sum test
+# ------------------------------------------------
+# two sided wilcoxon rank sum exact test
+## H1 (treatment): treatment does not change gene expression
+## H1_.05 -> alpha = 5% (p < alpha)
+## H1_.15 -> alpha = 15% (p < alpha)
+
+pancreas_highvariance_wilcox <- t(sapply(names(var)[1:10], function(i){
+  p_treatment = wilcox.test(filter(pancreas_highvariance, treatment == "NC" & Var2 == i)$value, filter(pancreas_highvariance, treatment == "TBL1" & Var2 == i)$value)$p.value
+  
+  c(p_treatment = p_treatment, H1_.05 = p_treatment < 0.05, H1_.15 = p_treatment < 0.15)
+}))
+
+# p values
+pancreas_highvariance_wilcox
+
+rownames(pancreas_highvariance_wilcox)[pancreas_highvariance_wilcox[,"H1_.15"]==1] 
+# each gene is contributing to PCA (part of pancreas_pca_importantGenes)
+
+autoplot(pancreas_GeneExprs_specifcTRA[c("CHST4", "PABPC4", "ECI2", "TMEM97", "ANXA4", "NEURL3", "MKNK1", "MED24"),], xlab = "Microarrays", ylab = "Genes")
+```
+
+
 
 
