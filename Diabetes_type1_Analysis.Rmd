@@ -110,11 +110,11 @@ data_diabetes <- ReadAffy()
 # change cdf
 data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
 # create expression matrix
-diabetes_matrix <- as.data.frame(exprs(data_diabetes))
+diabetes_matrix <- exprs(data_diabetes)
 # store colnames (microarray)
 diabetes_microarray_information <- colnames(diabetes_matrix)
 # vsnrm normalization
-diabetes_vsnrma <- vsnrma(data_diabetes)
+diabetes_vsnrma <- vsnrma(data_diabetes, subsample = 0)
 # expression matrix of vsnrm normalized data set
 diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
 # cut rownames at "." ("ENST00000000233.10_at"  becomes "ENST00000000233")
@@ -282,7 +282,7 @@ head(diabetes_GeneExprs_sub)
 # use of own function to combine values of genes that are mentioned more than once
 # ------------------------------------------------
 
-diabetes_GeneExprs_specifcTRA <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
+diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
 dim(combineGeneExprs_median2(diabetes_GeneExprs_sub))
 # 250  24
 
@@ -354,7 +354,7 @@ abline(v = median(apply(diabetes_vsnrma_matrix, 1,median)))
 # create a data frame (columns = treatment, time_h, median combined pancreas specifc TRAs)
 diabetes_df <- cbind(treatment = diabetes_microarrays[,"treatment"], 
             time_h = diabetes_microarrays[,"time_h"],
-            data.frame(t(diabetes_GeneExprs_specifcTRA)))
+            data.frame(t(diabetes_GeneExprs_sub_combined)))
 # PCA on the TRA expressions
 diabetes_pca <- prcomp(diabetes_df[,-c(1,2)])
 # elbow plot 
@@ -409,7 +409,7 @@ ggplot(diabetes_pca$rotation[diabetes_pca_importantGenes,], aes(PC1, PC2, label 
 # ------------------------------------------------
 
 # compute variance of each gene (each gene: 24 values)
-diabetes_var = sort(apply(diabetes_GeneExprs_specifcTRA,1,var), decreasing = TRUE)
+diabetes_var = sort(apply(diabetes_GeneExprs_sub_combined,1,var), decreasing = TRUE)
 
 # are these high variance genes the same as the genes that strongly contribute to PCA?
 
@@ -422,7 +422,7 @@ names(diabetes_var)[1:20] %in% diabetes_pca_importantGenes
 
 ```{r}
 # look at gene with highest variance (CXCL11)
-diabetes_CXCL11 <- data.frame(diabetes_microarrays[,c("number","treatment", "time_h")], CXCL11 = diabetes_GeneExprs_specifcTRA["CXCL11",])
+diabetes_CXCL11 <- data.frame(diabetes_microarrays[,c("number","treatment", "time_h")], CXCL11 = diabetes_GeneExprs_sub_combined["CXCL11",])
 ggplot(diabetes_CXCL11, aes(x = treatment, y = CXCL11)) + 
   geom_boxplot()
 ```
@@ -435,7 +435,7 @@ ggplot(diabetes_CXCL11, aes(x = treatment, y = CXCL11)) +
 # ------------------------------------------------
 
 # melt expression values of top50 high variance genes
-mel = melt(t(diabetes_GeneExprs_specifcTRA[names(diabetes_var)[1:50],]))
+mel = melt(t(diabetes_GeneExprs_sub_combined[names(diabetes_var)[1:50],]))
 # vector to annotate the values from mel with treatment 
 tr = diabetes_microarrays[,"treatment"]
 names(tr) = diabetes_microarrays[,"number"]
