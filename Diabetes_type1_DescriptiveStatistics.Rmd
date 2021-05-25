@@ -359,7 +359,7 @@ which(med_diab_TRA_median > (1.8 * median(med_diab_TRA_median)))
 ## INS, PRSS2
 
 ## Expression values of those genes:
-diab_above2med_TRA_median <- diabetes_GeneExprs[which(med_diab_TRA_median > (1.7 * median(med_diab_TRA_median)))]
+diab_above2med_TRA_median <- diabetes_GeneExprs[which(med_diab_TRA_median > (1.8 * median(med_diab_TRA_median)))]
 diab_above2med_TRA_median
 ```
 
@@ -389,13 +389,16 @@ diab_above2med_TRA_sum
 ```{r}
 # Median 
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.3 times less in the last chip than in the first.
 diabetes_TRA_ctrl_median_receding <- (which(diabetes_TRA_ctrl_median[,1] > (1.3 * diabetes_TRA_ctrl_median[,13])))
 ## 8 genes
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.2 times more in the last chip than in the first.
 diabetes_TRA_ctrl_median_growing <- (which((1.2 *diabetes_TRA_ctrl_median[,1]) < diabetes_TRA_ctrl_median[,13]))
 ## 4 genes
+
+diabetes_TRA_ctrl_median_growing
+diabetes_TRA_ctrl_median_receding
 
 ## Is the change significant?
 ## Only 8 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
@@ -404,11 +407,11 @@ diabetes_TRA_ctrl_median_growing <- (which((1.2 *diabetes_TRA_ctrl_median[,1]) <
 ```{r}
 # Sum
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.3 times less in the last chip than in the first.
 diabetes_TRA_ctrl_sum_receding <- (which(diabetes_TRA_ctrl_sum[,1] > (1.3 * diabetes_TRA_ctrl_sum[,13])))
 ## 6 genes
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.2 times less in the last chip than in the first.
 diabetes_TRA_ctrl_sum_growing <- (which((1.2 *diabetes_TRA_ctrl_sum[,1]) < diabetes_TRA_ctrl_sum[,13]))
 ## 4 genes
 
@@ -417,7 +420,7 @@ diabetes_TRA_ctrl_sum_growing <- (which((1.2 *diabetes_TRA_ctrl_sum[,1]) < diabe
 ```
 
 
-### 3.2.3 What are the genes that have a high variance: Important or house keeping genes?
+### 2.3.3 What are the genes that have a high variance: Important or house keeping genes?
 
 ```{r}
 ## Calculate variance of rows (genes)
@@ -459,4 +462,3 @@ rownames(high_var_diabetes_ctrl_median)
 ## TSPAN8: cell-surface proteins; diseases associated with TSPAN8 include Pancreas, Annular and Maturity-Onset Diabetes Of The Young.
 
 ```
-
