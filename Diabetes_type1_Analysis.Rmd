@@ -168,6 +168,7 @@ diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(diabetes_trans
 
 dim(diabetes_vsnrma_matrix) # after
 # 95659    24 
+
 ```
 ## convert transcript IDs to gene symbols
 ```{r}
@@ -530,7 +531,7 @@ filter(diabetes_highvariance_treatment_stat, H1_wilcox)
 # nrow = 12
 filter(diabetes_highvariance_treatment_stat, H1_t)
 # nrow = 11
-diabetes_highvariance_treatment_stat
+
 # which genes have a significant p value for time?
 filter(diabetes_highvariance_time_stat, H1_wilcox)
 # nrow = 32
@@ -580,7 +581,6 @@ log2.fold.change <- function(control, test){
              wilcox_raw_pvalue = w, # wilcoxon rank sum test
              wilcox_log10_pvalue = -1*log10(w)
              )
-
 }
 
 # gene expression matrix for each subgroup (treatment, control)

@@ -559,7 +559,7 @@ filter(pancreas_stat, H1_t == TRUE)
 autoplot(pancreas_GeneExprs_sub_combined[c("CHST4", "PABPC4", "ECI2", "TMEM97", "ANXA4", "NEURL3", "MKNK1", "MED24", "GRB10"),], xlab = "Microarrays", ylab = "Genes")
 ```
 
-## log fold change
+## log2 fold change
 
 ```{r warning=FALSE}
 log2.fold.change <- function(control, test){
