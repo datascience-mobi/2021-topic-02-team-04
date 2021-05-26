@@ -80,6 +80,12 @@ length(pancreas_gene_mouse)
 setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
 write.csv(matrix(pancreas_gene_human, nrow=1), file = "pancreas_specific_genes_human.csv", row.names = FALSE)
 write.csv(matrix(pancreas_gene_mouse, nrow=1), file = "pancreas_specific_genes_mouse.csv", row.names = FALSE)
+# as .RData
+TRA_pancreas_genes_human <- pancreas_gene_human
+TRA_pancreas_genes_mouse <- pancreas_gene_mouse
+setwd(paste(projectPath, "sessions", "RData" ,sep = "/"))
+save(TRA_pancreas_genes_human, file = "TRA_pancreas_genes_human.RData")
+save(TRA_pancreas_genes_mouse, file = "TRA_pancreas_genes_mouse.RData")
 ```
 
 ## Erstellen der Tabellen mit der Verteilung der TRA Gene auf die Gewebe
