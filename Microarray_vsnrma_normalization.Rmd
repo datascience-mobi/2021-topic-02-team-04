@@ -4,6 +4,16 @@ author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
 output: html_document
 ---
 
+```{r}
+# Bioconductor
+library(affy)
+library(vsn)#
+library(AnnotationDbi)
+library(hgu133plus2hsenstcdf)
+library(hgu133plus2hsenstprobe)
+library(hexbin)
+library(tidyverse)
+```
 
 ```{r}
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -13,6 +23,7 @@ PDAC dataset, GSE59761, data is downloaded from the GEO database.
 Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database.
 
 ```{r}
+set.seed(132) # with this vsnrma gives out the same values each time
 # get CEL files
 setwd(paste(projectPath, "rawdata", "GSE59761 PDAC Capan-1 Zellen", sep = "/"))
 data_pancreas <- ReadAffy()
@@ -39,14 +50,17 @@ rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix)
 # remove ending .CEL from colnames 
 colnames(pancreas_vsnrma_matrix) <- str_remove(colnames(pancreas_vsnrma_matrix),"_.CEL")
 colnames(diabetes_vsnrma_matrix) <- str_replace(colnames(diabetes_vsnrma_matrix),"\\..*","")
-# store transcript IDs
+# transcript IDs
 pancreas_transcript_names = rownames(pancreas_vsnrma_matrix)
 diabetes_transcript_names = rownames(diabetes_vsnrma_matrix)
 # remove control probes (AFFX) 
 pancreas_vsnrma_matrix = pancreas_vsnrma_matrix[which(!startsWith(pancreas_transcript_names, "AFFX")),]
 diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(diabetes_transcript_names, "AFFX")),]
-#
-
+# check if values are equal each time code is run 
+min(pancreas_vsnrma_matrix) 
+# 5.223044
+min(diabetes_vsnrma_matrix)
+# 5.678696
 ```
 
 ```{r}
@@ -86,10 +100,13 @@ names(ensemble_symbol) <- ensemble_transcripts
 # select only those transcripts that are also present in the annotation
 diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts,]
 pancreas_vsnrma_matrix <- pancreas_vsnrma_matrix[rownames(pancreas_vsnrma_matrix) %in% ensemble_transcripts,]
+
 # create vector with the symbols of the transcript from expression matrix
 diabetes_symbol <- ensemble_symbol[rownames(diabetes_vsnrma_matrix)]
 pancreas_symbol <- ensemble_symbol[rownames(pancreas_vsnrma_matrix)]
 # use gene symbols instead of transcripts as rownames
+diabetes_exprs <- cbind(GeneSymbol = as.character(diabetes_symbol),data.frame(diabetes_vsnrma_matrix))
+pancreas_exprs <- cbind(GeneSymbol = as.character(pancreas_symbol),data.frame(pancreas_vsnrma_matrix))
 rownames(diabetes_vsnrma_matrix) <- as.character(diabetes_symbol)
 rownames(pancreas_vsnrma_matrix) <- as.character(pancreas_symbol)
 # order genes alphabetically & remove all those rows where "" is the rowname 
@@ -98,7 +115,11 @@ pancreas_GeneExprs <-pancreas_vsnrma_matrix[order(rownames(pancreas_vsnrma_matri
 # replace colnames with the GSM number of the microarrays
 colnames(diabetes_GeneExprs) <- diabetes_microarrays[,"number"]
 colnames(pancreas_GeneExprs) <- pancreas_microarrays[,"number"]
-#
+colnames(diabetes_exprs) <- c("GeneSymbol", diabetes_microarrays[,"number"])
+colnames(pancreas_exprs) <- c("GeneSymbol", pancreas_microarrays[,"number"])
+# as data frame (transcript IDs were kept as rownames)
+diabetes_exprs <- arrange(filter(diabetes_exprs, GeneSymbol != ""), GeneSymbol)
+pancreas_exprs <- arrange(filter(pancreas_exprs, GeneSymbol != ""), GeneSymbol)
 
 ```
 
@@ -109,6 +130,9 @@ load("TRA_pancreas_genes_human.RData") # vector with pancreas specifc TRAs
 # create a expression matrix with only those genes
 diabetes_GeneExprs_sub = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% TRA_pancreas_genes_human),]
 pancreas_GeneExprs_sub = pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) %in% TRA_pancreas_genes_human),]
+# same for data frame (transcript IDs were kept as rownames)
+diabetes_TRAexprs <- filter(diabetes_exprs, GeneSymbol %in% TRA_pancreas_genes_human)
+pancreas_TRAexprs <- filter(pancreas_exprs, GeneSymbol %in% TRA_pancreas_genes_human)
 ```
 
 ```{r}
@@ -127,16 +151,23 @@ combineGeneExprs_median2 <- function(exprsmatrix){
   result
 }
 
+```
+
+
+```{r}
 # combine gene expression (one gene sometimes has many transcripts)
 pancreas_GeneExprs_combined <- combineGeneExprs_median2(pancreas_GeneExprs)
 diabetes_GeneExprs_combined <- combineGeneExprs_median2(diabetes_GeneExprs)
 pancreas_GeneExprs_sub_combined <- combineGeneExprs_median2(pancreas_GeneExprs_sub)
 diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
+# combine all rows where values are exactly the same (leave isoforms)
+pancreas_TRAexprs <- distinct(pancreas_TRAexprs)
+diabetes_TRAexprs <- distinct(diabetes_TRAexprs)
 ```
 
 ```{r}
 setwd(paste(projectPath, "sessions", "RData" ,sep = "/"))
-
+getwd()
 # information about microarrays
 
 save(pancreas_microarrays, file = "pancreas_microarrays.RData")
@@ -165,6 +196,11 @@ save(diabetes_GeneExprs_sub_combined, file = "diabetes_GeneExprs_sub_combined.RD
 save(pancreas_GeneExprs_combined, file = "pancreas_GeneExprs_combined.RData") 
 save(diabetes_GeneExprs_combined, file = "diabetes_GeneExprs_combined.RData") 
 
+# data frame with all processing steps except for combining by median 
+## instead: distinct (removes duplicated rows) 
+
+save(pancreas_TRAexprs, file = "pancreas_TRAexprs.RData")
+save(diabetes_TRAexprs, file = "diabetes_TRAexprs.RData")
 ```
 
 
