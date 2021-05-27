@@ -288,7 +288,7 @@ diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_s
 dim(combineGeneExprs_median2(diabetes_GeneExprs_sub))
 # 250  24
 
-dim(combineGeneExprs_median2(diabetes_GeneExprs))
+# dim(combineGeneExprs_median2(diabetes_GeneExprs))
 # 18062    24
 ```
 
@@ -382,7 +382,7 @@ diabetes_pca_kmeans2 <- kmeans(diabetes_pca$x,2)
 diabetes_pca_kmeans4 <- kmeans(diabetes_pca$x,4)
 diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_pca_kmeans4$cluster, diabetes_df)
 (diabetes_df)
-
+filter(diabetes_df,kmeans2 == 2)
 ```
 
 
@@ -557,20 +557,29 @@ log2.fold.change <- function(control, test){
     ratio = sapply(1:nrow(control), function(x){
       g1_m = median(control[x,])
       g2_m = median(test[x,])
-      g1_m/g2_m
+      g2_m/g1_m # change of treatment to control
     })
-    # log2 on ratio => log2(control/treatment)
+    # log2 on ratio => log2(treatment/control)
     log2_foldchange = log2(ratio)
     # ttest control vs treatment (expression values)
     t = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
       t.test(control[x,], test[x,])$p.value
     })
     # wilcoxon rank sum test control vs treatment (expression values)
     w = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
       wilcox.test(control[x,], test[x,], exact = FALSE)$p.value
     })
     
-  }else{print("Something has gone rone with the dimensions of the groups (probably row numbers)")}
+  }else{print("Something has gone wronge with the dimensions of the groups (probably row numbers)!")}
+  
+  trend = 1:length(t)
+  trend[t < 0.05 & log2_foldchange > 0] = "up"
+  trend[t < 0.05 & log2_foldchange < 0] = "down"
+  trend[t >= 0.05] = "not significant"
   
   # output
   data.frame(GeneSymbol = rownames(control), # genes
@@ -578,6 +587,7 @@ log2.fold.change <- function(control, test){
              log2_foldchange = log2_foldchange,  # log2 foldchange
              ttest_raw_pvalue = t,# ttest
              ttest_log10_pvalue = -1*log10(t),
+             trend = trend,
              wilcox_raw_pvalue = w, # wilcoxon rank sum test
              wilcox_log10_pvalue = -1*log10(w)
              )
@@ -587,23 +597,33 @@ log2.fold.change <- function(control, test){
 diabetes_ctrl = diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, treatment == "Control")[,"number"]]
 diabetes_treat = diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, treatment == "Cytok")[,"number"]]
 
-log2(median(diabetes_ctrl[1,])/median(diabetes_treat[1,]))
-
-
 diabetes_fc_treatment = log2.fold.change(diabetes_ctrl, diabetes_treat)
 diabetes_fc_treatment
-
-ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol)) + 
-  geom_point() + 
-  geom_label_repel(size = 3, col  = "red")
 
 diabetes_fc_time = log2.fold.change(
   diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, time_h <= 36)[,"number"]], 
   diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, time_h > 36)[,"number"]])
 diabetes_fc_time
-ggplot(data = diabetes_fc_time, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol)) + 
+
+ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = trend)) + 
   geom_point() + 
-  geom_text(size = 2, col  = "red")
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Vulcano plot (t test) for ratio = treatment / control", 
+       x = "log2 fold change", y = "-log10 (p-value)") +
+  xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
+         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"))
+
+ggplot(data = diabetes_fc_time, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = trend)) + 
+  geom_point() +  
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Vulcano plot (t test) for ratio = 1-36h / 48-96h", 
+       x = "log2 fold change", y = "-log10 (p-value)") +
+  xlim(c(-max(abs(diabetes_fc_time$log2_foldchange)), 
+         max(abs(diabetes_fc_time$log2_foldchange)))) + 
+  scale_color_manual(values = c("navyblue", "grey", "orange"))
+  
+  
 
 
 
