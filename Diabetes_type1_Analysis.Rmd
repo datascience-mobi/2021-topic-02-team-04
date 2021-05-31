@@ -97,6 +97,7 @@ combineGeneExprs_median2 <- function(exprsmatrix){
 
 # expression data sets
 ## create vsn normalized expression matrix
+
 Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
 ```{r}
 # ------------------------------------------------
@@ -110,7 +111,7 @@ data_diabetes <- ReadAffy()
 # change cdf
 data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
 # create expression matrix
-diabetes_matrix <- as.data.frame(exprs(data_diabetes))
+diabetes_matrix <- exprs(data_diabetes)
 # store colnames (microarray)
 diabetes_microarray_information <- colnames(diabetes_matrix)
 # vsnrm normalization
@@ -167,6 +168,7 @@ diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(diabetes_trans
 
 dim(diabetes_vsnrma_matrix) # after
 # 95659    24 
+
 ```
 ## convert transcript IDs to gene symbols
 ```{r}
@@ -282,11 +284,11 @@ head(diabetes_GeneExprs_sub)
 # use of own function to combine values of genes that are mentioned more than once
 # ------------------------------------------------
 
-diabetes_GeneExprs_specifcTRA <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
+diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
 dim(combineGeneExprs_median2(diabetes_GeneExprs_sub))
 # 250  24
 
-dim(combineGeneExprs_median2(diabetes_GeneExprs))
+# dim(combineGeneExprs_median2(diabetes_GeneExprs))
 # 18062    24
 ```
 
@@ -382,12 +384,16 @@ abline(v = median(apply(diabetes_vsnrma_matrix, 1,median)))
 # ------------------------------------------------
 # PCA & kmeans
 # ------------------------------------------------
+
 # create a data frame (columns = treatment, time_h, median combined pancreas specifc TRAs)
 diabetes_df <- cbind(treatment = diabetes_microarrays[,"treatment"], 
             time_h = diabetes_microarrays[,"time_h"],
-            data.frame(t(diabetes_GeneExprs_specifcTRA)))
+            data.frame(t(diabetes_GeneExprs_sub_combined)))
+head(diabetes_df)
+
 # PCA on the TRA expressions
 diabetes_pca <- prcomp(diabetes_df[,-c(1,2)])
+
 # elbow plot 
 plot(x = 1:10, y = sapply(1:10, function(i){kmeans(diabetes_pca$x,i)$tot.withinss}), 
      type = "l", xlab = "number of clusters", ylab = "total within-cluster sum of squares")
@@ -397,7 +403,7 @@ plot(x = 1:10, y = sapply(1:10, function(i){kmeans(diabetes_pca$x,i)$tot.withins
 autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", main = "Principal Component Analysis on beta cell data set", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
 autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3, main = "Principal Component Analysis on beta cell data set", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
 # plot kmeans for k = 2 and k = 4
-autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on beta cell data set") 
+autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on beta cell data set")  
 autoplot(kmeans(diabetes_pca$x,4), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=4) on beta cell data set") 
 ```
 
@@ -406,27 +412,30 @@ autoplot(kmeans(diabetes_pca$x,4), data = diabetes_pca$x, frame = TRUE, xlim = c
 diabetes_pca_kmeans2 <- kmeans(diabetes_pca$x,2)
 diabetes_pca_kmeans4 <- kmeans(diabetes_pca$x,4)
 diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_pca_kmeans4$cluster, diabetes_df)
-diabetes_df
-
+(diabetes_df)
+filter(diabetes_df,kmeans2 == 2)
 ```
 
 
-```{r}
+```{r warning=FALSE}
+treshhold = 0.1 
+
 # plot eigenvector values (PC1 vs PC2)
 ggplot(diabetes_pca$rotation, aes(PC1, PC2, label = rownames(diabetes_pca$rotation))) + 
+  geom_rect(xmin = -treshhold, xmax = treshhold, ymin = -treshhold, ymax = treshhold,
+            alpha = 0.5, color = "red") + 
   geom_point() + 
-  geom_label_repel(max.overlaps = 120, size = 2) +
-  coord_equal(xlim = c(-0.6,0.6), ylim = c(-0.6,0.6))
-
+  geom_text(col = "red", size = 2) +
+  coord_equal(xlim = c(-0.6,0.6), ylim = c(-0.6,0.6)) 
+  
 
 # select the genes that contribute the most to PC1 & PC2
-treshhold = 0.1 
 diabetes_pca_importantGenes = rownames(filter(data.frame(diabetes_pca$rotation), PC1 > treshhold | PC1 < -treshhold | PC2 > treshhold | PC2 < -treshhold ))
 
 # plot only the genes that strongly influence PC1 & PC2
 ggplot(diabetes_pca$rotation[diabetes_pca_importantGenes,], aes(PC1, PC2, label = diabetes_pca_importantGenes)) + 
   geom_point() +   
-  geom_label_repel(max.overlaps = 100, size = 2) +
+  geom_text(col = "red", size = 2) +
   coord_equal(xlim = c(-0.6,0.6), ylim = c(-0.6,0.6))
 
 
@@ -440,7 +449,7 @@ ggplot(diabetes_pca$rotation[diabetes_pca_importantGenes,], aes(PC1, PC2, label 
 # ------------------------------------------------
 
 # compute variance of each gene (each gene: 24 values)
-diabetes_var = sort(apply(diabetes_GeneExprs_specifcTRA,1,var), decreasing = TRUE)
+diabetes_var = sort(apply(diabetes_GeneExprs_sub_combined,1,var), decreasing = TRUE)
 
 # are these high variance genes the same as the genes that strongly contribute to PCA?
 
@@ -453,12 +462,13 @@ names(diabetes_var)[1:20] %in% diabetes_pca_importantGenes
 
 ```{r}
 # look at gene with highest variance (CXCL11)
-diabetes_CXCL11 <- data.frame(diabetes_microarrays[,c("number","treatment", "time_h")], CXCL11 = diabetes_GeneExprs_specifcTRA["CXCL11",])
+diabetes_CXCL11 <- data.frame(diabetes_microarrays[,c("number","treatment", "time_h")], CXCL11 = diabetes_GeneExprs_sub_combined["CXCL11",])
 ggplot(diabetes_CXCL11, aes(x = treatment, y = CXCL11)) + 
   geom_boxplot()
+
 ```
 
-## genes that differ with treatment / time)
+## genes that differ with treatment / time
 
 ```{r}
 # ------------------------------------------------
@@ -466,7 +476,7 @@ ggplot(diabetes_CXCL11, aes(x = treatment, y = CXCL11)) +
 # ------------------------------------------------
 
 # melt expression values of top50 high variance genes
-mel = melt(t(diabetes_GeneExprs_specifcTRA[names(diabetes_var)[1:50],]))
+mel = melt(t(diabetes_GeneExprs_sub_combined[names(diabetes_var)[1:50],]))
 # vector to annotate the values from mel with treatment 
 tr = diabetes_microarrays[,"treatment"]
 names(tr) = diabetes_microarrays[,"number"]
@@ -479,60 +489,173 @@ names(ti) = diabetes_microarrays[,"number"]
 ti = unname(ti[as.character(mel$Var1)])
 
 # create data frame (used for ggplot)
-diabetes_highvariance <- cbind(treatment = tr, time = ti, mel)
-diabetes_highvariance
+diabetes_highvariance_GeneExprs <- cbind(treatment = tr, time = ti, mel)
+head(diabetes_highvariance_GeneExprs)
 remove(tr,ti,mel) # remove these variables from Environment (not needed)
 
 # plot boxplots of top50 high variance genes (grouped by treatment)
-ggplot(diabetes_highvariance, aes(x = Var2, y = value, colour = treatment)) + 
+ggplot(diabetes_highvariance_GeneExprs, aes(x = Var2, y = value, colour = treatment)) + 
   geom_boxplot() + 
   theme(axis.text.x = element_text(angle = 90, size = 5)) +
   xlab("Genes")
 # plot boxplots of top50 high variance genes (grouped by time)
-ggplot(diabetes_highvariance, aes(x = Var2, y = value, colour = time)) + 
+ggplot(diabetes_highvariance_GeneExprs, aes(x = Var2, y = value, colour = time)) + 
   geom_boxplot() + 
   theme(axis.text.x = element_text(angle = 90, size = 5))+
   xlab("Genes")
 ```
 
-## wilcoxon rank sum test 
+## statistical tests
 ```{r}
 # ------------------------------------------------
-# wilcoxon rank sum test
+# ttest (on gene expression of top 10 high variance genes) +
+# two sided wilcoxon rank sum exact test 
 # ------------------------------------------------
-# two sided wilcoxon rank sum exact test
 ## H1 (treatment): treatment does not change gene expression
-## H1 (time): time does not change gene expression
+## H1 -> alpha = 5% (p < alpha)
+## H1.15 -> alpha = 15% (p < alpha)
 
-diabetes_highvariance_wilcox <- t(sapply(names(diabetes_var)[1:50], function(i){
-  p_treatment = wilcox.test(filter(diabetes_highvariance, treatment == "Control" & Var2 == i)$value, filter(diabetes_highvariance, treatment == "Cytok" & Var2 == i)$value)$p.value
+stat_tests2 <- function(df, ctrl, treat){
   
-  p_time = wilcox.test(filter(diabetes_highvariance, time == "1-36" & Var2 == i)$value, filter(diabetes_highvariance, time == "48-96" & Var2 == i)$value)$p.value
+  w = apply(df, 1, function(x){
+    wilcox.test(x[ctrl], x[treat])$p.value
+  })
   
-  c(p_treatment = p_treatment, p_time = p_time, 
-    H1_treatment = p_treatment < 0.05, H1_time = p_time < 0.05)
-}))
+  t = apply(df, 1, function(x){
+    t.test(x[ctrl], x[treat])$p.value
+  })
+  
+  data.frame(wilcox_pvalue = w, 
+             H1_wilcox = w < 0.05, 
+             H1.15_wilcox = w < 0.15,
+             ttest_pvalue = t, 
+             H1_t = t < 0.05)
+}
 
-# p values 
-diabetes_highvariance_wilcox
 
-# which genes have a significant p value for treatment?
-diabetes_highvariance_wilcox[which(diabetes_highvariance_wilcox[,"H1_treatment"] == 1),]
+# compare the control group against the treatment (for genes with high var)
+diabetes_highvariance_treatment_stat <- stat_tests(diabetes_GeneExprs_sub_combined[names(diabetes_var)[1:50],],
+           diabetes_microarrays[,"treatment"] == "Control",
+           diabetes_microarrays[,"treatment"] == "Cytok")
+# compare the 1-36 h group against the over 48-96 h group (for genes with high var)
+diabetes_highvariance_time_stat <- stat_tests(diabetes_GeneExprs_sub_combined[names(diabetes_var)[1:50],],
+           diabetes_microarrays[,"time_h"] <= 36,
+           diabetes_microarrays[,"time_h"] > 36)
+# compare the control group against the treatment (for genes with high var)
+diabetes_treatment_stat <- stat_tests(diabetes_GeneExprs_sub_combined,
+           diabetes_microarrays[,"treatment"] == "Control",
+           diabetes_microarrays[,"treatment"] == "Cytok")
+# compare the 1-36 h group against the over 48-96 h group (for genes with high var)
+diabetes_time_stat <- stat_tests(diabetes_GeneExprs_sub_combined,
+           diabetes_microarrays[,"time_h"] <= 36,
+           diabetes_microarrays[,"time_h"] > 36)
+
+
+diabetes_highvariance_treatment_stat
+diabetes_highvariance_time_stat
+diabetes_treatment_stat
+diabetes_time_stat
+
+
+# which high variance genes have a significant p value for treatment?
+filter(diabetes_highvariance_treatment_stat, H1_wilcox)
+# nrow = 12
+filter(diabetes_highvariance_treatment_stat, H1_t)
 # nrow = 11
 
 # which genes have a significant p value for time?
-diabetes_highvariance_wilcox[which(diabetes_highvariance_wilcox[,"H1_time"] == 1),]
-# nrow = 33
+filter(diabetes_highvariance_time_stat, H1_wilcox)
+# nrow = 32
+filter(diabetes_highvariance_time_stat, H1_t)
+# nrow = 34
 
 # which genes have a significant p value for both treatment & time?
-diabetes_highvariance_wilcox[which(apply(diabetes_highvariance_wilcox[,c(3,4)],1, function(x){x[1]==1 & x[2]==1})),]
-# PNLIPRP2   PABPC4    REG1A 
-## not part of the diabetes_pca_importantGenes (PCA contributor )
-# instead of 5% use 20% 
-diabetes_highvariance_wilcox[which(apply(diabetes_highvariance_wilcox[,c(1,2)],1, function(x){x[1]<0.2 & x[2]<0.2})),]
+diabetes_highvariance_time_stat[diabetes_highvariance_time_stat$H1_wilcox == TRUE & diabetes_highvariance_treatment_stat$H1_wilcox == TRUE,]
+#  PABPC4    REG1A 
+## not part of the diabetes_pca_importantGenes (no important PCA contributor)
 
-diabetes_highvariance_wilcox[c("PNLIPRP2","REG1A","PABPC4"),]
-# time is more significant 
+```
+
+## log2foldchange
+
+```{r}
+log2.fold.change <- function(control, test){
+  
+  # only if control have the same row numbers
+  if(nrow(control) == nrow(test)){
+    
+    # control / treatment (values combined by median)
+    ratio = sapply(1:nrow(control), function(x){
+      g1_m = median(control[x,])
+      g2_m = median(test[x,])
+      g2_m/g1_m # change of treatment to control
+    })
+    # log2 on ratio => log2(treatment/control)
+    log2_foldchange = log2(ratio)
+    # ttest control vs treatment (expression values)
+    t = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      t.test(control[x,], test[x,])$p.value
+    })
+    # wilcoxon rank sum test control vs treatment (expression values)
+    w = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      wilcox.test(control[x,], test[x,], exact = FALSE)$p.value
+    })
+    
+  }else{print("Something has gone wronge with the dimensions of the groups (probably row numbers)!")}
+  
+  trend = 1:length(t)
+  trend[t < 0.05 & log2_foldchange > 0] = "up"
+  trend[t < 0.05 & log2_foldchange < 0] = "down"
+  trend[t >= 0.05] = "not significant"
+  
+  # output
+  data.frame(GeneSymbol = rownames(control), # genes
+             foldchange_ratio = ratio, # without log2
+             log2_foldchange = log2_foldchange,  # log2 foldchange
+             ttest_raw_pvalue = t,# ttest
+             ttest_log10_pvalue = -1*log10(t),
+             trend = trend,
+             wilcox_raw_pvalue = w, # wilcoxon rank sum test
+             wilcox_log10_pvalue = -1*log10(w)
+             )
+}
+
+# gene expression matrix for each subgroup (treatment, control)
+diabetes_ctrl = diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, treatment == "Control")[,"number"]]
+diabetes_treat = diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, treatment == "Cytok")[,"number"]]
+
+diabetes_fc_treatment = log2.fold.change(diabetes_ctrl, diabetes_treat)
+diabetes_fc_treatment
+
+diabetes_fc_time = log2.fold.change(
+  diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, time_h <= 36)[,"number"]], 
+  diabetes_GeneExprs_sub_combined[,filter(diabetes_microarrays, time_h > 36)[,"number"]])
+diabetes_fc_time
+
+ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Vulcano plot (t test) for ratio = treatment / control", 
+       x = "log2 fold change", y = "-log10 (p-value)") +
+  xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
+         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"))
+
+ggplot(data = diabetes_fc_time, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = trend)) + 
+  geom_point() +  
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Vulcano plot (t test) for ratio = 1-36h / 48-96h", 
+       x = "log2 fold change", y = "-log10 (p-value)") +
+  xlim(c(-max(abs(diabetes_fc_time$log2_foldchange)), 
+         max(abs(diabetes_fc_time$log2_foldchange)))) + 
+  scale_color_manual(values = c("navyblue", "grey", "orange"))
+  
+  
+
 
 
 ```

@@ -91,6 +91,8 @@ combineGeneExprs_median2 <- function(exprsmatrix){
   # output
   result
 }
+
+
 ```
 
 # expression data sets
@@ -105,7 +107,7 @@ data_pancreas <- ReadAffy()
 # change cdf
 data_pancreas@cdfName <- "HGU133Plus2_Hs_ENST"
 # create expression matrix
-pancreas_matrix <- as.data.frame(exprs(data_pancreas))
+pancreas_matrix <- exprs(data_pancreas)
 # store colnames (microarray)
 pancreas_microarray_information <- colnames(pancreas_matrix)
 # vsnrm normalization
@@ -170,7 +172,9 @@ dim(pancreas_vsnrma_matrix) # after
 # 95659     6
 
 ```
+
 ## convert transcript IDs to gene symbols
+
 ```{r}
 # ------------------------------------------------
 # convert Affymetrix IDs to gene symbols
@@ -284,7 +288,7 @@ head(pancreas_GeneExprs_sub)
 # use of own function to combine values of genes that are mentioned more than once
 # ------------------------------------------------
 
-pancreas_GeneExprs_specifcTRA <- combineGeneExprs_median2(pancreas_GeneExprs_sub)
+pancreas_GeneExprs_sub_combined <- combineGeneExprs_median2(pancreas_GeneExprs_sub)
 dim(combineGeneExprs_median2(pancreas_GeneExprs_sub))
 # 250  6
 
@@ -389,7 +393,7 @@ dev.copy2pdf(file = "pancreas_heatmap_allTRAs.pdf")
 
 par(las = 2)
 
-boxplot(t(pancreas_GeneExprs_specifcTRA),
+boxplot(t(pancreas_GeneExprs_sub_combined),
          col = rainbow(250),
          main="",
          horizontal = TRUE)
@@ -402,6 +406,7 @@ abline(v =  median(apply(pancreas_vsnrma_matrix, 1,median)))
 # control vs. treatment
 
 ## PCA & kmeans
+
 ```{r}
 # ------------------------------------------------
 # PCA & kmeans
@@ -409,9 +414,12 @@ abline(v =  median(apply(pancreas_vsnrma_matrix, 1,median)))
 
 # create a data frame (columns = treatment, median combined pancreas specifc TRAs)
 pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
-            data.frame(t(pancreas_GeneExprs_specifcTRA)))
+            data.frame(t(pancreas_GeneExprs_sub_combined)))
+head(pancreas_df) 
+
 # PCA on the TRA expressions
-pancreas_pca <- prcomp(pancreas_df[,-c(1,2)])
+pancreas_pca <- prcomp(pancreas_df[,-1])
+
 # elbow plot 
 plot(x = 1:5, y = sapply(1:5, function(i){kmeans(pancreas_pca$x,i)$tot.withinss}), 
      type = "l", xlab = "number of clusters", ylab = "total within-cluster sum of squares")
@@ -420,20 +428,22 @@ plot(x = 1:5, y = sapply(1:5, function(i){kmeans(pancreas_pca$x,i)$tot.withinss}
 # plot PC1 against PC2 and show the eigenvectors (loadings)
 autoplot(prcomp(pancreas_df[,-c(1,2)]), data = pancreas_df, colour = "treatment", main = "Principal Component Analysis on beta cell data set", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
 autoplot(prcomp(pancreas_df[,-c(1,2)]), data = pancreas_df, colour = "treatment", loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3, main = "Principal Component Analysis on beta cell data set", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
-
+# plot kmeans for k = 2
 autoplot(kmeans(pancreas_pca$x,2), data = pancreas_pca$x, frame = TRUE,  xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1, main = "kmeans clustering (k=2) on beta cell data set")
 
 # add cluster numbers to already existing data frame (rows = microarrays)
 pancreas_df <- cbind(kmeans2 = kmeans(pancreas_pca$x,2)$cluster, pancreas_df)
-pancreas_df
+head(pancreas_df)
+
 ```
 
 ```{r}
 # plot eigenvector values (PC1 vs PC2)
 ggplot(pancreas_pca$rotation, aes(PC1, PC2, label = rownames(pancreas_pca$rotation))) + 
   geom_point() + 
-  geom_label_repel(max.overlaps = 50, size = 2)
-pancreas_pca$rotation["FBXL8",]
+  geom_label_repel(max.overlaps = 50, size = 2) + 
+  coord_equal(xlim = c(-0.7,0.7), ylim = c(-0.7,0.7))
+
 # select the genes that contribute the most to PC1 & PC2
 treshhold1 = 0.1
 treshhold2 = 0.15
@@ -442,7 +452,8 @@ pancreas_pca_importantGenes = rownames(filter(data.frame(pancreas_pca$rotation),
 # plot only the genes that strongly influence PC1 & PC2
 ggplot(pancreas_pca$rotation[pancreas_pca_importantGenes,], aes(PC1, PC2, label = pancreas_pca_importantGenes)) + 
   geom_point() + 
-  geom_label_repel(max.overlaps = 50, size = 2)
+  geom_label_repel(max.overlaps = 50, size = 2) + 
+  coord_equal(xlim = c(-0.7,0.7), ylim = c(-0.7,0.7))
 ```
 
 ## high variance
@@ -453,73 +464,173 @@ ggplot(pancreas_pca$rotation[pancreas_pca_importantGenes,], aes(PC1, PC2, label 
 # ------------------------------------------------
 
 # compute variance of each gene (each gene: 6 values)
-pancreas_var = sort(apply(pancreas_GeneExprs_specifcTRA,1,var), decreasing = TRUE)
+pancreas_var = sort(apply(pancreas_GeneExprs_sub_combined,1,var), decreasing = TRUE)
 
 # are these high variance genes the same as the mediangenes that strongly contribute to PCA?
 pancreas_pca_importantGenes %in% names(pancreas_var[pancreas_var > 2*median(pancreas_var)])
-# all PCA contributing genes have a 2x variance higher than  variance
+# all PCA contributing genes have a 2x variance higher than median variance
 names(pancreas_var)[1:9] %in% pancreas_pca_importantGenes
 # all top 9 high variance genes contribute strongly in PCA
 # (there are genes with high variance that don't really contribute to PC1/PC2)
+
 ```
 
 ```{r}
 # look at gene with highest variance (CHST4)
-pancreas_CHST4 <- data.frame(pancreas_microarrays[,c("number","siRNA")], CHST4 = pancreas_GeneExprs_specifcTRA["CHST4",])
+pancreas_CHST4 <- data.frame(pancreas_microarrays[,c("number","siRNA")], CHST4 = pancreas_GeneExprs_sub_combined["CHST4",])
+pancreas_CHST4
 ggplot(pancreas_CHST4, aes(x = siRNA, y = CHST4)) + 
   geom_boxplot()
+
 ```
 
-## genes that differ with treatment / time)
+## genes that differ with treatment / time
 ```{r}
 # ------------------------------------------------
 # boxplot of high variance genes (grouped by treatment / time)
 # ------------------------------------------------
 
 # melt expression values of top10 high variance genes
-mel = melt(t(pancreas_GeneExprs_specifcTRA[names(pancreas_var)[1:10],]))
+mel = melt(t(pancreas_GeneExprs_sub_combined[names(pancreas_var)[1:10],]))
 # vector to annotate the values from mel with treatment 
 tr = pancreas_microarrays[,"siRNA"]
 names(tr) = pancreas_microarrays[,"number"]
 tr = unname(tr[as.character(mel$Var1)])
 
 # create data frame (used for ggplot)
-pancreas_highvariance <- cbind(treatment = tr, mel)
+pancreas_highvariance_GeneExprs <- cbind(treatment = tr, mel)
 remove(tr,mel)
-
 # plot boxplots of top10 high variance genes (grouped by treatment)
-ggplot(pancreas_highvariance, aes(x = Var2, y = value, colour = treatment)) + 
+ggplot(pancreas_highvariance_GeneExprs, aes(x = Var2, y = value, colour = treatment)) + 
   geom_boxplot() + 
   theme(axis.text.x = element_text(angle = 90, size = 5))+
   xlab("Genes")
 
 ```
 
-## wilcoxon rank sum test 
+## statistical tests
 ```{r}
 # ------------------------------------------------
-# wilcoxon rank sum test
+# ttest (on gene expression of top 10 high variance genes) +
+# two sided wilcoxon rank sum exact test 
 # ------------------------------------------------
-# two sided wilcoxon rank sum exact test
 ## H1 (treatment): treatment does not change gene expression
-## H1_.05 -> alpha = 5% (p < alpha)
-## H1_.15 -> alpha = 15% (p < alpha)
+## H1 -> alpha = 5% (p < alpha)
+## H1.15 -> alpha = 15% (p < alpha)
 
-pancreas_highvariance_wilcox <- t(sapply(names(var)[1:10], function(i){
-  p_treatment = wilcox.test(filter(pancreas_highvariance, treatment == "NC" & Var2 == i)$value, filter(pancreas_highvariance, treatment == "TBL1" & Var2 == i)$value)$p.value
+stat_tests <- function(df, ctrl, treat){
   
-  c(p_treatment = p_treatment, H1_.05 = p_treatment < 0.05, H1_.15 = p_treatment < 0.15)
-}))
+  w = apply(df, 1, function(x){
+    wilcox.test(x[ctrl], x[treat])$p.value
+  })
+  
+  t = apply(df, 1, function(x){
+    t.test(x[ctrl], x[treat])$p.value
+  })
+  
+  data.frame(wilcox_pvalue = w, 
+             H1_wilcox = w < 0.05, 
+             H1.15_wilcox = w < 0.15,
+             ttest_pvalue = t, 
+             H1_t = t < 0.05)
+}
 
-# p values
-pancreas_highvariance_wilcox
 
-rownames(pancreas_highvariance_wilcox)[pancreas_highvariance_wilcox[,"H1_.15"]==1] 
+pancreas_highvariance_stat <- stat_tests(pancreas_GeneExprs_sub_combined[names(pancreas_var)[1:10],],
+           pancreas_microarrays[,"siRNA"] == "NC", 
+           pancreas_microarrays[,"siRNA"] == "TBL1")
+pancreas_stat <- stat_tests(pancreas_GeneExprs_sub_combined, 
+           pancreas_microarrays[,"siRNA"] == "NC", 
+           pancreas_microarrays[,"siRNA"] == "TBL1")
+
+filter(pancreas_highvariance_stat, H1.15_wilcox == TRUE)
+filter(pancreas_highvariance_stat, H1_t == TRUE)
 # each gene is contributing to PCA (part of pancreas_pca_importantGenes)
+filter(pancreas_stat, H1.15_wilcox == TRUE)
+filter(pancreas_stat, H1_t == TRUE)
+# when H1_t = TRUE then H1.15_wilcox = TRUE (maybe just use ttest)
 
-autoplot(pancreas_GeneExprs_specifcTRA[c("CHST4", "PABPC4", "ECI2", "TMEM97", "ANXA4", "NEURL3", "MKNK1", "MED24"),], xlab = "Microarrays", ylab = "Genes")
+# plot genes with signigficant difference between treatment & control
+autoplot(pancreas_GeneExprs_sub_combined[c("CHST4", "PABPC4", "ECI2", "TMEM97", "ANXA4", "NEURL3", "MKNK1", "MED24", "GRB10"),], xlab = "Microarrays", ylab = "Genes")
 ```
 
+## log2 fold change
 
+```{r}
+log2.fold.change <- function(control, test){
+  
+  # only if control have the same row numbers
+  if(nrow(control) == nrow(test)){
+    
+    # control / treatment (values combined by median)
+    ratio = sapply(1:nrow(control), function(x){
+      g1_m = median(as.numeric(control[x,]))
+      g2_m = median(as.numeric(test[x,]))
+      g2_m/g1_m # change of treatment to control
+    })
+    # log2 on ratio => log2(treatment/control)
+    log2_foldchange = log2(ratio)
+    # ttest control vs treatment (expression values)
+    t = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      t.test(control[x,], test[x,])$p.value
+    })
+    # wilcoxon rank sum test control vs treatment (expression values)
+    w = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      wilcox.test(control[x,], test[x,])$p.value
+    })
+    
+  }else{print("Something has gone wrong with the dimensions of the groups (probably row numbers)!")}
+  
+  trend = 1:length(t)
+  trend[t < 0.05 & log2_foldchange > 0] = "up"
+  trend[t < 0.05 & log2_foldchange < 0] = "down"
+  trend[t >= 0.05] = "not significant"
+  
+  # output
+  data.frame(GeneSymbol = rownames(control), # genes
+             foldchange_ratio = ratio, # without log2
+             log2_foldchange = log2_foldchange,  # log2 foldchange
+             ttest_raw_pvalue = t,# ttest
+             trend = trend,
+             ttest_log10_pvalue = -1*log10(t), 
+             wilcox_raw_pvalue = w, # wilcoxon rank sum test
+             wilcox_log10_pvalue = -1*log10(w))
+
+}
+
+# gene expression matrix for each subgroup (treatment, control)
+pancreas_ctrl = pancreas_GeneExprs_sub_combined[,filter(pancreas_microarrays, siRNA == "NC")[,"number"]]
+pancreas_treat = pancreas_GeneExprs_sub_combined[,filter(pancreas_microarrays, siRNA == "TBL1")[,"number"]]
+
+
+pancreas_fc = log2.fold.change(pancreas_ctrl, pancreas_treat)
+pancreas_fc
+
+filter(pancreas_fc, abs(log2_foldchange) > 0.15)
+max(abs(pancreas_fc$log2_foldchange))
+
+ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") + 
+  labs(title = "Vulcano plot (wilcoxon rank sum test)", 
+       x = "log2 fold change", y = "-log10 (p-value)") +
+  xlim(c(-max(abs(pancreas_fc$log2_foldchange)),
+         max(abs(pancreas_fc$log2_foldchange))))
+
+ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") + 
+  labs(title = "Vulcano plot (t test)", 
+       x = "log2 fold change", y = "-log10 (p-value)") +
+  xlim(c(-max(abs(pancreas_fc$log2_foldchange)),
+         max(abs(pancreas_fc$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"))
+
+
+```
 
 
