@@ -32,50 +32,22 @@ Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
 
 ```{r}
 
-# steps already done in Quality Control/Analysis
+# load necessary files from our created RData.
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
-# get CEL files
-setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
-data_diabetes <- ReadAffy()
-# change cdf
-data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
+setwd(paste(projectPath, "sessions", "RData", sep = "/"))
 
-# create expression matrix
-diabetes_matrix <- as.data.frame(exprs(data_diabetes))
-# store colnames (microarray)
-diabetes_microarray_information <- colnames(diabetes_matrix)
-# vsnrm normalization
-diabetes_vsnrma <- vsnrma(data_diabetes)
-# expression matrix of vsnrm normalized data set
-diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
-# cut rownames at "." ("ENST00000000233.10_at"  becomes "ENST00000000233")
-rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")
-# remove control probes from normalized data set
-diabetes_transcript_names <- rownames(diabetes_vsnrma_matrix)
-diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[which(!startsWith(diabetes_transcript_names, "AFFX")),]
+load(file = "diabetes_vsnrma_matrix.RData")
 
-# convert to gene symbols
-setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
-annotation = read.csv("ensemble.103.txt") 
+load(file = "diabetes_GeneExprs.RData")
 
-ensemble_genes = annotation[,"Gene.stable.ID"]
-ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
-ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
-ensemble_symbol = annotation[,"HGNC.symbol"]
+load(file = "diabetes_GeneExprs_sub.RData")
 
-diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts,]
-names(ensemble_symbol) <- ensemble_transcripts 
-diabetes_symbol <- ensemble_symbol[rownames(diabetes_vsnrma_matrix)]
-rownames(diabetes_vsnrma_matrix) <- as.character(diabetes_symbol)
+load(file = "diabetes_GeneExprs_sub_combined.RData")
 
-diabetes_GeneExprs <- diabetes_vsnrma_matrix[order(rownames(diabetes_vsnrma_matrix)),][1097:nrow(diabetes_vsnrma_matrix),] 
+load(file = "diabetes_GeneExprs_combined.RData")
 
-## Something does not quite work the way it is supposed to. There are always different results for the same line of code.
-
-summary(diabetes_GeneExprs)
-
-dim(combineGeneExprs_median(diabetes_GeneExprs))
+load(file = "diabetes_TRAexprs.RData")
 ```
 
 
@@ -130,7 +102,7 @@ high_var_diabetes <- diabetes_GeneExprs[top5_diab_names, , drop = FALSE]
 dim(high_var_diabetes)
 
 ## data set complete: 94451 genes
-## data set high variance: 4743 genes
+## data set high variance: 4729 genes
 ```
 
 
@@ -139,18 +111,18 @@ dim(high_var_diabetes)
 ### 1.3.1 Median expression of genes that is more than twice that of the general median.
 
 ```{r}
-## Search for genes, whose median gene expression are more than two times that of the median.
+## Search for genes, whose median gene expression are more than 1.9 times that of the median.
 
 med_diab <- apply(diabetes_GeneExprs, 1, median, na.rm=TRUE)
 
-## Names of genes that fit this criteria: 2 in total (some are doubled).
-## INS, PRSS2
+## Names of genes that fit this criteria: 8 genes
+## GCG, INS-IGF2, INS, PRSS2, MT-ND3, RPL31, PPL37A, SST
 
-which(med_diab > (2 * median(med_diab)))
+which(med_diab > (1.9 * median(med_diab)))
 
 ## Expression values of those genes.
 
-diab_above2med <- diabetes_GeneExprs[which(med_diab > (2 * median(med_diab)))]
+diab_above2med <- diabetes_GeneExprs[which(med_diab > (1.9 * median(med_diab)))]
 diab_above2med
 ```
 
@@ -168,14 +140,12 @@ median_treat <- apply(diabetes_treat, 1, median, na.rm=TRUE)
 median_1_5 <- which(median_treat > (1.5 * median_ctrl))
 median_1_5
 
-## This is true for the following genes: IDO1, CXCL9, CXCL10, CXCL11, GBP1, CCL8, GBP5 
+## This is true for the following genes: CXCL9 CXCL10 CXCL11 IDO1
 
 ## Their gene expression changed from...
 median_ctrl[median_1_5]
 ## ... to:
 median_treat[median_1_5]
-
-
 
 ## Search for genes in treatment group, whose median gene expression is reduced by 1.2 times compared to the control group
 
@@ -205,7 +175,7 @@ length(var_t_smaller_c)
 var_t_greater_c <- which(var_treat > var_ctrl)
 length(var_t_greater_c)
 
-## Surprising results: Only roughly two thirds of the genes have a higher variance of their gene expression after treatment.
+## Surprising results: Only roughly five ninth of the genes have a higher variance of their gene expression after treatment.
 ```
 
 
@@ -224,49 +194,22 @@ qqnorm(diabetes_treat, main = "Normal QQ-Plot of Diabetes Treatment", ylab = "Di
 
 # 2. TRA Analysis 
 
-Steps already taken in Analysis:
-
-```{r}
-setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
-pancreas_specific_genes = read.csv("pancreas_specific_genes_human.csv")
-pancreas_specific_genes = sort(pancreas_specific_genes)
-
-
-# create a expression matrix with only those genes
-diabetes_GeneExprs_sub = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% pancreas_specific_genes),]
-
-dim(diabetes_GeneExprs_sub) 
-# 1569   24 
-length(unique(rownames(diabetes_GeneExprs_sub)))
-# 250 (number of TRA genes in the expression matrix)
-head(diabetes_GeneExprs_sub)
-```
-
-
 ## 2.1 Diabetes TRA expression analyis of all pancreatic cancer sets
-
-```{r}
-diabetes_GeneExprs_sub_combined <- combineGeneExprs_sum(diabetes_GeneExprs_sub)
-
-head(diabetes_GeneExprs_sub_combined)
-dim(diabetes_GeneExprs_sub_combined)
-##250
-```
 
 ```{r}
 ### mean insgesamt und für jedes Set einzelnd
 mean(diabetes_GeneExprs_sub_combined)
-## 8.79089
+## 8.810097
 apply(diabetes_GeneExprs_sub_combined, 2, mean)
 
 ### median insgesamt und für jedes Set einzelnd
 median(diabetes_GeneExprs_sub_combined)
-## 7.996373
+## 8.019698
 apply(diabetes_GeneExprs_sub_combined, 2, median)
 
 ### sd ingesamt und für jedes Set einzelnd
 sd(diabetes_GeneExprs_sub_combined)
-##  1.6099
+## 2.166952
 apply(diabetes_GeneExprs_sub_combined, 2, sd)
 
 ```
@@ -289,7 +232,6 @@ for(i in 1:24)
 max_gene <- row.names(diabetes_GeneExprs_sub_combined)[diabetes_GeneExprs_sub_combined[,i] == max_value]
 print(max_value)
 print(max_gene)}
-
 ```
 
 
@@ -321,8 +263,7 @@ dim(high_var_diabetes_sub)
 ```
 
 
-
-## 2.3 TRAs in Diabetes Control Group
+## 2.3 TRAs in Diabetes Control Group (noch nicht mit Dateien der microarray_vsnrma_normalization überarbeitet)
 
 ### Read in functions for combining gene expression: median or sum.
 
