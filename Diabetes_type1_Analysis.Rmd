@@ -290,7 +290,38 @@ dim(combineGeneExprs_median2(diabetes_GeneExprs))
 # 18062    24
 ```
 
+## select only all TRAs
+```{r}
+# ------------------------------------------------
+# minimize expression matrix: only all TRAs 
+# ------------------------------------------------
 
+# get all TRA genes from "TRA Daten"
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+all_TRA_genes = read.csv("TRA_genes_human.csv")
+all_TRA_genes = sort(all_TRA_genes)
+
+# create a expression matrix with only those genes
+all_TRA_GeneExprs_sub = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% all_TRA_genes),]
+
+dim(all_TRA_GeneExprs_sub) 
+#
+length(unique(rownames(all_TRA_GeneExprs_sub)))
+#  (number of TRA genes in the expression matrix)
+head(all_TRA_GeneExprs_sub)
+
+```
+
+## combine genes 
+```{r}
+# ------------------------------------------------
+# use of own function to combine values of genes that are mentioned more than once
+# ------------------------------------------------
+
+
+dim(combineGeneExprs_median2(all_TRA_GeneExprs))
+# 
+```
 # plots
 ## distributions
 

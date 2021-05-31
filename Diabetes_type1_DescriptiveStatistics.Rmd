@@ -240,10 +240,24 @@ dim(diabetes_GeneExprs_sub)
 length(unique(rownames(diabetes_GeneExprs_sub)))
 # 250 (number of TRA genes in the expression matrix)
 head(diabetes_GeneExprs_sub)
+
+## create a expression matrix with all TRA genes
+
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+all_TRA_genes = read.csv("TRA_genes_human.csv")
+all_TRA_genes = sort(all_TRA_genes)
+
+all_TRA_GeneExprs_sub = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% all_TRA_genes),]
+
+dim(all_TRA_GeneExprs_sub) 
+#
+length(unique(rownames(all_TRA_GeneExprs_sub)))
+#  (number of TRA genes in the expression matrix)
+head(all_TRA_GeneExprs_sub)
 ```
 
 
-## 2.1 Diabetes TRA expression analyis of all pancreatic cancer sets
+## 2.1 pancreatic TRA expression analyis of all diabetis sets
 
 ```{r}
 diabetes_GeneExprs_sub_combined <- combineGeneExprs_sum(diabetes_GeneExprs_sub)
@@ -291,7 +305,51 @@ print(max_value)
 print(max_gene)}
 
 ```
+## 2.1.5 all TRA expression analyis of all diabetis sets
 
+```{r}
+all_TRA_GeneExprs_sub_combined <- combineGeneExprs_sum(all_TRA_GeneExprs_sub)
+
+head(all_TRA_GeneExprs_sub_combined)
+dim(all_TRA_GeneExprs_sub_combined)
+##
+```
+```{r}
+### mean insgesamt und für jedes Set einzelnd
+mean(all_TRA_GeneExprs_sub_combined)
+## 8.79089
+apply(all_TRA_GeneExprs_sub_combined, 2, mean)
+
+### median insgesamt und für jedes Set einzelnd
+median(all_TRA_GeneExprs_sub_combined)
+## 7.996373
+apply(all_TRA_GeneExprs_sub_combined, 2, median)
+
+### sd ingesamt und für jedes Set einzelnd
+sd(all_TRA_GeneExprs_sub_combined)
+##  1.6099
+apply(all_TRA_GeneExprs_sub_combined, 2, sd)
+
+```
+
+```{r}
+## lowest expressed Gene each chip:
+
+for(i in 1:24)
+{min_value <- min(all_TRA_GeneExprs_sub_combined[,i])
+min_gene <- row.names(all_TRA_GeneExprs_sub_combined)[all_TRA_GeneExprs_sub_combined[,i] == min_value]
+print(min_value)
+print(min_gene)}
+```
+```{r}
+### highest expressed Gene each chip:
+
+for(i in 1:24)
+{max_value <- max(all_TRA_GeneExprs_sub_combined[,i])
+max_gene <- row.names(all_TRA_GeneExprs_sub_combined)[all_TRA_GeneExprs_sub_combined[,i] == max_value]
+print(max_value)
+print(max_gene)}
+```
 
 ## 2.2 High Variance TRA genes in diabetes data set
 
