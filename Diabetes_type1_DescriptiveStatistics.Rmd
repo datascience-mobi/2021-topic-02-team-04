@@ -32,50 +32,22 @@ Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
 
 ```{r}
 
-# steps already done in Quality Control/Analysis
+# load necessary files from our created RData.
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
-# get CEL files
-setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
-data_diabetes <- ReadAffy()
-# change cdf
-data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
+setwd(paste(projectPath, "sessions", "RData", sep = "/"))
 
-# create expression matrix
-diabetes_matrix <- as.data.frame(exprs(data_diabetes))
-# store colnames (microarray)
-diabetes_microarray_information <- colnames(diabetes_matrix)
-# vsnrm normalization
-diabetes_vsnrma <- vsnrma(data_diabetes)
-# expression matrix of vsnrm normalized data set
-diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
-# cut rownames at "." ("ENST00000000233.10_at"  becomes "ENST00000000233")
-rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")
-# remove control probes from normalized data set
-diabetes_transcript_names <- rownames(diabetes_vsnrma_matrix)
-diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[which(!startsWith(diabetes_transcript_names, "AFFX")),]
+load(file = "diabetes_vsnrma_matrix.RData")
 
-# convert to gene symbols
-setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
-annotation = read.csv("ensemble.103.txt") 
+load(file = "diabetes_GeneExprs.RData")
 
-ensemble_genes = annotation[,"Gene.stable.ID"]
-ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
-ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
-ensemble_symbol = annotation[,"HGNC.symbol"]
+load(file = "diabetes_GeneExprs_sub.RData")
 
-diabetes_vsnrma_matrix <- diabetes_vsnrma_matrix[rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts,]
-names(ensemble_symbol) <- ensemble_transcripts 
-diabetes_symbol <- ensemble_symbol[rownames(diabetes_vsnrma_matrix)]
-rownames(diabetes_vsnrma_matrix) <- as.character(diabetes_symbol)
+load(file = "diabetes_GeneExprs_sub_combined.RData")
 
-diabetes_GeneExprs <- diabetes_vsnrma_matrix[order(rownames(diabetes_vsnrma_matrix)),][1097:nrow(diabetes_vsnrma_matrix),] 
+load(file = "diabetes_GeneExprs_combined.RData")
 
-## Something does not quite work the way it is supposed to. There are always different results for the same line of code.
-
-summary(diabetes_GeneExprs)
-
-dim(combineGeneExprs_median(diabetes_GeneExprs))
+load(file = "diabetes_TRAexprs.RData")
 ```
 
 
@@ -130,7 +102,7 @@ high_var_diabetes <- diabetes_GeneExprs[top5_diab_names, , drop = FALSE]
 dim(high_var_diabetes)
 
 ## data set complete: 94451 genes
-## data set high variance: 4743 genes
+## data set high variance: 4729 genes
 ```
 
 
@@ -139,18 +111,18 @@ dim(high_var_diabetes)
 ### 1.3.1 Median expression of genes that is more than twice that of the general median.
 
 ```{r}
-## Search for genes, whose median gene expression are more than two times that of the median.
+## Search for genes, whose median gene expression are more than 1.9 times that of the median.
 
 med_diab <- apply(diabetes_GeneExprs, 1, median, na.rm=TRUE)
 
-## Names of genes that fit this criteria: 2 in total (some are doubled).
-## INS, PRSS2
+## Names of genes that fit this criteria: 8 genes
+## GCG, INS-IGF2, INS, PRSS2, MT-ND3, RPL31, PPL37A, SST
 
-which(med_diab > (2 * median(med_diab)))
+which(med_diab > (1.9 * median(med_diab)))
 
 ## Expression values of those genes.
 
-diab_above2med <- diabetes_GeneExprs[which(med_diab > (2 * median(med_diab)))]
+diab_above2med <- diabetes_GeneExprs[which(med_diab > (1.9 * median(med_diab)))]
 diab_above2med
 ```
 
@@ -168,14 +140,12 @@ median_treat <- apply(diabetes_treat, 1, median, na.rm=TRUE)
 median_1_5 <- which(median_treat > (1.5 * median_ctrl))
 median_1_5
 
-## This is true for the following genes: IDO1, CXCL9, CXCL10, CXCL11, GBP1, CCL8, GBP5 
+## This is true for the following genes: CXCL9 CXCL10 CXCL11 IDO1
 
 ## Their gene expression changed from...
 median_ctrl[median_1_5]
 ## ... to:
 median_treat[median_1_5]
-
-
 
 ## Search for genes in treatment group, whose median gene expression is reduced by 1.2 times compared to the control group
 
@@ -205,7 +175,7 @@ length(var_t_smaller_c)
 var_t_greater_c <- which(var_treat > var_ctrl)
 length(var_t_greater_c)
 
-## Surprising results: Only roughly two thirds of the genes have a higher variance of their gene expression after treatment.
+## Surprising results: Only roughly five ninth of the genes have a higher variance of their gene expression after treatment.
 ```
 
 
@@ -219,7 +189,6 @@ qqnorm(diabetes_treat, main = "Normal QQ-Plot of Diabetes Treatment", ylab = "Di
 ## Control and treatment group are not normally distributed.
 
 ```
-
 
 
 # 2. TRA Analysis 
@@ -305,7 +274,8 @@ print(max_value)
 print(max_gene)}
 
 ```
-## 2.1.5 all TRA expression analyis of all diabetis sets
+
+## 2.1.5 all TRA expression analyis of all diabetes sets
 
 ```{r}
 all_TRA_GeneExprs_sub_combined <- combineGeneExprs_sum(all_TRA_GeneExprs_sub)
@@ -351,6 +321,7 @@ print(max_value)
 print(max_gene)}
 ```
 
+
 ## 2.2 High Variance TRA genes in diabetes data set
 
 ```{r}
@@ -378,19 +349,29 @@ dim(high_var_diabetes_sub)
 ## data set high variance: 63 genes
 ```
 
+#### Boxplot of 25% high variance genes
+
+```{r}
+par(las = 2)
+par(mai = c(0.7,0.4,0.5,0.1))
+
+boxplot(t(high_var_diabetes_sub), col = rainbow(63), cex.axis=0.5, main = "Top 25% high variance genes of diabetes data set"); 
+abline(h = median(diabetes_GeneExprs_sub_combined), col = "red")
+```
 
 
-## 2.3 TRAs in Diabetes Control Group
+## 2.3 TRAs in Diabetes Control Group 
 
 ### Read in functions for combining gene expression: median or sum.
 
 ```{r}
 ## Create new matrix containing the control groups of the diabetes dataset with only TRA specific genes. We are unsure whether we should choose sum or median to combine the gene expressions.
 
+set.seed(977)
+
 ## Median
 
-diabetes_GeneExprs_sub_combined_median <- combineGeneExprs_median(diabetes_GeneExprs_sub)
-diabetes_TRA_ctrl_median <- diabetes_GeneExprs_sub_combined_median[, 1:13]
+diabetes_TRA_ctrl_median <- diabetes_GeneExprs_sub_combined[, 1:13]
 
 ## Sum
 
@@ -409,7 +390,7 @@ diabetes_TRA_ctrl_sum <- diabetes_GeneExprs_sub_combined_sum[, 1:13]
 med_diab_TRA_median <- apply(diabetes_TRA_ctrl_median, 1, median, na.rm=TRUE)
 median(med_diab_TRA_median)
 
-## Median: 8,05
+## Median: 8.068697
 
 ## Search for genes, whose median gene expression are more than 1.8 times that of the median.
 which(med_diab_TRA_median > (1.8 * median(med_diab_TRA_median)))
@@ -417,7 +398,7 @@ which(med_diab_TRA_median > (1.8 * median(med_diab_TRA_median)))
 ## INS, PRSS2
 
 ## Expression values of those genes:
-diab_above2med_TRA_median <- diabetes_GeneExprs[which(med_diab_TRA_median > (1.7 * median(med_diab_TRA_median)))]
+diab_above2med_TRA_median <- diabetes_GeneExprs[which(med_diab_TRA_median > (1.8 * median(med_diab_TRA_median)))]
 diab_above2med_TRA_median
 ```
 
@@ -427,7 +408,7 @@ diab_above2med_TRA_median
 med_diab_TRA_sum <- apply(diabetes_TRA_ctrl_sum, 1, median, na.rm=TRUE)
 median(med_diab_TRA_sum)
 
-## Median: 38.08
+## Median: 38.43985
 
 ## Search for genes, whose median gene expression are more than 1.5 times that of the median.
 which(med_diab_TRA_sum > (5 * median(med_diab_TRA_sum)))
@@ -442,70 +423,77 @@ diab_above2med_TRA_sum
 
 ### 2.3.2 Genes that are differently expressed over the time period
 
-#### Results are similar for sum/median technique
+#### Results are the same for sum/median technique
 
 ```{r}
 # Median 
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.3 times less in the last chip than in the first.
 diabetes_TRA_ctrl_median_receding <- (which(diabetes_TRA_ctrl_median[,1] > (1.3 * diabetes_TRA_ctrl_median[,13])))
-## 8 genes
+## 10 genes
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.2 times more in the last chip than in the first.
 diabetes_TRA_ctrl_median_growing <- (which((1.2 *diabetes_TRA_ctrl_median[,1]) < diabetes_TRA_ctrl_median[,13]))
 ## 4 genes
 
+diabetes_TRA_ctrl_median_receding
+diabetes_TRA_ctrl_median_growing
+
 ## Is the change significant?
-## Only 8 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
+## Only 10 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
 ```
 
 ```{r}
 # Sum
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.3 times less in the last chip than in the first.
 diabetes_TRA_ctrl_sum_receding <- (which(diabetes_TRA_ctrl_sum[,1] > (1.3 * diabetes_TRA_ctrl_sum[,13])))
-## 6 genes
+## 10 genes
 
-## Genes that 1.2 times are expressed at a lower level in the last chip than in the first.
+## Genes that are expressed 1.2 times less in the last chip than in the first.
 diabetes_TRA_ctrl_sum_growing <- (which((1.2 *diabetes_TRA_ctrl_sum[,1]) < diabetes_TRA_ctrl_sum[,13]))
 ## 4 genes
 
+diabetes_TRA_ctrl_sum_receding
+diabetes_TRA_ctrl_sum_growing
+
 ## Is the change significant?
-## Only 6 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
+## Only 10 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
 ```
 
 
-### 3.2.3 What are the genes that have a high variance: Important or house keeping genes?
+### 2.3.3 What are the genes that have a high variance: Important or house keeping genes?
 
 ```{r}
 ## Calculate variance of rows (genes)
 
 var_diabetes_TRA_ctrl_median <- apply(diabetes_TRA_ctrl_median, 1, var, na.rm=TRUE)
 
-## Create function to filter out the top 25% of variance.
+## Create function to filter out the top 2.5% of variance.
 
-top5 <- function(x) {
+top2.5 <- function(x) {
   x >= quantile(x, 0.975)
 }
 
 ## Apply function to variance set, to determine the top 5% of variance.
 
-top5_var_ctrl_median <- top5(var_diabetes_TRA_ctrl_median)
+top2.5_var_ctrl_median <- top2.5(var_diabetes_TRA_ctrl_median)
 
-top5_var_ctrl_median_names <- which(top5_var_ctrl_median == "TRUE")
+top2.5_var_ctrl_median_names <- which(top2.5_var_ctrl_median == "TRUE")
 
-high_var_diabetes_ctrl_median <- diabetes_TRA_ctrl_median[top5_var_ctrl_median_names, , drop = FALSE]
+high_var_diabetes_ctrl_median <- diabetes_TRA_ctrl_median[top2.5_var_ctrl_median_names, , drop = FALSE]
 
 dim(high_var_diabetes_ctrl_median)
 
 ## data set complete: 250 genes
-## data set high variance: 13 genes
+## data set high variance: 7 genes
 
 rownames(high_var_diabetes_ctrl_median)
 
 # High variance genes and their function:
 
 ## CELA2B: serine proteases that hydrolyze elastin; secreted from pancreas as zymogen
+## CELP: carboxyl ester lipase pseudogene
 ## CUZD1: CUZD1 antiserum inhibits cell attachment and proliferation of ovarian cancer cells so may be involved in these processes.
 ## GP2: encodes an integral membrane protein; antigen binding
 ## PNLIP: encodes a member of the lipase family of proteins
@@ -514,7 +502,126 @@ rownames(high_var_diabetes_ctrl_median)
 # Might be important
 
 ## SPP1: involved in the attachment of osteoclasts to the mineralized bone matrix; cytokine that upregulates expression of interferon-gamma and interleukin-12
-## TSPAN8: cell-surface proteins; diseases associated with TSPAN8 include Pancreas, Annular and Maturity-Onset Diabetes Of The Young.
 
 ```
 
+#### Boxplot of identified 2.5% high variance genes in diabetes control
+
+```{r}
+par(las = 2)
+par(mai = c(1.1,0.5,0.5,0.1))
+
+boxplot(t(high_var_diabetes_ctrl_median), col = rainbow(7), main = "2.5% high variance genes of diabetes control group"); 
+abline(h = median(med_diab_TRA_median), col = "red")
+```
+
+
+## 2.4 Comparison of control and treatment group
+
+### 2.4.1 Find high variance genes of treatment group
+
+```{r}
+## Calculate variance of rows (genes) of the diabetes treatment group
+
+diabetes_TRA_treat_median <- diabetes_GeneExprs_sub_combined[, 14:24]
+var_diabetes_TRA_treat_median <- apply(diabetes_TRA_treat_median, 1, var, na.rm=TRUE)
+
+## Create function to filter out the top 2.5% of variance.
+
+top2.5 <- function(x) {
+  x >= quantile(x, 0.975)
+}
+
+## Apply function to variance set, to determine the top 5% of variance.
+
+top2.5_var_treat_median <- top2.5(var_diabetes_TRA_treat_median)
+
+top2.5_var_treat_median_names <- which(top2.5_var_treat_median == "TRUE")
+
+high_var_diabetes_treat_median <- diabetes_TRA_treat_median[top2.5_var_treat_median_names, , drop = FALSE]
+
+dim(high_var_diabetes_treat_median)
+
+## data set complete: 250 genes
+## data set high variance: 7 genes
+
+rownames(high_var_diabetes_treat_median)
+
+```
+
+```{r}
+med_diab_TRA_treat <- apply(diabetes_TRA_treat_median, 1, median, na.rm=TRUE)
+
+par(las = 2)
+par(mai = c(1.1,0.5,0.5,0.1))
+
+boxplot(t(high_var_diabetes_treat_median), col = rainbow(7), main = "2.5% high variance genes of diabetes treatment group"); 
+abline(h = median(med_diab_TRA_median), col = "red")
+```
+
+### 2.4.2 Are there genes that are present in both 2.5% high variance control and 2.5% high variance treatment?
+
+```{r}
+rownames(high_var_diabetes_ctrl_median)
+rownames(high_var_diabetes_treat_median)
+
+## Same genes: CUZD1, GP2, PNLIPRP1, PNLIP
+
+## Create a data set with those genes: ctrl and treatment.
+## Control data set reduced to the same number of microarrays as treatment.
+
+col_diab <- c(2:11, 13)
+
+ctrl_treat_high_var <- cbind(high_var_diabetes_ctrl_median["CUZD1",col_diab], high_var_diabetes_treat_median["CUZD1",],
+                            high_var_diabetes_ctrl_median["GP2",col_diab], high_var_diabetes_treat_median["GP2",],
+                            high_var_diabetes_ctrl_median["PNLIPRP1",col_diab], high_var_diabetes_treat_median["PNLIPRP1",], 
+                            high_var_diabetes_ctrl_median["PNLIP",col_diab], high_var_diabetes_treat_median["PNLIP",]);
+colnames(ctrl_treat_high_var) <- c("CUZD1 ctrl","CUZD1 treat", "GP2 ctrl", "GP2 treat", "PNLIPRP1 ctrl", "PNLIPRP1 treat", "PNLIP ctrl", "PNLIP treat")
+
+## Boxplot
+
+par(las = 2)
+par(mai = c(1.1,0.5,0.5,0.3))
+
+boxplot(ctrl_treat_high_var, col = rainbow(8), main = "High variance genes present in the top 2.5% in both control and treatment", cex.axis = 0.7);
+abline(h = median(diabetes_GeneExprs_sub_combined), col = "red")
+
+```
+
+### 2.4.3 High variance gene in both control and treatment group comparison
+
+```{r}
+
+ctrl_high_var <- cbind(high_var_diabetes_ctrl_median["CUZD1",], high_var_diabetes_ctrl_median["GP2",],
+                       high_var_diabetes_ctrl_median["PNLIPRP1",], 
+                       high_var_diabetes_ctrl_median["PNLIP",])
+
+treat_high_var <- cbind(high_var_diabetes_treat_median["CUZD1",], high_var_diabetes_treat_median["GP2",],
+                        high_var_diabetes_treat_median["PNLIPRP1",], high_var_diabetes_treat_median["PNLIP",])
+
+col_ctrl_treat <- c("CUZD1", "GP2", "PNLIPRP1", "PNLIP")
+
+# Plots
+
+par(mfrow = c(2,2), mai = c(0.75,0.7,0.5,0.1))
+
+## control 
+
+for (i in 1:ncol(ctrl_high_var)){
+  plot(ctrl_high_var[,i], 
+       type = "b", 
+       xlab = "Microarray Number", ylab = "Gene expression", 
+       main = paste(col_ctrl_treat[i], "\n", "Control"));
+  axis(1,  at = seq(1, nrow(ctrl_high_var), by=1))
+}
+
+## treatment
+
+for (i in 1:ncol(treat_high_var)){
+  plot(treat_high_var[,i], 
+       type = "b", 
+       xlab = "Microarray Number", ylab = "Gene expression", 
+       main = paste(col_ctrl_treat[i], "\n", "Treatment"));
+}
+axis(1, at = seq(1, nrow(treat_high_var), by=1))
+```
