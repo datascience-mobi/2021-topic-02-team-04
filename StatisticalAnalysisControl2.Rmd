@@ -1,0 +1,151 @@
+---
+title: "StatisticalAnalysisControl2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(paste(projectPath, "sessions", "RData", sep = "/"))
+```
+
+
+```{r}
+load(file = "diabetes_GeneExprs_sub_combined.R")
+```
+
+
+
+
+Selecting data for analysis
+```{r}
+diabetes_GeneExprs_sub_control <- combineGeneExprs_median(diabetes_GeneExprs_sub[,1:13])
+pancreas_GeneExprs_sub_control <- combineGeneExprs_median(pancreas_GeneExprs_sub[,1:3])
+dim(pancreas_GeneExprs_sub_control)
+```
+
+
+# higher and lower differentially expressed genes
+```{r}
+Differential_TRA_values <- vector("numeric",250)
+Differential_TRA_values2 <- vector("numeric",250)
+
+#higher differentially expressed genes
+
+for (i in 1:250){
+  WilcoxonTest <- wilcox.test(x=diabetes_GeneExprs_sub_control[i,],y=pancreas_GeneExprs_sub_control[i,],alternative ="greater")
+  if (WilcoxonTest$p.value < 0.05){
+    Differential_TRA_values[i] <- WilcoxonTest$p.value}
+    
+}
+
+Gensymbol_pvalue_higher_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values),nrow=250,byrow=FALSE)
+colnames(Gensymbol_pvalue_higher_matrix) <- c("Genesymbol","p-value")
+
+higher_expressed_genes <- Gensymbol_pvalue_higher_matrix[-which(Gensymbol_pvalue_higher_matrix[,2]==0),]
+dim(higher_expressed_genes)
+
+#lower differentially expressed genes
+
+for (i in 1:250){
+  WilcoxonTest2 <- wilcox.test(x=diabetes_GeneExprs_sub_control[i,],y=pancreas_GeneExprs_sub_control[i,],alternative ="less")
+  if (WilcoxonTest2$p.value < 0.05){
+    Differential_TRA_values2[i] <- WilcoxonTest2$p.value}
+    
+}
+
+Gensymbol_pvalue_lower_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values2),nrow=250,byrow=FALSE)
+colnames(Gensymbol_pvalue_lower_matrix) <- c("Genesymbol","p-value")
+
+lower_expressed_genes <- Gensymbol_pvalue_lower_matrix[-which(Gensymbol_pvalue_lower_matrix[,2]==0),]
+dim(lower_expressed_genes)
+
+## 46 genes are lower expressed in pancreatic cancer cells in comparison to ß cells 
+## 164 genes are higher expressed in pancreatic cancer cells in comparison to ß cells
+# 40 genes show no significant difference between the two data sets ## 23
+
+```
+```{r}
+#differentially expressed genes
+
+Differential_TRA_values3 <- vector("numeric",250)
+
+for (i in 1:250){
+  WilcoxonTest3 <- wilcox.test(x=diabetes_GeneExprs_sub_control[i,],y=pancreas_GeneExprs_sub_control[i,],alternative ="two.sided")
+  if (WilcoxonTest3$p.value < 0.05){
+    Differential_TRA_values3[i] <- WilcoxonTest3$p.value}
+    
+}
+
+Gensymbol_pvalue_differential_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values3),nrow=250,byrow=FALSE)
+colnames(Gensymbol_pvalue_lower_matrix) <- c("Genesymbol","p-value")
+
+differential_expressed_genes <- Gensymbol_pvalue_lower_matrix[-which(Gensymbol_pvalue_differential_matrix[,2]==0),]
+dim(differential_expressed_genes)
+```
+
+
+
+```{r}
+#Erstellen des Datensatzes mit nur höher exprimierten Genen
+
+differentialexpressedgenenames <- differential_expressed_genes[,1]
+
+diabeteshigherexpressedgenes <- diabetes_GeneExprs_sub_control[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+pancreashigherexpressedgenes <- pancreas_GeneExprs_sub_control[which((rownames(pancreas_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+
+
+```
+
+
+
+
+
+```{r}
+
+#Creating matrix that only contains differential expressed genes and their corresponding mean difference between the two control sets
+
+# Calculating the mean values for each of the genes
+diabetescontrolmean <- apply(diabetes_GeneExprs_sub_control,1,mean)
+pancreascontrolmean <- apply(pancreas_GeneExprs_sub_control,1,mean)
+
+# Calculating the mean difference
+differencemean <-  pancreascontrolmean - diabetescontrolmean
+differencemeanabs <- abs(pancreascontrolmean - diabetescontrolmean)
+
+# Creating matrix with the mean values for each of the genes
+differencemeanmatrix <-  matrix(c(rownames(pancreas_GeneExprs_sub_control),differencemean,diabetescontrolmean,pancreascontrolmean),nrow=250,byrow=FALSE)
+differencemeanmatrixabs <-  matrix(c(rownames(pancreas_GeneExprs_sub_control),differencemeanabs,diabetescontrolmean,pancreascontrolmean),nrow=250,byrow=FALSE)
+
+# Selecting only the genes that are differential expressed
+differentialdifferencematrix <- differencemeanmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+differentialdifferencematrixabs <- differencemeanmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+```
+
+```{r}
+# Matrix in descending order
+ordermatrix <- order(differentialdifferencematrix[,2],decreasing = TRUE)
+ordermatrixabs <- order(differentialdifferencematrixabs[,2],decreasing = TRUE)
+
+differentialdifferencematrixordered <- differentialdifferencematrix[ordermatrix,]
+differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[ordermatrixabs,]
+
+colnames(differentialdifferencematrixordered) <- c("Gensymbol","Meandifference","MeanDiabetes","MeanPancreas")
+colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Meandifferenceabs","MeanDiabetes","MeanPancreas")
+
+
+View(differentialdifferencematrixordered)
+View(differentialdifferencematrixorderedabs)
+
+## serine protease inhibitor Kazal type 1 (SPINK1) , Glucagon --> both attributed with pancreatic cancer
+```
+
+
+
+```{r}
+#Distribution of the mean differences
+hist(as.integer(differentialdifferencematrixordered[,2]),breaks = "FD",xlab="meandifference",main="Distribution of mean difference for differential expressed genes",col="orange")
+```
