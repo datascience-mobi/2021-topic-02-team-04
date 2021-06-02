@@ -592,12 +592,16 @@ abline(h = median(diabetes_GeneExprs_sub_combined), col = "red")
 
 ```{r}
 
-ctrl_high_var <- cbind(high_var_diabetes_ctrl_median["CUZD1",], high_var_diabetes_ctrl_median["GP2",],
-                       high_var_diabetes_ctrl_median["PNLIPRP1",], 
-                       high_var_diabetes_ctrl_median["PNLIP",])
+high_var_diabetes_ctrl_ordered <- high_var_diabetes_ctrl_median[, c(1, 3, 5, 8, 12, 2, 4, 6, 7, 9, 10, 11, 13)]
 
-treat_high_var <- cbind(high_var_diabetes_treat_median["CUZD1",], high_var_diabetes_treat_median["GP2",],
-                        high_var_diabetes_treat_median["PNLIPRP1",], high_var_diabetes_treat_median["PNLIP",])
+ctrl_high_var <- cbind(high_var_diabetes_ctrl_ordered["CUZD1",], high_var_diabetes_ctrl_ordered["GP2",],
+                       high_var_diabetes_ctrl_ordered["PNLIPRP1",], 
+                       high_var_diabetes_ctrl_ordered["PNLIP",])
+
+high_var_diabetes_treat_ordered <- high_var_diabetes_treat_median[, c(3, 5, 1, 2, 4, 6, 7, 8, 9, 10, 11)]
+
+treat_high_var <- cbind(high_var_diabetes_treat_ordered["CUZD1",], high_var_diabetes_treat_ordered["GP2",],
+                        high_var_diabetes_treat_ordered["PNLIPRP1",], high_var_diabetes_treat_ordered["PNLIP",])
 
 col_ctrl_treat <- c("CUZD1", "GP2", "PNLIPRP1", "PNLIP")
 
@@ -624,4 +628,97 @@ for (i in 1:ncol(treat_high_var)){
        main = paste(col_ctrl_treat[i], "\n", "Treatment"));
 }
 axis(1, at = seq(1, nrow(treat_high_var), by=1))
+
 ```
+
+
+# 3. Pancreas
+
+```{r}
+# load necessary files from our created RData.
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(paste(projectPath, "sessions", "RData", sep = "/"))
+
+load(file = "pancreas_vsnrma_matrix.RData")
+
+load(file = "pancreas_GeneExprs.RData")
+
+load(file = "pancreas_GeneExprs_sub.RData")
+
+load(file = "pancreas_GeneExprs_sub_combined.RData")
+
+load(file = "pancreas_GeneExprs_combined.RData")
+
+load(file = "pancreas_TRAexprs.RData")
+```
+
+```{r}
+## Calculate variance of rows (genes) of the pancreas control group
+
+pancreas_TRA_ctrl <- pancreas_GeneExprs_sub_combined[, 4:6]
+var_pancreas_TRA_ctrl <- apply(pancreas_TRA_ctrl, 1, var, na.rm=TRUE)
+
+## Create function to filter out the top 2.5% of variance.
+
+top2.5 <- function(x) {
+  x >= quantile(x, 0.975)
+}
+
+## Apply function to variance set, to determine the top 5% of variance.
+
+top2.5_var_ctrl_pancreas <- top2.5(var_pancreas_TRA_ctrl)
+
+top2.5_var_ctrl_pancreas_names <- which(top2.5_var_ctrl_pancreas == "TRUE")
+
+high_var_ctrl_pancreas <- pancreas_TRA_ctrl[top2.5_var_ctrl_pancreas_names, , drop = FALSE]
+
+dim(high_var_ctrl_pancreas)
+
+## data set complete: 250 genes
+## data set high variance: 7 genes
+
+rownames(high_var_ctrl_pancreas)
+
+```
+
+#### Boxplot of identified 2.5% high variance genes in pancreas control
+
+```{r}
+
+med_pancreas_TRA <- apply(pancreas_TRA_ctrl, 1, median, na.rm=TRUE)
+
+par(las = 2)
+par(mai = c(1.1,0.5,0.5,0.1))
+
+boxplot(t(high_var_ctrl_pancreas), col = rainbow(7), main = "2.5% high variance genes of pancreas control group"); 
+abline(h = median(med_pancreas_TRA), col = "red")
+```
+
+#### High variance genes depending on the chip
+
+```{r}
+ctrl_high_var_pancreas <- cbind(high_var_ctrl_pancreas["FBXL8",], 
+                                high_var_ctrl_pancreas["GOLGA8A",], 
+                                high_var_ctrl_pancreas["GOLGA8B",], 
+                                high_var_ctrl_pancreas["IL32",], 
+                                high_var_ctrl_pancreas["PRSS2",], 
+                                high_var_ctrl_pancreas["SEL1L",], 
+                                high_var_ctrl_pancreas["SYCN",])
+
+col_ctrl_treat_pancreas <- c("FBXL8", "GOLGA8A", "GOLGA8B", "IL32", "PRSS2", "SEL1L", "SYCN" )
+
+# Plots
+
+par(mfrow = c(2,2), mai = c(0.75,0.7,0.5,0.1))
+
+## control 
+
+for (i in 1:ncol(ctrl_high_var_pancreas)){
+  plot(ctrl_high_var_pancreas[,i], 
+       type = "b", 
+       xlab = "Microarray Number", ylab = "Gene expression", 
+       main = paste(col_ctrl_treat_pancreas[i], "\n", "Pancreas Control"))
+}
+```
+
