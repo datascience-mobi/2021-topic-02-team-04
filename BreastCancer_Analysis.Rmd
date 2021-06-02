@@ -1,0 +1,462 @@
+---
+title: "Analysis of Breast Cancer data set"
+author: "Bianca Greul"
+date: "26 5 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# libraries
+
+```{r libraries, include=FALSE}
+# Bioconductor
+library(affy)
+library(vsn)
+library(AnnotationDbi)
+library(hgu133plus2hsenstcdf)
+library(hgu133plus2hsenstprobe)
+library(hexbin)
+
+library(rstudioapi) 
+library(tidyverse) 
+library(ggplot2) 
+library(pheatmap)
+library(stats)
+library(dplyr)
+library(ggfortify)
+library(reshape2)
+library(ggrepel) 
+```
+
+
+# 1. functions
+
+## 1.1 combineGeneExprs
+```{r}
+# ------------------------------------------------
+# function: genes in expression matrix that are mentioned more than once are combined 
+# ------------------------------------------------
+
+combineGeneExprs_median <- function(exprsmatrix){
+  # all unique genes
+  genes <- unique(rownames(exprsmatrix))
+  # empty matrix
+  result <- matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # for each gene: find indices, combine rows by using median
+  for (i in genes){
+    indices <- which(rownames(exprsmatrix) == i)
+    gene_matrix <- exprsmatrix[indices,]
+    # combine values only if gene_matrix has 2 or more rows
+    if (length(indices) > 1){
+      # for each microarray: compute median of gene expression for certain gene 
+      combined <-  apply(gene_matrix,2,function(x){median(x)})
+      result <- rbind(result, combined, deparse.level = 1)}
+    # if there is only one row: no need to combine values
+    else if (length(indices) == 1){result = rbind(result, gene_matrix)}
+  }
+  rownames(result) = genes
+  # output
+  result
+}
+
+combineGeneExprs_sum <- function(exprsmatrix){
+  # all unique genes
+  genes <- unique(rownames(exprsmatrix))
+  # empty matrix
+  result <- matrix(ncol = ncol(exprsmatrix), nrow = 0)
+  # for each gene: find indices, combine rows by using sum
+  for (i in genes){
+    indices <- which(rownames(exprsmatrix) == i)
+    gene_matrix <- exprsmatrix[indices,]
+    # combine values only if gene_matrix has 2 or more rows
+    if (length(indices) > 1){
+      # for each microarray: compute sum of gene expression for certain gene 
+      combined <-  apply(gene_matrix,2,function(x){sum(x)})
+      result <- rbind(result, combined, deparse.level = 1)}
+    # if there is only one row: no need to combine values
+    else if (length(indices) == 1){result = rbind(result, gene_matrix)}
+  }
+  rownames(result) = genes
+  # output
+  result
+} 
+
+combineGeneExprs_median2 <- function(exprsmatrix){
+  # create data frame with a column of all the gene symbols
+  data <- data.frame(geneSymbols = rownames(exprsmatrix),
+                     exprsmatrix, 
+                     row.names = NULL)
+  # group data frame by gene symbols and combine values of one gene by median
+  combined <- aggregate(data[-1], by = list(data$geneSymbols) , FUN = median)
+  # convert data frame to matrix (only expression values, no row names)
+  result <- as.matrix(combined[,-1])
+  # use gene symbols as row names
+  rownames(result) <- combined[,1]
+  # output
+  result
+}
+
+```
+
+
+# 2. expression data sets
+
+## 2.1 create vsn normalized expression matrix
+
+Breast Cancer dataset, GSE27830
+```{r}
+# ------------------------------------------------
+# steps already done in Quality Control
+# ------------------------------------------------
+
+set.seed(567)
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+# get CEL files
+setwd(paste(projectPath, "rawdata", "rawdata breast GSE27830", sep = "/"))
+data_breast <- ReadAffy()
+# change cdf
+data_breast@cdfName <- "HGU133Plus2_Hs_ENST"
+# create expression matrix
+breast_matrix <- exprs(data_breast)
+# store colnames (microarray)
+breast_microarray_information <- colnames(breast_matrix)
+# vsnrm normalization
+breast_vsnrma <- vsnrma(data_breast)
+# expression matrix of vsnrm normalized data set
+breast_vsnrma_matrix <- exprs(breast_vsnrma)
+# cut rownames at "." ("ENST00000000233.10_at"  becomes "ENST00000000233")
+rownames(breast_vsnrma_matrix) <- str_replace(rownames(breast_vsnrma_matrix),"\\..*","")
+
+```
+
+
+# 3. Processing of data
+
+## 3.1 remove control probes
+```{r}
+# ------------------------------------------------
+# remove control probes from normalized data set
+# ------------------------------------------------
+dim(breast_vsnrma_matrix) # before
+# 95721    10
+
+breast_transcript_names <- rownames(breast_vsnrma_matrix)
+
+breast_vsnrma_matrix <- breast_vsnrma_matrix[which(!startsWith(breast_transcript_names, "AFFX")),] # remove control probes (AFFX) 
+
+dim(breast_vsnrma_matrix) # after
+# 95659    10
+
+```
+## 3.2 convert transcript IDs to gene symbols
+
+```{r}
+# ------------------------------------------------
+# convert Affymetrix IDs to gene symbols
+# ------------------------------------------------
+
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+annotation = read.csv("ensemble.103.txt") 
+# file comes from www.ensembl.org/biomart
+
+```
+
+```{r}
+ensemble_genes = annotation[,"Gene.stable.ID"]
+ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
+ensemble_affyID = annotation[,"AFFY.HG.U133.Plus.2.probe"]
+ensemble_symbol = annotation[,"HGNC.symbol"]
+
+# which transcripts from the microarray are not listed in the ensemble.103.txt file?
+breast_nomatchesIDs <- rownames(breast_vsnrma_matrix)[!(rownames(breast_vsnrma_matrix) %in% ensemble_transcripts)]
+length(breast_nomatchesIDs)
+# 112  (these transcripts dont occur in the txt file)
+
+# remove these 112 transcripts from expression data
+breast_vsnrma_matrix <- breast_vsnrma_matrix[rownames(breast_vsnrma_matrix) %in% ensemble_transcripts,]
+dim(breast_vsnrma_matrix)
+# 95547    10
+
+
+# select only those symbols that are in the diabetes data set
+names(ensemble_symbol) <- ensemble_transcripts 
+breast_symbol <- ensemble_symbol[rownames(breast_vsnrma_matrix)]
+# symbols already in right order for diabetes_vsnrma_matrix
+
+
+# name the probes according to gene symbol
+rownames(breast_vsnrma_matrix) <- as.character(breast_symbol)
+
+# ------------------------------------------------
+# check for NAs or "" 
+# ------------------------------------------------
+
+sum(is.na(rownames(breast_vsnrma_matrix)))
+# 0 are NA
+
+sum(rownames(breast_vsnrma_matrix) == "")
+# 1096 are ""
+```
+
+## 3.3 sort gene symbols alphabetically 
+```{r}
+# ------------------------------------------------
+# alphabetical order + deletion of all rows with "" as gene symbol (1096)
+# ------------------------------------------------
+
+breast_GeneExprs <- breast_vsnrma_matrix[order(rownames(breast_vsnrma_matrix)),][1097:nrow(breast_vsnrma_matrix),] 
+
+dim(breast_GeneExprs)
+# 94451    24
+
+head(breast_GeneExprs)
+```
+
+```{r}
+# ------------------------------------------------
+# save as .csv file 
+# ------------------------------------------------
+
+# create excel table with columns: genenames, gene expression values for each mircoarray
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+write.csv2(breast_GeneExprs, file = "breast_GeneExprs.csv", sep = ";", dec = ",")
+
+# # can be read by using read.csv2
+# setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+# test = read.csv2("diabetes_GeneExprs.csv")
+# sym = test[,"X"]
+# diabetes_GeneExprs = as.matrix(test[,2:ncol(test)])
+# rownames(diabetes_GeneExprs) <- sym 
+# diabetes_GeneExprs
+# remove(sym)
+# remove(test)
+```
+
+## 3.4 select only pancreas specific TRAs
+```{r}
+# ------------------------------------------------
+# minimize expression matrix: only pancreas TRAs 
+# ------------------------------------------------
+
+# get the tissue specific genes from "TRA Daten"
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+pancreas_specific_genes = read.csv("pancreas_specific_genes_human.csv")
+pancreas_specific_genes = sort(pancreas_specific_genes)
+
+# create a expression matrix with only those genes
+breast_GeneExprs_sub = breast_GeneExprs[which(rownames(breast_GeneExprs) %in% pancreas_specific_genes),]
+
+dim(breast_GeneExprs_sub) 
+# 1569   24 
+length(unique(rownames(breast_GeneExprs_sub)))
+# 250 (number of TRA genes in the expression matrix)
+head(breast_GeneExprs_sub)
+
+```
+
+## 3.5 combine genes 
+```{r}
+# ------------------------------------------------
+# use of own function to combine values of genes that are mentioned more than once
+# ------------------------------------------------
+
+breast_GeneExprs_sub_combined <- combineGeneExprs_median2(breast_GeneExprs_sub)
+dim(combineGeneExprs_median2(breast_GeneExprs_sub))
+# 250  10
+
+dim(combineGeneExprs_median2(breast_GeneExprs))
+# 18062    10
+```
+
+
+# 4. TRA Analysis 
+
+## 4.1 Breast Cancer TRA expression analyis of pancreatic cancer sets
+
+```{r}
+### mean insgesamt und für jedes Set einzelnd
+mean(breast_GeneExprs_sub_combined)
+## 7.317744
+apply(breast_GeneExprs_sub_combined, 2, mean)
+
+### median insgesamt und für jedes Set einzelnd
+median(breast_GeneExprs_sub_combined)
+## 6.839355
+apply(breast_GeneExprs_sub_combined, 2, median)
+
+### sd ingesamt und für jedes Set einzelnd
+sd(breast_GeneExprs_sub_combined)
+##  1.384234
+apply(breast_GeneExprs_sub_combined, 2, sd)
+
+```
+
+```{r}
+## lowest expressed Gene each chip:
+
+for(i in 1:10)
+{min_value <- min(breast_GeneExprs_sub_combined[,i])
+min_gene <- row.names(breast_GeneExprs_sub_combined)[breast_GeneExprs_sub_combined[,i] == min_value]
+print(min_value)
+print(min_gene)}
+```
+
+```{r}
+### highest expressed Gene each chip:
+
+for(i in 1:10)
+{max_value <- max(breast_GeneExprs_sub_combined[,i])
+max_gene <- row.names(breast_GeneExprs_sub_combined)[breast_GeneExprs_sub_combined[,i] == max_value]
+print(max_value)
+print(max_gene)}
+
+```
+
+## 4.2 High Variance TRA genes in breast cancer data set
+
+```{r}
+## Calculate variance of rows (genes)
+
+var_di <- apply(breast_GeneExprs_sub_combined, 1, var, na.rm=TRUE)
+
+## Create function to filter out the top 25% of variance.
+
+top5 <- function(x) {
+  x >= quantile(x, 0.75)
+}
+
+## Apply function to variance set, to determine the top 5% of variance.
+
+top5_di <- top5(var_di)
+
+top5_di_names <- which(top5_di == "TRUE")
+
+high_var_breast_sub <- breast_GeneExprs_sub_combined[top5_di_names, , drop = FALSE]
+
+dim(high_var_breast_sub)
+
+## data set complete: 250 genes
+## data set high variance: 63 genes
+```
+
+## 4.3 TRAs in Diabetes Control Group
+
+### Read in functions for combining gene expression: median or sum.
+
+```{r}
+## Create new matrix containing the control groups of the diabetes dataset with only TRA specific genes. We are unsure whether we should choose sum or median to combine the gene expressions.
+
+## Median
+breast_GeneExprs_sub_combined_median <- combineGeneExprs_median(breast_GeneExprs_sub)
+
+## Sum
+breast_GeneExprs_sub_combined_sum <- combineGeneExprs_sum(breast_GeneExprs_sub)
+```
+
+
+### 4.3.1 Genes with high expression levels 
+
+#### Results are not similar for sum/median technique
+
+```{r}
+# Median
+
+med_breast_TRA_median <- apply(breast_GeneExprs_sub_combined_median, 1, median, na.rm=TRUE)
+median(med_breast_TRA_median)
+
+## Median: 6.836378
+
+## Search for genes, whose median gene expression are more than 1.8 times that of the median.
+which(med_breast_TRA_median > (1.8 * median(med_breast_TRA_median)))
+## Names of genes that fit this criteria: 2 in total.
+## GNAS RPL5 RPL8 RPS9
+
+## Expression values of those genes:
+breast_above2med_TRA_median <- breast_GeneExprs[which(med_breast_TRA_median > (1.8 * median(med_breast_TRA_median)))]
+breast_above2med_TRA_median
+```
+
+```{r}
+# Sum 
+
+med_breast_TRA_sum <- apply(breast_GeneExprs_sub_combined_sum, 1, median, na.rm=TRUE)
+median(med_breast_TRA_sum)
+
+## Median: 30.79868
+
+## Search for genes, whose median gene expression are more than 1.5 times that of the median.
+which(med_breast_TRA_sum > (5 * median(med_breast_TRA_sum)))
+## Names of genes that fit this criteria:
+##  ABCC8     CD44    FGFR1     FXR1     GNAS     IL32     P4HB   PABPC4    PSEN2     RPS9 SERPINB6     TPM1    VEGFA 
+
+## Expression values of those genes:
+breast_above2med_TRA_sum <- breast_GeneExprs[which(med_breast_TRA_sum > (5 * median(med_breast_TRA_sum)))]
+breast_above2med_TRA_sum
+```
+
+### 4.3.2 What are the genes that have a high variance?
+
+```{r}
+## Calculate variance of rows (genes)
+
+var_breast_TRA_ctrl_median <- apply(breast_GeneExprs_sub_combined_median, 1, var, na.rm=TRUE)
+
+## Create function to filter out the top 25% of variance.
+
+top5 <- function(x) {
+  x >= quantile(x, 0.975)
+}
+
+## Apply function to variance set, to determine the top 5% of variance.
+
+top5_var_ctrl_median <- top5(var_breast_TRA_ctrl_median)
+
+top5_var_ctrl_median_names <- which(top5_var_ctrl_median == "TRUE")
+
+high_var_breast_ctrl_median <- breast_GeneExprs_sub_combined_median[top5_var_ctrl_median_names, , drop = FALSE]
+
+dim(high_var_breast_ctrl_median)
+
+## data set complete: 250 genes
+## data set high variance: 7 genes
+
+rownames(high_var_breast_ctrl_median)
+```
+
+
+# 5. Plots
+
+## boxplot of TRAs
+
+```{r fig.height=20}
+
+par(las = 2)
+
+boxplot(t(combineGeneExprs_median2(breast_GeneExprs_sub)),
+         col = rainbow(250),
+         main="Breast Cancer TRA gene expression")
+abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
+
+```
+
+## heatmap of TRAs
+
+```{r}
+
+filenames <- rownames(pData(data_breast)) 
+breast_samples <- substr(filenames, 1, 9)
+
+pheatmap(t(breast_GeneExprs_sub), 
+         labels_row = paste(breast_samples),
+         labels_col = rep("",nrow(breast_GeneExprs_sub)))
+
+# after combining
+pheatmap(t(combineGeneExprs_median2(breast_GeneExprs_sub)), 
+         labels_row = paste(breast_samples),
+         labels_col = rep("",nrow(breast_GeneExprs_sub)))
+```
