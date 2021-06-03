@@ -18,6 +18,7 @@ library(tidyverse)
 ```{r}
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 projectPath
+
 ```
 PDAC dataset, GSE59761, data is downloaded from the GEO database.
 Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database.
@@ -163,11 +164,12 @@ diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_s
 # combine all rows where values are exactly the same (leave isoforms)
 pancreas_TRAexprs <- distinct(pancreas_TRAexprs)
 diabetes_TRAexprs <- distinct(diabetes_TRAexprs)
+
 ```
 
 ```{r}
 setwd(paste(projectPath, "sessions", "RData" ,sep = "/"))
-getwd()
+
 # information about microarrays
 
 save(pancreas_microarrays, file = "pancreas_microarrays.RData")
