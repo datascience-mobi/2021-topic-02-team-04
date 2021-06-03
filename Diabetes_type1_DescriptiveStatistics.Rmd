@@ -3,7 +3,7 @@ title: "Diabetes: High Variance and Descriptive Statistics"
 author: "Bianca Greul"
 date: "15 5 2021"
 output: html_document
----
+--- 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -103,6 +103,7 @@ dim(high_var_diabetes)
 
 ## data set complete: 94451 genes
 ## data set high variance: 4729 genes
+
 ```
 
 
@@ -122,7 +123,7 @@ which(med_diab > (1.9 * median(med_diab)))
 
 ## Expression values of those genes.
 
-diab_above2med <- diabetes_GeneExprs[which(med_diab > (1.9 * median(med_diab)))]
+diab_above2med <- diabetes_GeneExprs[which(med_diab > (1.9 * median(diabetes_GeneExprs))),]
 diab_above2med
 ```
 
@@ -142,7 +143,7 @@ median_1_5
 
 ## This is true for the following genes: CXCL9 CXCL10 CXCL11 IDO1
 
-## Their gene expression changed from...
+## Their median gene expression changed from...
 median_ctrl[median_1_5]
 ## ... to:
 median_treat[median_1_5]
@@ -153,6 +154,60 @@ median_reduced <- which((1.2 * median_treat) < (median_ctrl))
 head(median_reduced)
 
 ## Following genes have a reduced median gene expression after treatment: OLFM4, AKR1B10
+
+```
+
+```{r}
+# using log2 fold change:
+log2.fold.change <- function(control, test){
+  
+  # only if control have the same row numbers
+  if(nrow(control) == nrow(test)){
+    
+    # control / treatment (values combined by median)
+    ratio = sapply(1:nrow(control), function(x){
+      g1_m = median(control[x,])
+      g2_m = median(test[x,])
+      g2_m/g1_m # change of treatment to control
+    })
+    # log2 on ratio => log2(treatment/control)
+    log2_foldchange = log2(ratio)
+    # ttest control vs treatment (expression values)
+    t = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      t.test(control[x,], test[x,])$p.value
+    })
+    # wilcoxon rank sum test control vs treatment (expression values)
+    w = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      wilcox.test(control[x,], test[x,], exact = FALSE)$p.value
+    })
+    
+  }else{print("Something has gone wronge with the dimensions of the groups (probably row numbers)!")}
+  
+  trend = 1:length(t)
+  trend[t < 0.05 & log2_foldchange > 0] = "up"
+  trend[t < 0.05 & log2_foldchange < 0] = "down"
+  trend[t >= 0.05] = "not significant"
+  
+  # output
+  data.frame(GeneSymbol = rownames(control), # genes
+             foldchange_ratio = ratio, # without log2
+             log2_foldchange = log2_foldchange,  # log2 foldchange
+             ttest_raw_pvalue = t,# ttest
+             ttest_log10_pvalue = -1*log10(t),
+             trend = trend,
+             wilcox_raw_pvalue = w, # wilcoxon rank sum test
+             wilcox_log10_pvalue = -1*log10(w)
+             )
+}
+
+diabetes_allgenes_fc = log2.fold.change(diabetes_ctrl, diabetes_treat)
+hist(diabetes_allgenes_fc$foldchange_ratio)
+filter(t, foldchange_ratio > 1.5) # high expressed in treatment 
+filter(t, foldchange_ratio < (1/1.2)) # low expressed in treatment
 
 ```
 
@@ -229,7 +284,7 @@ head(all_TRA_GeneExprs_sub)
 ## 2.1 pancreatic TRA expression analyis of all diabetis sets
 
 ```{r}
-diabetes_GeneExprs_sub_combined <- combineGeneExprs_sum(diabetes_GeneExprs_sub)
+# diabetes_GeneExprs_sub_combined <- combineGeneExprs_sum(diabetes_GeneExprs_sub)
 
 head(diabetes_GeneExprs_sub_combined)
 dim(diabetes_GeneExprs_sub_combined)
@@ -344,7 +399,6 @@ top5_di_names <- which(top5_di == "TRUE")
 high_var_diabetes_sub <- diabetes_GeneExprs_sub_combined[top5_di_names, , drop = FALSE]
 
 dim(high_var_diabetes_sub)
-
 ## data set complete: 250 genes
 ## data set high variance: 63 genes
 ```
@@ -443,6 +497,7 @@ diabetes_TRA_ctrl_median_growing
 ## Only 10 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
 ```
 
+
 ```{r}
 # Sum
 
@@ -459,6 +514,7 @@ diabetes_TRA_ctrl_sum_growing
 
 ## Is the change significant?
 ## Only 10 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
+
 ```
 
 
@@ -475,7 +531,7 @@ top2.5 <- function(x) {
   x >= quantile(x, 0.975)
 }
 
-## Apply function to variance set, to determine the top 5% of variance.
+## Apply function to variance set, to determine the top 2.5% of variance.
 
 top2.5_var_ctrl_median <- top2.5(var_diabetes_TRA_ctrl_median)
 
@@ -569,7 +625,6 @@ rownames(high_var_diabetes_treat_median)
 
 ## Create a data set with those genes: ctrl and treatment.
 ## Control data set reduced to the same number of microarrays as treatment.
-
 col_diab <- c(2:11, 13)
 
 ctrl_treat_high_var <- cbind(high_var_diabetes_ctrl_median["CUZD1",col_diab], high_var_diabetes_treat_median["CUZD1",],
