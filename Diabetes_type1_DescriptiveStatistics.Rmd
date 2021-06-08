@@ -419,7 +419,7 @@ abline(h = median(diabetes_GeneExprs_sub_combined), col = "red")
 ### Read in functions for combining gene expression: median or sum.
 
 ```{r}
-## Create new matrix containing the control groups of the diabetes dataset with only TRA specific genes. We are unsure whether we should choose sum or median to combine the gene expressions.
+## Create new matrix containing the control groups of the diabetes dataset with only TRA specific genes. 
 
 set.seed(977)
 
@@ -427,16 +427,10 @@ set.seed(977)
 
 diabetes_TRA_ctrl_median <- diabetes_GeneExprs_sub_combined[, 1:13]
 
-## Sum
-
-diabetes_GeneExprs_sub_combined_sum <- combineGeneExprs_sum(diabetes_GeneExprs_sub)
-diabetes_TRA_ctrl_sum <- diabetes_GeneExprs_sub_combined_sum[, 1:13]
 ```
 
 
 ### 2.3.1 Genes with high expression levels 
-
-#### Results are not similar for sum/median technique
 
 ```{r}
 # Median
@@ -456,28 +450,8 @@ diab_above2med_TRA_median <- diabetes_GeneExprs[which(med_diab_TRA_median > (1.8
 diab_above2med_TRA_median
 ```
 
-```{r}
-# Sum 
-
-med_diab_TRA_sum <- apply(diabetes_TRA_ctrl_sum, 1, median, na.rm=TRUE)
-median(med_diab_TRA_sum)
-
-## Median: 38.43985
-
-## Search for genes, whose median gene expression are more than 1.5 times that of the median.
-which(med_diab_TRA_sum > (5 * median(med_diab_TRA_sum)))
-## Names of genes that fit this criteria: 2 in total (some are doubled).
-## ABCC8, CD44, FGFR1, GNAS, IL32, P4HB, PABPC4, PSEN2, RPS9, SERPINB6, TPM1, VEGFA
-
-## Expression values of those genes:
-diab_above2med_TRA_sum <- diabetes_GeneExprs[which(med_diab_TRA_sum > (5 * median(med_diab_TRA_sum)))]
-diab_above2med_TRA_sum
-```
-
 
 ### 2.3.2 Genes that are differently expressed over the time period
-
-#### Results are the same for sum/median technique
 
 ```{r}
 # Median 
@@ -495,26 +469,6 @@ diabetes_TRA_ctrl_median_growing
 
 ## Is the change significant?
 ## Only 10 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
-```
-
-
-```{r}
-# Sum
-
-## Genes that are expressed 1.3 times less in the last chip than in the first.
-diabetes_TRA_ctrl_sum_receding <- (which(diabetes_TRA_ctrl_sum[,1] > (1.3 * diabetes_TRA_ctrl_sum[,13])))
-## 10 genes
-
-## Genes that are expressed 1.2 times less in the last chip than in the first.
-diabetes_TRA_ctrl_sum_growing <- (which((1.2 *diabetes_TRA_ctrl_sum[,1]) < diabetes_TRA_ctrl_sum[,13]))
-## 4 genes
-
-diabetes_TRA_ctrl_sum_receding
-diabetes_TRA_ctrl_sum_growing
-
-## Is the change significant?
-## Only 10 and 4 genes differently expressed at threshold levels of 1.3 and 1.2
-
 ```
 
 
