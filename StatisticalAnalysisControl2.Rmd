@@ -167,7 +167,29 @@ View(differentialdifferencematrixorderedabs)
 #Distribution of the mean differences
 hist(as.integer(differentialdifferencematrixordered[,2]),breaks = "FD",xlab="Meandifference",main="Distribution of mean difference for differential expressed genes",col="orange")
 ```
+log2foldchange to visualize differential expressed genes
 
+```{r}
+differentialcontrol_diabetes_pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, diabetes_GeneExprs_sub_control)
+
+arrange(differentialcontrol_diabetes_pancreas_fc, -log2_foldchange)
+
+ggplot(data = differentialcontrol_diabetes_pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for control vs. control (GSE53454 & GSE59761)", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = control beta cells / control PDAC cells") +
+  xlim(c(-max(abs(differentialcontrol_diabetes_pancreas_fc$log2_foldchange)),
+         max(abs(differentialcontrol_diabetes_pancreas_fc$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"), 
+                     labels = c("higher in PDAC cells", "not significant", "higher in beta cells")) + 
+  geom_text_repel(size = 2, max.overlaps = 30)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
+
+```
 
 Boxplot highly expressed TRAs PDAC
 ```{r}
