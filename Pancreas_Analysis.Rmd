@@ -418,7 +418,7 @@ pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
 head(pancreas_df) 
 
 # PCA on the TRA expressions
-pancreas_pca <- prcomp(pancreas_df[,-1])
+pancreas_pca <- prcomp(pancreas_df[,-1], scale. = TRUE)
 
 # elbow plot 
 plot(x = 1:5, y = sapply(1:5, function(i){kmeans(pancreas_pca$x,i)$tot.withinss}), 
@@ -426,10 +426,21 @@ plot(x = 1:5, y = sapply(1:5, function(i){kmeans(pancreas_pca$x,i)$tot.withinss}
 # result: k = 2 
 
 # plot PC1 against PC2 and show the eigenvectors (loadings)
-autoplot(prcomp(pancreas_df[,-c(1,2)]), data = pancreas_df, colour = "treatment", main = "Principal Component Analysis on beta cell data set", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
-autoplot(prcomp(pancreas_df[,-c(1,2)]), data = pancreas_df, colour = "treatment", loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3, main = "Principal Component Analysis on beta cell data set", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
+autoplot(pancreas_pca, data = pancreas_df, colour = "treatment", main = "Principal Component Analysis on PDAC data set (GSE59761)", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_pca_microarrays.pdf")
+
+autoplot(pancreas_pca, data = pancreas_df, colour = "treatment", loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3, main = "Principal Component Analysis on PDAC data set (GSE59761)", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
+
+
 # plot kmeans for k = 2
-autoplot(kmeans(pancreas_pca$x,2), data = pancreas_pca$x, frame = TRUE,  xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1, main = "kmeans clustering (k=2) on beta cell data set")
+autoplot(kmeans(pancreas_pca$x,2), data = pancreas_pca$x, frame = TRUE,  xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1, main = "kmeans clustering (k=2)\nafter PCA on PDAC data set (GSE59761)") + 
+  scale_color_hue(direction = -1, h.start = 90) +
+  scale_fill_hue(direction = -1, h.start = 90)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_pca_kmeans_microarrays.pdf")
 
 # add cluster numbers to already existing data frame (rows = microarrays)
 pancreas_df <- cbind(kmeans2 = kmeans(pancreas_pca$x,2)$cluster, pancreas_df)
@@ -468,11 +479,10 @@ pancreas_var = sort(apply(pancreas_GeneExprs_sub_combined,1,var), decreasing = T
 
 # are these high variance genes the same as the mediangenes that strongly contribute to PCA?
 pancreas_pca_importantGenes %in% names(pancreas_var[pancreas_var > 2*median(pancreas_var)])
-# all PCA contributing genes have a 2x variance higher than median variance
-names(pancreas_var)[1:9] %in% pancreas_pca_importantGenes
-# all top 9 high variance genes contribute strongly in PCA
+# many PCA contributing genes have a 2x variance higher than median variance
+names(pancreas_var)[1:5] %in% pancreas_pca_importantGenes
+# all top 5 high variance genes contribute strongly in PCA
 # (there are genes with high variance that don't really contribute to PC1/PC2)
-
 ```
 
 ```{r}
@@ -566,7 +576,7 @@ log2.fold.change <- function(control, test){
     ratio = sapply(1:nrow(control), function(x){
       g1_m = median(as.numeric(control[x,]))
       g2_m = median(as.numeric(test[x,]))
-      g2_m/g1_m # change of treatment to control
+      g2_m/g1_m # change of test to control
     })
     # log2 on ratio => log2(treatment/control)
     log2_foldchange = log2(ratio)
@@ -584,21 +594,27 @@ log2.fold.change <- function(control, test){
     })
     
   }else{print("Something has gone wrong with the dimensions of the groups (probably row numbers)!")}
+   
+  trend_t = 1:length(t)
+  trend_t[t < 0.05 & log2_foldchange > 0] = "up"
+  trend_t[t < 0.05 & log2_foldchange < 0] = "down"
+  trend_t[t >= 0.05] = "not significant"
   
-  trend = 1:length(t)
-  trend[t < 0.05 & log2_foldchange > 0] = "up"
-  trend[t < 0.05 & log2_foldchange < 0] = "down"
-  trend[t >= 0.05] = "not significant"
+  trend_w = 1:length(w)
+  trend_w[w < 0.05 & log2_foldchange > 0] = "up"
+  trend_w[w < 0.05 & log2_foldchange < 0] = "down"
+  trend_w[w >= 0.05] = "not significant"
   
   # output
   data.frame(GeneSymbol = rownames(control), # genes
              foldchange_ratio = ratio, # without log2
              log2_foldchange = log2_foldchange,  # log2 foldchange
              ttest_raw_pvalue = t,# ttest
-             trend = trend,
-             ttest_log10_pvalue = -1*log10(t), 
+             ttest_log10_pvalue = -1*log10(t),
+             ttest_trend = trend_t, 
              wilcox_raw_pvalue = w, # wilcoxon rank sum test
-             wilcox_log10_pvalue = -1*log10(w))
+             wilcox_log10_pvalue = -1*log10(w),
+             wilcox_trend = trend_w)
 
 }
 
@@ -613,18 +629,24 @@ pancreas_fc
 filter(pancreas_fc, abs(log2_foldchange) > 0.15)
 max(abs(pancreas_fc$log2_foldchange))
 
-ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol)) + 
+ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") + 
-  labs(title = "Vulcano plot (wilcoxon rank sum test)", 
-       x = "log2 fold change", y = "-log10 (p-value)") +
+  labs(title = "Volcano plot (wilcoxon rank sum test) for PDAC data set (GSE59761)", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = treatment/control") +
   xlim(c(-max(abs(pancreas_fc$log2_foldchange)),
-         max(abs(pancreas_fc$log2_foldchange))))
+         max(abs(pancreas_fc$log2_foldchange))))+
+  scale_color_manual(values = c("grey"))+ 
+  geom_text_repel(size = 2, max.overlaps = 20)
 
-ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = trend)) + 
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_vulcano_wilcox.pdf")
+
+ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = ttest_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") + 
-  labs(title = "Vulcano plot (t test)", 
+  labs(title = "Volcano plot (t test)", 
        x = "log2 fold change", y = "-log10 (p-value)") +
   xlim(c(-max(abs(pancreas_fc$log2_foldchange)),
          max(abs(pancreas_fc$log2_foldchange))))+ 
