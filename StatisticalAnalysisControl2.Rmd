@@ -6,6 +6,11 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+```{r message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggrepel) 
+```
 
 
 
@@ -141,7 +146,6 @@ differentialexpressedgenenames <- Gensymbol_pvalue_differential_matrix[,1]
 # Selecting only the genes that are differential expressed
 differentialdifferencematrix <- differencemeanmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
 differentialdifferencematrixabs <- differencemeanmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
-
 ```
 
 ```{r}
@@ -170,24 +174,78 @@ hist(as.integer(differentialdifferencematrixordered[,2]),breaks = "FD",xlab="Mea
 log2foldchange to visualize differential expressed genes
 
 ```{r}
-differentialcontrol_diabetes_pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, diabetes_GeneExprs_sub_control)
+log2.fold.change <- function(control, test){
+  
+  # only if control have the same row numbers
+  if(nrow(control) == nrow(test)){
+    
+    # control / treatment (values combined by median)
+    ratio = sapply(1:nrow(control), function(x){
+      g1_m = median(control[x,])
+      g2_m = median(test[x,])
+      g2_m/g1_m # change of treatment to control
+    })
+    # log2 on ratio => log2(treatment/control)
+    log2_foldchange = log2(ratio)
+    # ttest control vs treatment (expression values)
+    t = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      t.test(g1, g2)$p.value
+    })
+    # wilcoxon rank sum test control vs treatment (expression values)
+    w = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      wilcox.test(g1, g2, exact = FALSE)$p.value
+    })
+    
+  }else{print("Something has gone wronge with the dimensions of the groups (probably row numbers)!")}
+  
+  trend_t = 1:length(t)
+  trend_t[t < 0.05 & log2_foldchange > 0] = "up"
+  trend_t[t < 0.05 & log2_foldchange < 0] = "down"
+  trend_t[t >= 0.05] = "not significant"
+  
+  trend_w = 1:length(w)
+  trend_w[w < 0.05 & log2_foldchange > 0] = "up"
+  trend_w[w < 0.05 & log2_foldchange < 0] = "down"
+  trend_w[w >= 0.05] = "not significant"
+  
+  # output
+  data.frame(GeneSymbol = rownames(control), # genes
+             foldchange_ratio = ratio, # without log2
+             log2_foldchange = log2_foldchange,  # log2 foldchange
+             ttest_raw_pvalue = t,# ttest
+             ttest_log10_pvalue = -1*log10(t),
+             ttest_trend = trend_t,
+             wilcox_raw_pvalue = w, # wilcoxon rank sum test
+             wilcox_log10_pvalue = -1*log10(w),
+             wilcox_trend = trend_w
+             )
+}
 
-arrange(differentialcontrol_diabetes_pancreas_fc, -log2_foldchange)
+differentialcontrol_diabetes_pancreas_fc = log2.fold.change(diabetes_GeneExprs_sub_control, pancreas_GeneExprs_sub_control) # ratio = control PDAC cells / beta cells
+
+View(arrange(differentialcontrol_diabetes_pancreas_fc, -log2_foldchange)) # sort by how much differential expressed
+View(filter(differentialcontrol_diabetes_pancreas_fc, wilcox_trend != "not significant")) # only significant genes 
 
 ggplot(data = differentialcontrol_diabetes_pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
   labs(title = "Volcano plot (wilcox test) for control vs. control (GSE53454 & GSE59761)", 
        x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
-       subtitle = "ratio = control beta cells / control PDAC cells") +
+       subtitle = "ratio = control PDAC cells / beta cells") +
   xlim(c(-max(abs(differentialcontrol_diabetes_pancreas_fc$log2_foldchange)),
          max(abs(differentialcontrol_diabetes_pancreas_fc$log2_foldchange))))+ 
   scale_color_manual(values = c("navyblue", "grey", "orange"), 
-                     labels = c("higher in PDAC cells", "not significant", "higher in beta cells")) + 
+                     labels = c("higher in beta cells", "not significant", "higher in PDAC cells")) + 
   geom_text_repel(size = 2, max.overlaps = 30)
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
+
+
 
 ```
 
