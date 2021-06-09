@@ -103,7 +103,7 @@ Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
 # ------------------------------------------------
 # steps already done in Quality Control
 # ------------------------------------------------
-
+set.seed(132)
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 # get CEL files
 setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
@@ -276,7 +276,7 @@ head(diabetes_GeneExprs_sub)
 # ------------------------------------------------
 
 diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
-dim(combineGeneExprs_median2(diabetes_GeneExprs_sub))
+dim(diabetes_GeneExprs_sub_combined)
 # 250  24
 
 # dim(combineGeneExprs_median2(diabetes_GeneExprs))
@@ -318,53 +318,68 @@ dim(combineGeneExprs_median2(all_TRA_GeneExprs_sub))
 # plots
 ## distributions
 
-```{r fig.height=12}
-par(mfrow = c(5,5), mai = c(0.6,0.6,0.5,0.1))
+```{r}
+par(mai = c(0.85,0.85,0.5,0.1))
 
-for(x in 1:24){
-  hist(diabetes_GeneExprs[,x], 
-       xlab = "gene expression values",
-       main = paste("Histogram of", diabetes_microarrays[x,"number"],"\n", "data set: GSE53454"))
-  abline(v = c(mean(diabetes_GeneExprs[,x]), median(diabetes_GeneExprs[,x])), 
-         col = c("red", "blue"), lwd = 2)
-}
-plot.new()
-legend("center", legend = c("mean", "median"), fill = c("red", "blue"), cex = 2)
+hist(diabetes_GeneExprs_combined, 
+     xlab = "gene expression values",
+     ylab = "probability",
+     main = paste("Histogram of gene expression (data set: GSE53454)"), 
+     freq = FALSE)
+abline(v = c(mean(diabetes_GeneExprs_combined), median(diabetes_GeneExprs_combined)), 
+       col = c("red", "blue"), lwd = 2)
+legend("topright", 
+       legend = c(paste0("mean = ",round(mean(diabetes_GeneExprs_combined),2)), 
+                  paste0("median = ", round(median(diabetes_GeneExprs_combined),2))), 
+       fill = c("red", "blue"))
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
-
 ```
 
 
 
 ## heatmap of TRAs
 ```{r}
+anno = dplyr::select(diabetes_microarrays,treatment, time_h)
+rownames(anno) <- diabetes_microarrays$number
 
 pheatmap(t(diabetes_GeneExprs_sub), 
-         labels_row = paste(diabetes_microarrays[,"time_h"],",",diabetes_microarrays[,"treatment"]),
-         labels_col = rep("",nrow(diabetes_GeneExprs_sub)))
+         labels_col = rep("",nrow(diabetes_GeneExprs_sub)),
+         annotation_row = anno,
+         treeheight_col = 0)
 
 # after combining
-pheatmap(t(combineGeneExprs_median2(diabetes_GeneExprs_sub)), 
-         labels_row = paste(diabetes_microarrays[,"time_h"],",",diabetes_microarrays[,"treatment"]),
-         labels_col = rep("",nrow(diabetes_GeneExprs_sub)))
+pheatmap(t(diabetes_GeneExprs_sub_combined), 
+         labels_col = rep("",nrow(diabetes_GeneExprs_sub)),
+         annotation_row = anno,
+         treeheight_col = 0)
 
 
 
 ```
 ## boxplot of TRAs
 
-```{r fig.height=20}
+```{r}
 # ------------------------------------------------
 # boxplot (very unfinished, just to get an overview)
 # ------------------------------------------------
-par(las = 2)
-boxplot(t(combineGeneExprs_median2(diabetes_GeneExprs_sub)),
-         col = rainbow(250),
-         main="", 
-         horizontal = TRUE)
-abline(v = median(apply(diabetes_vsnrma_matrix, 1,median)))
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.3,0.1), mfrow = c(2,1))
+
+for (i in seq(1,250,by = 50)){
+  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Control")$number]),
+          col = rainbow(50), 
+          main="boxplot of TRA gene expression in beta cells", 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main="boxplot of TRA gene expression in beta cells treated with cytokines", 
+          horizontal = FALSE)
+  grid(NA,NULL)
+}
 
 ```
 
@@ -640,7 +655,7 @@ diabetes_fc_time
 ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = ttest_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
-  labs(title = "Vulcano plot (t test) for ratio = treatment / control", 
+  labs(title = "Volcano plot (t test) for ratio = treatment / control", 
        x = "log2 fold change", y = "-log10 (p-value)") +
   xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
          max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
@@ -649,7 +664,7 @@ ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = ttest_log10_pv
 ggplot(data = diabetes_fc_time, aes(x = log2_foldchange, y = ttest_log10_pvalue, label = GeneSymbol, col = ttest_trend)) + 
   geom_point() +  
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
-  labs(title = "Vulcano plot (t test) for ratio = 1-36h / 48-96h", 
+  labs(title = "Volcano plot (t test) for ratio = 1-36h / 48-96h", 
        x = "log2 fold change", y = "-log10 (p-value)") +
   xlim(c(-max(abs(diabetes_fc_time$log2_foldchange)), 
          max(abs(diabetes_fc_time$log2_foldchange)))) + 
@@ -658,7 +673,7 @@ ggplot(data = diabetes_fc_time, aes(x = log2_foldchange, y = ttest_log10_pvalue,
 ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
-  labs(title = "Vulcano plot (wilcox test) for beta cell data set (GSE53454)", 
+  labs(title = "Volcano plot (wilcox test) for beta cell data set (GSE53454)", 
        x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
        subtitle = "ratio = treatment/control") +
   xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),

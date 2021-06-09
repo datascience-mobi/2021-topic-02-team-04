@@ -222,6 +222,7 @@ boxplot(diabetes_vsnrma_matrix, names = substr(colnames(diabetes_matrix), 1,10),
         main= "Gene expression in mircoarrays (beta cell data set: GSE53454)\nafter vsnrma normalization", 
         horizontal = FALSE, outline = FALSE) # outliers are not drawn
 title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+abline(v = median(diabetes_vsnrma_matrix))
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf") 
@@ -304,9 +305,9 @@ dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 ## 4.5 Scatter plot
 
 ```{r}
-setwd(paste(projectPath, "plots" ,sep = "/"))
-
+setwd(paste(projectPath, "plots", "scatter plots diabetes" ,sep = "/"))
 par(mai = c(0.8,0.8,0.6,0.1), pty = "s")
+
 for (i in 1:23){
   for (j in (i+1):24){
     plot(diabetes_vsnrma_matrix[,i], diabetes_vsnrma_matrix[,j], pch = ".",
@@ -314,23 +315,49 @@ for (i in 1:23){
          ylab = substr(colnames(diabetes_matrix), 1,10)[j])
     abline(0,1,col="red")
 
-    title(main = paste("Scatterplot of microarrays from beta cell data set (GSE53454\n", 
+    title(main = paste("Scatterplot of microarrays (GSE53454)\n", 
                        substr(colnames(diabetes_matrix), 1,10)[i],
                        "and",
                        substr(colnames(diabetes_matrix), 1,10)[j],
                        sep = " ", collapse = NULL))
     
-    file.name = paste("diabetes_scatterplot_",
-                    substr(colnames(diabetes_matrix), 1,10)[i], 
-                    "_",  
-                    substr(colnames(diabetes_matrix), 1,10)[j, 
-                    ".pdf", 
-                    sep = "")
+    file.name = paste0("diabetes_scatterplot_",
+                       substr(colnames(diabetes_matrix), 1,10)[i],
+                       ".pdf")
     # dev.copy2pdf(file = file.name)
-}}
+  }
+
+}
+
+
+
 
 ``` 
 
+```{r fig.height=10}
 
+setwd(paste(projectPath, "plots", "scatter plots diabetes" ,sep = "/"))
 
+par(mai = c(0.6,0.5,0.5,0.1), pty = "s", mfrow = c(4,6))
+i = which(substr(colnames(diabetes_matrix), 9, 10) == "21")
+
+for (j in 1:24){
+  plot(diabetes_vsnrma_matrix[,i], diabetes_vsnrma_matrix[,j], pch = ".",
+         xlab = substr(colnames(diabetes_matrix), 1,10)[i],
+         ylab = substr(colnames(diabetes_matrix), 1,10)[j])
+  abline(0,1,col="red")
+  
+  title(main = paste(substr(colnames(diabetes_matrix), 1,10)[i],
+                     "and",
+                     substr(colnames(diabetes_matrix), 1,10)[j],
+                     sep = " ", collapse = NULL))
+  
+}
+
+file.name = paste0("diabetes_scatterplot_",
+                    substr(colnames(diabetes_matrix), 1,10)[i],
+                   ".pdf")
+
+dev.copy2pdf(file = file.name)
+```
 
