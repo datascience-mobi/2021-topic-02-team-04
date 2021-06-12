@@ -23,7 +23,8 @@ library(stats)
 library(dplyr)
 library(ggfortify)
 library(reshape2)
-library(ggrepel) 
+library(ggrepel)
+library(factoextra) #new
 
 ```
 
@@ -421,6 +422,13 @@ setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "diabetes_pca_kmeans_microarrays.pdf")
 
 autoplot(kmeans(diabetes_pca$x,4), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=4) on beta cell data set") 
+
+# elbow method 
+set.seed(123)
+fviz_nbclust(diabetes_pca$x, kmeans, method = "wss")
+
+#silhuette method plot
+fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
 
 ```
 
