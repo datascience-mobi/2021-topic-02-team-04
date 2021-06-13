@@ -1,0 +1,1221 @@
+---
+title: "TRA expression in pancreas"
+subtitle: "Analysis of TRA expression in pancreatic cancer and diabetes type"
+author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
+output: 
+  pdf_document:
+    keep_tex: true
+    toc: true
+    toc_depth: 2 # section & subsection in toc 
+    number_sections: true # all sections are numbered in output
+    fig_caption: true # (true by default)
+documentclass: article
+papersize: a4
+fontsize: 10pt
+geometry: left = 2 cm, right = 2 cm, top = 2 cm, bottom = 2 cm, headsep = 20pt
+secnumdepth: 2
+linestretch: 1
+out.width: "50%"
+fig.align: "center"
+header-includes:
+  \usepackage{float}
+  \usepackage{graphicx}
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage[greek, ngerman, main=english]{babel}
+  \usepackage{helvet}
+  \renewcommand{\familydefault}{\sfdefault}
+  \usepackage{titlesec} 
+  \headsep = 5mm
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  eval = TRUE,
+	echo = FALSE, # source code
+	collapse = FALSE, # ouput from one chunk are separate
+	message = FALSE, # messages not shown in output
+	warning = FALSE, # warnings not in output
+	comment = "", # line before output (default: ##)
+	include = FALSE, # output  
+	out.width = "50%", # plot smaller
+	fig.align = "center", # plot in center
+	highlight = TRUE
+)
+
+```
+```{r libraries}
+# Bioconductor
+library(affy)
+library(vsn)
+library(AnnotationDbi)
+library(hgu133plus2hsenstcdf)
+library(hgu133plus2hsenstprobe)
+library(hexbin)
+
+library(rstudioapi) 
+library(tidyverse) 
+library(ggplot2) 
+library(pheatmap)
+library(stats)
+library(dplyr)
+library(ggfortify)
+library(reshape2)
+library(ggrepel) 
+library(RColorBrewer)
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+```
+\maketitlepage
+\newpage
+# Introduction
+
+# Information to data
+## TRA genes 
+
+TRA tables that list tissue specific genes are downloaded. \
+There are 4 tables for human TRAs and 2 tables for mouse TRAs. 
+
+```{r}
+# ----------------------------------------------------------
+# TRAs 
+# ----------------------------------------------------------
+
+# set working directory to folder with TRA tables (rawdata/TRA Daten)
+setwd(paste(projectPath, "rawdata", "TRA Daten", sep = "/"))
+# read in all 6 tables
+TRAs1_human <-read_csv("Human_protein_atlas_TRA_5median_genes_annotated.tsv")
+TRAs2_human <-read_tsv("tra.2014.human.5x.table.tsv")
+TRAs3_human <-read_tsv("tra.2014.human.roth.5x.table.tsv")
+TRAs4_mouse <-read_tsv("tra.2014.mouse.5x.table.tsv")
+TRAs5_mouse <-read_tsv("tra.2014.mouse.4301.5x.table.tsv")
+TRAs6_human <-read_tsv("tra.2017.human.gtex.5x.table.tsv",col_types = cols(ensembl.chrom=col_character()))
+#col_types to correct the parsing failure
+
+# 
+tissuecount <- function(df, maxtissue){
+  tissues <- table(df[,maxtissue])
+  percentage <- tissues/sum(tissues)
+  m <- matrix(c(tissues, percentage), ncol = 2)
+  rownames(m) <- names(tissues)
+  colnames(m) <- c("Anzahl TRAs in Gewebe", "Anteil")
+  m <- m[order(m[,1], decreasing = TRUE),]
+  m
+}
+
+# ----------------------------------------------------------
+# distribution of TRAs betweeen tissues
+# ----------------------------------------------------------
+
+GewebeTabelleProzent1 <- tissuecount(TRAs1_human,"Max_tissue")
+GewebeTabelleProzent2 <- tissuecount(TRAs2_human,"max.tissue")
+GewebeTabelleProzent3 <- tissuecount(TRAs3_human,"max.tissue")
+GewebeTabelleProzent4 <- tissuecount(TRAs4_mouse,"max.tissue")
+GewebeTabelleProzent5 <- tissuecount(TRAs5_mouse,"max.tissue")
+GewebeTabelleProzent6 <- tissuecount(TRAs6_human,"max.tissue")
+
+# ----------------------------------------------------------
+# Pancreas specific TRAs
+# ----------------------------------------------------------
+
+# create data frames where only pancreas genes are listed
+PancreasTRAs1_human <- TRAs1_human[grep(x=TRAs1_human$Max_tissue,"panc"),]
+PancreasTRAs2_human <- TRAs2_human[grep(x=TRAs2_human$max.tissue,"Panc"),]
+PancreasTRAs3_human <- TRAs3_human[grep(x=TRAs3_human$max.tissue,"Panc"),]
+PancreasTRAs4_mouse <- TRAs4_mouse[grep(x=TRAs4_mouse$max.tissue,"panc"),]
+PancreasTRAs5_mouse <- TRAs5_mouse[grep(x=TRAs5_mouse$max.tissue,"panc"),]
+PancreasTRAs6_human <- TRAs6_human[grep(x=TRAs6_human$max.tissue,"Panc"),]
+
+# create character vectors with pancreas specific genes (for both humans & mice)
+pancreas_gene_human <- unique(c(PancreasTRAs1_human$Symbol,PancreasTRAs2_human$gene.symbol,PancreasTRAs6_human$ensembl.symbol))
+pancreas_gene_mouse <- unique(c(PancreasTRAs4_mouse$gene.symbol,PancreasTRAs5_mouse$gene.symbol))
+TRA_pancreas_genes_human <- pancreas_gene_human
+TRA_pancreas_genes_mouse <- pancreas_gene_mouse
+
+length(pancreas_gene_human)
+# 330
+length(pancreas_gene_mouse)
+# 59
+
+# ----------------------------------------------------------
+# all TRAs
+# ----------------------------------------------------------
+TRA_genes_human <- unique(c(TRAs1_human$Symbol,TRAs2_human$gene.symbol,TRAs6_human$ensembl.symbol))
+TRA_genes_mouse <- unique(c(TRAs4_mouse$gene.symbol,TRAs5_mouse$gene.symbol))
+
+
+```
+
+
+```{r}
+# ----------------------------------------------------------
+# create pie charts for distribution of TRAs between tissues
+# ----------------------------------------------------------
+
+## labels of pie chart: tissues (percentage%)
+label1 = paste0(rownames(GewebeTabelleProzent1), " (", as.character(round(GewebeTabelleProzent1[,"Anteil"],3)*100), "%)")
+label2 = paste0(rownames(GewebeTabelleProzent2), " (", as.character(round(GewebeTabelleProzent2[,"Anteil"],3)*100), "%)")
+label3 = paste0(rownames(GewebeTabelleProzent3), " (", as.character(round(GewebeTabelleProzent3[,"Anteil"],3)*100), "%)")
+label4 = paste0(rownames(GewebeTabelleProzent4), " (", as.character(round(GewebeTabelleProzent4[,"Anteil"],3)*100), "%)")
+label5 = paste0(rownames(GewebeTabelleProzent5), " (", as.character(round(GewebeTabelleProzent5[,"Anteil"],3)*100), "%)")
+label6 = paste0(rownames(GewebeTabelleProzent6), " (", as.character(round(GewebeTabelleProzent6[,"Anteil"],3)*100), "%)")
+## not all tissues included
+label1[c(11:26,28:33)] = "" # pancreas is [27]
+label2[c(11:15,17:61)] = ""
+label3[c(11:64)] = "" # no pancreas mentioned here
+label4[c(11:42,44:60)] = ""
+label5[c(11:59,61:91)] = ""
+label6[c(11:20,22:53)] = ""
+```
+
+
+```{r include = TRUE}
+# TRAs1
+par(mai = c(0,0,0.5,0))
+pie(GewebeTabelleProzent1[,1], labels = label1, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues (atlas)")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+#dev.copy2pdf(file = "TRA1_human_piechart.pdf")
+```
+
+
+```{r}
+# TRAs2
+par(mai = c(0,0,0.5,0))
+pie(GewebeTabelleProzent2[,1],labels = label2, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues")
+
+# TRAs3
+par(mai = c(0,0,0.5,0))
+pie(GewebeTabelleProzent3[,1],labels = label3, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues (roth)")
+
+# TRAs4 (mouse)
+par(mai = c(0,0,0.5,0))
+pie(GewebeTabelleProzent4[,1],labels = label4, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in mouse tissues")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+#dev.copy2pdf(file = "TRA4_mouse_piechart.pdf")
+
+# TRAs5 (mouse)
+par(mai = c(0,0,0.5,0))
+pie(GewebeTabelleProzent5[,1],labels = label5, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in mouse tissues")
+
+# TRAs6
+par(mai = c(0,0,0.5,0))
+pie(GewebeTabelleProzent6[,1],labels = label6, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues") 
+
+remove(label1, label2, label3, label4, label5, label6) # not needed anymore
+```
+
+```{r}
+# ----------------------------------------------------------
+# pancreas specific TRAs distribution over chromosomes 
+# ----------------------------------------------------------
+
+# TRAs1 (human)
+
+PancreasTRAs1ChromX <- gsub(x=PancreasTRAs1_human$Chromosome,pattern="X",replacement="23")
+PancreasTRAs1ChromX <- as.integer(PancreasTRAs1ChromX)
+PancreasTRAs1ChromXorder <- PancreasTRAs1ChromX[order(PancreasTRAs1ChromX)]
+
+plot(table(PancreasTRAs1ChromXorder),main="Verteilung der TRAs1 über die Chromosomen",xlab="Chromosom") 
+
+# TRAs2 (human)
+
+PancreasTRAs2ChromX <- gsub(x=PancreasTRAs2_human$chrom,pattern="X",replacement="23")
+PancreasTRAs2ChromX <- as.integer(PancreasTRAs2ChromX)
+PancreasTRAs2ChromXorder <- PancreasTRAs2ChromX[order(PancreasTRAs2ChromX)]
+
+plot(table(PancreasTRAs2ChromXorder),main="Verteilung der TRAs2 über die Chromosomen",xlab="Chromosom")
+
+# TRAs6 (human)
+
+PancreasTRAs6ChromX <- gsub(x=PancreasTRAs6_human$ensembl.chrom,pattern="X",replacement="23")
+PancreasTRAs6ChromX <- as.integer(PancreasTRAs6ChromX)
+PancreasTRAs6ChromXorder <- PancreasTRAs6ChromX[order(PancreasTRAs6ChromX)]
+
+plot(table(PancreasTRAs6ChromXorder),main="Verteilung der TRAs6 über die Chromosomen",xlab="Chromosom")
+
+# TRAs4 (mouse)
+
+PancreasTRAs4ChromX <- gsub(x=PancreasTRAs4_mouse$chrom,pattern="X",replacement="20")
+PancreasTRAs4ChromX <- as.integer(PancreasTRAs4ChromX)
+PancreasTRAs4ChromXorder <- PancreasTRAs4ChromX[order(PancreasTRAs4ChromX)]
+
+plot(table(PancreasTRAs4ChromXorder),main="Verteilung der TRAs4 über die Chromosomen",xlab="Chromosom")
+
+# TRAs5 (mouse)
+
+PancreasTRAs5ChromX <- gsub(x=PancreasTRAs5_mouse$chrom,pattern="X",replacement="20")
+PancreasTRAs5ChromX <- as.integer(PancreasTRAs5ChromX)
+PancreasTRAs5ChromXorder <- PancreasTRAs5ChromX[order(PancreasTRAs5ChromX)]
+
+plot(table(PancreasTRAs5ChromXorder),main="Verteilung der TRAs5 über die Chromosomen",xlab="Chromosom")
+
+```
+
+
+## Microarrays
+
+### Data sets
+
+
+PDAC Capan-1 Zellen dataset (GSE59761) and Diabetes type 1 dataset (GSE53454) are downloaded from the GEO database. \\
+
+GSE59761: 6 chips
+\begin{itemize}
+ \item pancreatic cancer cells (PDAC)
+ \item control: 3 chips, treated with unspecified siRNA
+ \item treatment: 3 chips, treated with siRNA targeted against TBL1X gene 
+\end{itemize}
+
+GSE53454: 24 chips
+\begin{itemize}
+ \item $\beta$ cells
+ \item control: 13 chips
+ \item treatment: 11 chips, treated with IFN-$\gamma$ and IL-1$\beta$
+ \item analyzed 0-96 hours
+\end{itemize}
+
+
+### Creating expression matrix
+
+
+steps for microarray gene expression matrix:
+\begin{itemize}
+ \item upload
+ \item vsnrma normalization
+ \item remove control probe sets 
+ \item convert transcript IDs to gene symbols 
+ \item remove transcripts woth no gene symbol 
+ \item select genes that are pancreas specific TRAs
+ \item combine expression values for genes that are mentioned more than once
+\end{itemize}
+
+```{r}
+# ----------------------------------------------------------
+# create vsnrma normalized expression matrix
+# ----------------------------------------------------------
+
+set.seed(132) # with this vsnrma gives out the same values each time
+# get CEL files
+setwd(paste(projectPath, "rawdata", "GSE59761 PDAC Capan-1 Zellen", sep = "/"))
+data_pancreas <- ReadAffy()
+setwd(paste(projectPath, "rawdata", "GSE53454 Diabetes type 1", sep = "/"))
+data_diabetes <- ReadAffy()
+# change cdf
+data_pancreas@cdfName <- "HGU133Plus2_Hs_ENST"
+data_diabetes@cdfName <- "HGU133Plus2_Hs_ENST"
+# create expression matrix
+pancreas_matrix <- exprs(data_pancreas)
+diabetes_matrix <- exprs(data_diabetes)
+# store colnames (microarray)
+pancreas_microarray_information <- colnames(pancreas_matrix)
+diabetes_microarray_information <- colnames(diabetes_matrix)
+# vsnrm normalization
+pancreas_vsnrma <- vsnrma(data_pancreas)
+diabetes_vsnrma <- vsnrma(data_diabetes)
+# expression matrix of vsnrm normalized data set
+pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
+diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
+# cut rownames at "." 
+rownames(pancreas_vsnrma_matrix) <- str_replace(rownames(pancreas_vsnrma_matrix),"\\..*","") 
+rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix),"\\..*","")
+# remove ending .CEL from colnames 
+colnames(pancreas_vsnrma_matrix) <- str_remove(colnames(pancreas_vsnrma_matrix),"_.CEL")
+colnames(diabetes_vsnrma_matrix) <- str_replace(colnames(diabetes_vsnrma_matrix),"\\..*","")
+# remove control probes (AFFX) 
+pancreas_vsnrma_matrix = pancreas_vsnrma_matrix[which(!startsWith(rownames(pancreas_vsnrma_matrix), "AFFX")),]
+diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(rownames(diabetes_vsnrma_matrix), "AFFX")),]
+# transcript IDs
+pancreas_transcript_names = rownames(pancreas_vsnrma_matrix)
+diabetes_transcript_names = rownames(diabetes_vsnrma_matrix)
+
+# ----------------------------------------------------------
+# create data frames which hold information about micro arrays
+# ----------------------------------------------------------
+
+# create data frame with information about microarray samples
+
+diabetes_microarrays = t(as.data.frame(
+  sapply(diabetes_microarray_information, function(x){
+    s = str_replace(x,"\\..*","")
+    str_split(s, "_")
+    })
+  ))[,-c(2,3)]
+colnames(diabetes_microarrays) <- c("number", "treatment", "time_h")
+diabetes_microarrays <- transform(diabetes_microarrays, 
+                                  time_h = as.integer(str_remove(diabetes_microarrays[,"time_h"],"h")))
+rownames(diabetes_microarrays) <- c(1:24)
+diabetes_microarrays <- as.data.frame(diabetes_microarrays)
+
+
+pancreas_microarrays <- data.frame(number = substr(pancreas_microarray_information, 1,10), 
+                                   version = substr(pancreas_microarray_information, 24,27),
+                                   siRNA = c("TBL1", "TBL1", "TBL1", "NC", "NC", "NC"), 
+                                   time = rep("24h",6),
+                                   Affymetrix = rep("G-U133_Plus_2",6),
+                                   row.names = c(1:6))
+
+# replace old IDs sample names
+colnames(pancreas_matrix) <- pancreas_microarrays[,"number"]
+colnames(diabetes_matrix) <- diabetes_microarrays[,"number"]
+colnames(pancreas_vsnrma_matrix) <- pancreas_microarrays[,"number"]
+colnames(diabetes_vsnrma_matrix) <- diabetes_microarrays[,"number"]
+
+# ----------------------------------------------------------
+# convert transcript IDs to gene symbols
+# ----------------------------------------------------------
+
+# get table for converting transcript IDs to gene symbols
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+annotation = read.csv("ensemble.103.txt") 
+ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
+ensemble_symbol = annotation[,"HGNC.symbol"]
+# name each gene symbol by their respective transcripts
+names(ensemble_symbol) <- ensemble_transcripts
+# select only those transcripts that are also present in the annotation
+diabetes_GeneExprs <- diabetes_vsnrma_matrix[rownames(diabetes_vsnrma_matrix) %in% ensemble_transcripts,]
+pancreas_GeneExprs <- pancreas_vsnrma_matrix[rownames(pancreas_vsnrma_matrix) %in% ensemble_transcripts,]
+# create vector with the symbols of the transcript from expression matrix
+diabetes_symbol <- ensemble_symbol[rownames(diabetes_GeneExprs)]
+pancreas_symbol <- ensemble_symbol[rownames(pancreas_GeneExprs)]
+# use gene symbols instead of transcripts as rownames
+rownames(diabetes_GeneExprs) <- as.character(diabetes_symbol)
+rownames(pancreas_GeneExprs) <- as.character(pancreas_symbol)
+# order genes alphabetically & remove all those rows where "" is the rowname 
+diabetes_GeneExprs <- diabetes_GeneExprs[order(rownames(diabetes_GeneExprs)),][1097:nrow(diabetes_GeneExprs),] 
+pancreas_GeneExprs <- pancreas_GeneExprs[order(rownames(pancreas_GeneExprs)),][1097:nrow(pancreas_GeneExprs),] 
+# replace colnames with the GSM number of the microarrays
+colnames(diabetes_GeneExprs) <- diabetes_microarrays[,"number"]
+colnames(pancreas_GeneExprs) <- pancreas_microarrays[,"number"]
+
+# ----------------------------------------------------------
+# pancreas specific TRAs
+# ----------------------------------------------------------
+
+# create a expression matrix with only those genes
+diabetes_GeneExprs_sub = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% TRA_pancreas_genes_human),]
+pancreas_GeneExprs_sub = pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) %in% TRA_pancreas_genes_human),]
+
+# ----------------------------------------------------------
+# TRAs for all tissues
+# ----------------------------------------------------------
+
+pancreas_GeneExprs_allTRA = pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) %in% TRA_genes_human),]
+diabetes_GeneExprs_allTRA = diabetes_GeneExprs[which(rownames(diabetes_GeneExprs) %in% TRA_genes_human),]
+
+# ----------------------------------------------------------
+# combining transcripts for same gene via median
+# ----------------------------------------------------------
+
+combineGeneExprs_median2 <- function(exprsmatrix){
+  # create data frame with a column of all the gene symbols
+  data <- data.frame(geneSymbols = rownames(exprsmatrix),
+                     exprsmatrix, 
+                     row.names = NULL)
+  # group data frame by gene symbols and combine values of one gene by median
+  combined <- aggregate(data[-1], by = list(data$geneSymbols) , FUN = median)
+  # convert data frame to matrix (only expression values, no row names)
+  result <- as.matrix(combined[,-1])
+  # use gene symbols as row names
+  rownames(result) <- combined[,1]
+  # output
+  result
+}
+
+pancreas_GeneExprs_combined <- combineGeneExprs_median2(pancreas_GeneExprs)
+diabetes_GeneExprs_combined <- combineGeneExprs_median2(diabetes_GeneExprs)
+pancreas_GeneExprs_sub_combined <- combineGeneExprs_median2(pancreas_GeneExprs_sub)
+diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_sub)
+
+```
+
+### Quality control of chips
+
+\begin{itemize}
+ \item single chip control 
+ \item RNA degeneration plot 
+ \item meanSdPlot
+ \item histogram before and after normalization
+ \item boxplot before and after normalization
+ \item scatterplots
+\end{itemize}
+
+```{r eval=FALSE}
+# ----------------------------------------------------------
+# single chip control: diabetes data set
+# ----------------------------------------------------------
+
+setwd(paste(projectPath, "plots", sep = "/"))
+par(pty = "s")
+
+for (i in 1:24){
+  image(data_diabetes[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
+  file.name = paste0("diabetes_", str_remove(colnames(diabetes_matrix)[i],".CEL"),".pdf")
+  # dev.copy2pdf(file = file.name)
+}
+
+# ----------------------------------------------------------
+# single chip control: PDAC data set
+# ----------------------------------------------------------
+
+setwd(paste(projectPath, "plots", sep = "/"))
+par(pty = "s")
+
+for (i in 1:6){
+  image(data_pancreas[,i], col = rainbow(100, start = 0, end = 0.75)[100:1])
+  file.name <- paste0("pancreas_", str_remove(colnames(pancreas_matrix)[i],".CEL"),".pdf")
+  #dev.copy2pdf(file = file.name)
+}
+
+# ----------------------------------------------------------
+# RNA degeneration plot: diabetes data set
+# ----------------------------------------------------------
+
+RNAdeg_diabetes = AffyRNAdeg(data_diabetes)
+
+# use of shift & scale
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_diabetes, col=rainbow(24), transform = "shift.scale")
+title(sub = "beta cell data set (GSE53454) rawdata")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "diabetes_rnadeg_rawdata.pdf")
+
+# use only shift
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_diabetes, col = rainbow(24), transform = "shift.only")
+title(sub = "beta cell data set (GSE53454) rawdata")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
+
+# ----------------------------------------------------------
+# RNA degeneration plot: PDAC data set
+# ----------------------------------------------------------
+
+RNAdeg_PDAC <- AffyRNAdeg(data_pancreas)
+
+## shift and scale
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6))
+title(sub = "PDAC data set (GSE59761) rawdata")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_rnadeg_shiftt_scale_rawdata.pdf")
+
+## shift
+par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6), transform = "shift.only")
+title(sub = "PDAC data set (GSE59761) rawdata")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_rnadeg_shift_rawdata.pdf")
+
+
+# ----------------------------------------------------------
+# meanSdPlot: diabetes data set
+# ----------------------------------------------------------
+
+meanSdPlot(diabetes_vsnrma, plot = FALSE)$gg + theme(aspect.ratio = 1)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "diabetes_meanSdPlot_vsnrma_normalized.pdf")
+
+# ----------------------------------------------------------
+# meanSdPlot: PDAC data set
+# ----------------------------------------------------------
+
+meanSdPlot(pancreas_vsnrma, plot = FALSE)$gg + theme(aspect.ratio = 1) 
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
+
+# ----------------------------------------------------------
+# histogram before and after normalization: diabetes data set
+# ----------------------------------------------------------
+
+par(mai = c(1.2,1,1,0.5))
+hist(data_diabetes, 
+     col = rainbow(24), 
+     main = "Density function of log intensity of beta cells (data set: GSE53454)\nbefore normalization")
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
+
+par(mai = c(1.2,1,1,0.5))
+
+plot(density(diabetes_vsnrma_matrix), 
+     type = "n", xlab = "log Intensity", ylim = c(0,0.7), 
+     main = "Density function of log intensity of beta cells (GSE53454) \n after normalization")
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+
+for (i in 1:ncol(diabetes_vsnrma_matrix)){
+  lines(density(diabetes_vsnrma_matrix[,i]), col = rainbow(24)[i])
+}
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "diabetes_hist_vsnrma_normalized.pdf")
+
+# ----------------------------------------------------------
+# histogram before and after normalization: PDAC data set
+# ----------------------------------------------------------
+
+par(mai = c(1.2,1,1,0.5))
+hist(data_pancreas, col = rainbow(6), main = "Density function of log intensity of PDAC cells (data set: GSE59761)\nbefore normalization")
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
+
+par(mai = c(1.2,1,1,0.5))
+plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log intensity of PDAC cells (data set: GSE59761)\nafter normalization", ylim = c(0,0.4))
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
+
+for (i in 1:ncol(pancreas_vsnrma_matrix)){
+  lines(density(pancreas_vsnrma_matrix[,i]), col = rainbow(6)[i])
+}
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_hist_vsnrma_normalized.pdf")
+
+
+# ----------------------------------------------------------
+# boxplot before and after normalization: diabetes data set
+# ----------------------------------------------------------
+
+par(las = 2, mai = c(1.2,0.8,1,0.1))
+
+boxplot(data_diabetes, names = substr(colnames(diabetes_matrix), 1,10),
+        col = rainbow(24), cex.axis=0.6, ylab = "Intensity values", 
+        main="Gene expression in mircoarrays (beta cell data set: GSE53454)\nbefore vsnrma normalization", 
+        horizontal = FALSE)
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
+
+par(las = 2, mai = c(1.2,0.8,1,0.1))
+
+boxplot(diabetes_vsnrma_matrix, names = substr(colnames(diabetes_matrix), 1,10),
+        col = rainbow(24), cex.axis = 0.6, ylab = "Intensity values",
+        main= "Gene expression in mircoarrays (beta cell data set: GSE53454)\nafter vsnrma normalization", 
+        horizontal = FALSE, outline = FALSE) # outliers are not drawn
+title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
+abline(v = median(diabetes_vsnrma_matrix))
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf") 
+
+
+# ----------------------------------------------------------
+# boxplot before and after normalization: PDAC data set
+# ----------------------------------------------------------
+
+par(las = 2, mai = c(1.2,0.8,1,0.1))
+
+boxplot(data_pancreas, names = pancreas_microarrays$number, col = rainbow(6), main = "Gene expression in mircoarrays (PDAC data set: GSE59761)\nbefore normalization", cex.axis=0.6, ylab = "Intensity values")
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
+
+par(las = 2, mai = c(1.2,0.8,1,0.1))
+
+boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "Gene expression in mircoarrays (PDAC data set: GSE59761)\nafter normalization", cex.axis=0.6, ylab = "Intensity values")
+title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+dev.copy2pdf(file = "pancreas_boxplot_vsnrma_normalized.pdf")
+# ----------------------------------------------------------
+# scatterplots: diabetes data set
+# ----------------------------------------------------------
+
+setwd(paste(projectPath, "plots", "scatter plots diabetes" ,sep = "/"))
+par(mai = c(0.8,0.8,0.6,0.1), pty = "s")
+
+for (i in 1:23){
+  for (j in (i+1):24){
+    plot(diabetes_vsnrma_matrix[,i], diabetes_vsnrma_matrix[,j], pch = ".",
+         xlab = substr(colnames(diabetes_matrix), 1,10)[i],
+         ylab = substr(colnames(diabetes_matrix), 1,10)[j])
+    abline(0,1,col="red")
+
+    title(main = paste("Scatterplot of microarrays (GSE53454)\n", 
+                       substr(colnames(diabetes_matrix), 1,10)[i],
+                       "and",
+                       substr(colnames(diabetes_matrix), 1,10)[j],
+                       sep = " ", collapse = NULL))
+    
+    file.name = paste0("diabetes_scatterplot_",
+                       substr(colnames(diabetes_matrix), 1,10)[i],
+                       ".pdf")
+    # dev.copy2pdf(file = file.name)
+  }
+}
+
+# ----------------------------------------------------------
+# scatterplots: PDAC data set
+# ----------------------------------------------------------
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+par(mai = c(0.8,0.8,0.6,0.1), pty = "s")
+
+for (i in 1:5) {
+  for (j in (i+1):6){
+    plot(pancreas_vsnrma_matrix[,i], pancreas_vsnrma_matrix[,j], pch = ".",
+         xlab = pancreas_microarrays$number[i],
+         ylab = pancreas_microarrays$number[j])
+    abline(0, 1, col = "red")
+  
+    title(main = paste("Scatterplot of microarrays\n", 
+                       pancreas_microarrays$number[i],
+                       "and",
+                       pancreas_microarrays$number[j],
+                       sep = " ", collapse = NULL))
+    
+    file.name = paste("pancreas_scatterplot_",
+                      pancreas_microarrays$number[i], 
+                      "_",  
+                      pancreas_microarrays$number[j], 
+                      ".pdf", 
+                      sep = "")
+  
+  # dev.copy2pdf(file = file.name)
+  }}
+
+```
+
+
+
+# Analysis
+
+## Descriptive Statistics
+
+\begin{itemize}
+ \item distribution (mean & median & sd) -> normal or not?
+ \item boxplot of gene expression for each group
+ \item (PCA, diabetes time, variance for groups, compare to all TRAs)
+\end{itemize}
+
+```{r}
+mean(diabetes_GeneExprs_sub_combined)
+median(diabetes_GeneExprs_sub_combined)
+sd(diabetes_GeneExprs_sub_combined)
+
+
+mean(pancreas_GeneExprs_sub_combined)
+median(pancreas_GeneExprs_sub_combined)
+sd(pancreas_GeneExprs_sub_combined)
+```
+
+
+
+
+```{r eval = FALSE}
+# ----------------------------------------------------------
+# distribution (all) gene expression: both data sets
+# ----------------------------------------------------------
+
+par(mai = c(0.85,0.85,0.5,0.1))
+
+hist(diabetes_GeneExprs_combined, 
+     xlab = "gene expression values",
+     ylab = "probability",
+     main = paste("Histogram of gene expression (diabetes data set: GSE53454)"), 
+     freq = FALSE)
+abline(v = c(mean(diabetes_GeneExprs_combined), median(diabetes_GeneExprs_combined)), 
+       col = c("red", "blue"), lwd = 2)
+legend("topright", 
+       legend = c(paste0("mean = ",round(mean(diabetes_GeneExprs_combined),2)), 
+                  paste0("median = ", round(median(diabetes_GeneExprs_combined),2))), 
+       fill = c("red", "blue"))
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
+
+
+par(mai = c(0.85,0.85,0.5,0.1))
+
+hist(pancreas_GeneExprs_combined, 
+     xlab = "gene expression values",
+     ylab = "probability",
+     main = paste("Histogram of gene expression (PDAC data set: GSE59761)"), 
+     freq = FALSE)
+abline(v = c(mean(pancreas_GeneExprs_combined), median(pancreas_GeneExprs_combined)), 
+       col = c("red", "blue"), lwd = 2)
+legend("topright", 
+       legend = c(paste0("mean = ",round(mean(pancreas_GeneExprs_combined),2)), 
+                  paste0("median = ", round(median(pancreas_GeneExprs_combined),2))), 
+       fill = c("red", "blue"))
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
+
+# ----------------------------------------------------------
+# heatmap TRA gene expression with hclustering: diabetes data set
+# ----------------------------------------------------------
+
+anno <- select(diabetes_microarrays,treatment, time_h)
+rownames(anno) <- diabetes_microarrays$number
+
+pheatmap(diabetes_GeneExprs_sub, 
+         labels_row = rep("",nrow(diabetes_GeneExprs_sub)),
+         annotation_col = anno,
+         treeheight_row = 0,
+         main = "TRA gene expression in beta cells (GSE53454)")
+
+# after combining
+pheatmap(diabetes_GeneExprs_sub_combined, 
+         labels_row = rep("",nrow(diabetes_GeneExprs_sub)),
+         annotation_col = anno,
+         treeheight_row = 0,
+         main = "TRA gene expression in beta cells (GSE53454)\nafter combining transcripts from one gene over median")
+
+# ----------------------------------------------------------
+# heatmap gene expression with hclustering: PDAC data set
+# ----------------------------------------------------------
+
+# check if the knockout of TBL1X can be seen
+anno <- select(pancreas_microarrays,siRNA)
+rownames(anno) <- pancreas_microarrays$number
+
+par(mai = c(1,0.1,2,1))
+pheatmap(pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) == "TBL1X"),], 
+         main = "TBL1X - Gene expression in pancreatic cancer cells\ndata set: GSE59761 (Stoy et al., 2015)",
+         annotation_col = anno,
+         cluster_rows = TRUE, treeheight_row = 0, 
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
+
+# pancreas TRAs
+pheatmap(pancreas_GeneExprs_sub,
+         annotation_col = anno,
+         labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
+         cluster_rows = TRUE, treeheight_row = 0,
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9,
+         main = "TRA gene expression in pancreatic cancer cells before combining via median\ndata set: GSE59761")
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_heatmap_TRAs.pdf")
+
+# after combining
+pheatmap(pancreas_GeneExprs_sub_combined,
+         annotation_col = anno,
+         labels_row = rep("",nrow(pancreas_GeneExprs_sub_combined)),
+         cluster_rows = TRUE, treeheight_row = 0,
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9,
+         main = "TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_heatmap_TRA_combined.pdf")
+
+# ------------------------------------------------
+# boxplots: diabetes data set
+# ------------------------------------------------
+
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+
+for (i in seq(1,250,by = 50)){
+  
+  generange = paste0("(", rownames(diabetes_GeneExprs_sub_combined)[i],
+                     "-", 
+                     rownames(diabetes_GeneExprs_sub_combined)[i+49],")")
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Control")$number]),
+          col = rainbow(50), 
+          main= paste0("boxplot of TRA gene expression in beta cells ", generange, "\ndata set: GSE53454"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of TRA gene expression in beta cells treated with cytokines", generange, "\ndata set: GSE53454"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  filename = paste0("diabetes_geneexpression_boxplot_", 
+                    rownames(diabetes_GeneExprs_sub_combined)[i],"_",
+                    rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
+  print(filename)
+  setwd(paste(projectPath, "plots", sep = "/"))
+  dev.copy2pdf(file = filename)
+}
+
+# ------------------------------------------------
+# boxplots: PDAC data set
+# ------------------------------------------------
+
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+
+for (i in seq(1,250,by = 50)){
+  
+  generange = paste0("(", rownames(pancreas_GeneExprs_sub_combined)[i],
+                     "-", 
+                     rownames(pancreas_GeneExprs_sub_combined)[i+49],")")
+  
+  boxplot(t(pancreas_GeneExprs_sub_combined[i:(i+49),filter(pancreas_microarrays, siRNA == "NC")$number]),
+          col = rainbow(50), 
+          main= paste0("boxplot of TRA gene expression in pancreatic cancer cells ", generange, "\ndata set: GSE59761"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  boxplot(t(pancreas_GeneExprs_sub_combined[i:(i+49),filter(pancreas_microarrays, siRNA == "TBL1")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of TRA gene expression in pancreatic cancer cells after knockout of TBL1X ", generange, "\ndata set: GSE59761"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  filename = paste0("pancreas_geneexpression_boxplot_", 
+                    rownames(diabetes_GeneExprs_sub_combined)[i],"_",
+                    rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
+  print(filename)
+  setwd(paste(projectPath, "plots", sep = "/"))
+  dev.copy2pdf(file = filename)
+}
+
+```
+
+## Differential TRA expression in pancreatic cancer and $\beta$ cells
+
+### highly expressed genes in pancreatic cancer cells & $\beta$ cells 
+
+```{r}
+# ------------------------------------------------
+# genes that are highly expressed in beta cells (over certain threshold)
+# ------------------------------------------------
+
+# beta cells are the control group from diabetes data set
+diabetes_GeneExprs_sub_control <- diabetes_GeneExprs_sub_combined[, filter(diabetes_microarrays,treatment == "Control")$number]
+diabetes_GeneExprs_sub_treat <- diabetes_GeneExprs_sub_combined[, filter(diabetes_microarrays,treatment == "Cytok")$number]
+
+# Median of pancreas TRAs in control group
+diabetes_ctrl_median <- apply(diabetes_GeneExprs_sub_control, 1, median, na.rm=TRUE)
+
+median(diabetes_GeneExprs_sub_control)
+## 8.083549
+
+threshold = 1.8 * median(diabetes_GeneExprs_sub_control)
+
+## Search for genes, whose median gene expression are more than threshold times that of the median of control group.
+names(which(diabetes_ctrl_median > threshold))
+## Names of genes that fit this criteria: 2 in total.
+## INS, PRSS2
+
+## Expression values (control & treatment groups) of those genes:
+diabetes_abovethreshold <- diabetes_GeneExprs_sub_combined[names(which(diabetes_ctrl_median > threshold)),]
+diabetes_abovethreshold
+
+remove(threshold) # not needed anymore
+
+# ------------------------------------------------
+# Plots: change over time
+# ------------------------------------------------
+
+par(mfrow = c(2,2), mai = c(0.75,0.7,0.5,0.1))
+
+## control
+
+for (i in 1:nrow(diabetes_abovethreshold)){
+  plot(diabetes_abovethreshold[i, arrange(filter(diabetes_microarrays,treatment == "Control"), time_h)$number],
+       type = "b", xaxt = "n",
+       xlab = "time [h]", ylab = "Gene expression",
+       main = paste(rownames(diabetes_abovethreshold)[i], "\n", "Control"))
+  axis(1, at = c(1:ncol(diabetes_GeneExprs_sub_control)), cex.axis = 0.8,
+       labels = arrange(filter(diabetes_microarrays,treatment == "Control"), time_h)$time_h)
+}
+
+## treatment
+
+for (i in 1:nrow(diabetes_abovethreshold)){
+  plot(diabetes_abovethreshold[i, filter(diabetes_microarrays,treatment == "Cytok")$number],
+       type = "b", xaxt = "n",
+       xlab = "time [h]", ylab = "Gene expression",
+       main = paste(rownames(diabetes_abovethreshold)[i], "\n", "Treatment"))
+  axis(1, at = c(1:ncol(diabetes_GeneExprs_sub_treat)), cex.axis = 0.8,
+       labels = arrange(filter(diabetes_microarrays,treatment == "Cytok"), time_h)$time_h)
+}
+
+```
+
+```{r}
+# ------------------------------------------------
+# genes that are highly expressed in PDAC cells (over certain threshold)
+# ------------------------------------------------
+# normal pancreatic cancer cells are in control group
+pancreas_GeneExprs_sub_control <- pancreas_GeneExprs_sub_combined[, filter(pancreas_microarrays, siRNA == "NC")$number ]
+pancreas_GeneExprs_sub_treat <- pancreas_GeneExprs_sub_combined[ , filter(pancreas_microarrays, siRNA == "TBL1")$number]
+
+
+# Median of pancreas TRAs in control group
+pancreas_ctrl_median <- apply(pancreas_GeneExprs_sub_control,1,median)
+
+median(pancreas_GeneExprs_sub_control)
+## 6.771193
+
+threshold <- 1.8 * median(pancreas_GeneExprs_sub_control)
+threshold
+## 12.18815
+
+## Search for genes, whose median gene expression are more than threshold times that of the median of control group.
+pancreas_abovethreshold <- pancreas_GeneExprs_sub_combined[names(which(pancreas_ctrl_median > threshold)),]
+pancreas_abovethreshold
+
+
+# ------------------------------------------------
+# Plots: highly expressed genes in PDAC cells
+# ------------------------------------------------
+
+par(mai = c(0.8,0.8,0.6,0.1))
+
+boxplot(t(pancreas_GeneExprs_sub_control[(which(pancreas_ctrl_median > threshold )),]),col = rainbow(8), main = paste0("Highly expressed TRA genes in the PDAC dataset (GSE59761)","\n","higher than ",round(threshold,2)),ylab="gene expression value",xlab="Genes")
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_boxplot_highexpression.pdf")
+
+remove(threshold)
+
+```
+
+
+### differentially expressed genes between cancer cells and $\beta$ cells
+
+```{r}
+#Creating a empty vector for the p-values
+Differential_TRA_values <- vector("numeric",length(diabetes_GeneExprs_sub_control[,1]))
+Differential_TRA_values2 <- vector("numeric",length(diabetes_GeneExprs_sub_control[,1]))
+
+# ------------------------------------------------
+# Higher differential expressed genes
+# ------------------------------------------------
+
+# for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
+for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
+  WilcoxonTest <- wilcox.test(x=pancreas_GeneExprs_sub_control[i,],y=diabetes_GeneExprs_sub_control[i,],alternative ="greater")
+  if (WilcoxonTest$p.value < 0.05){
+    Differential_TRA_values[i] <- WilcoxonTest$p.value}
+    
+}
+# Creating a matrix for higher expressed PDAC genes with all the gene symbols and their corresponding p-values
+Gensymbol_pvalue_higher_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values),nrow=length(diabetes_GeneExprs_sub_control[,1]),byrow=FALSE)
+colnames(Gensymbol_pvalue_higher_matrix) <- c("Genesymbol","p-value")
+
+
+# Removing all rows with a p-value = 0 (the p-value was bigger than 5%)
+Gensymbol_pvalue_higher_matrix <- Gensymbol_pvalue_higher_matrix[-which(Gensymbol_pvalue_higher_matrix[,2]==0),]
+dim(Gensymbol_pvalue_higher_matrix)
+## 40  2 
+
+# ------------------------------------------------
+# lower  differential expressed genes
+# ------------------------------------------------
+
+# for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
+for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
+  WilcoxonTest2 <- wilcox.test(x=pancreas_GeneExprs_sub_control[i,],y=diabetes_GeneExprs_sub_control[i,],alternative ="less")
+  if (WilcoxonTest2$p.value < 0.05){
+    Differential_TRA_values2[i] <- WilcoxonTest2$p.value}
+}
+
+# Creating a matrix for lower expressed PDAC genes with all the gene symbols and their corresponding p-values
+Gensymbol_pvalue_lower_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values2),nrow=length(diabetes_GeneExprs_sub_control[,1]),byrow=FALSE)
+colnames(Gensymbol_pvalue_lower_matrix) <- c("Genesymbol","p-value")
+
+# Removing all rows with a p-value = 0 (the p-value was bigger than 5%)
+Gensymbol_pvalue_lower_matrix <- Gensymbol_pvalue_lower_matrix[-which(Gensymbol_pvalue_lower_matrix[,2]==0),]
+dim(Gensymbol_pvalue_lower_matrix)
+## 190   2
+
+## 40 genes are higher expressed in pancreatic cancer cells in comparison to ß cells 
+## 190 genes are lower expressed in pancreatic cancer cells in comparison to ß cells
+## 20 genes show no significant difference between the two data sets 
+
+# ------------------------------------------------
+# Selecting differential expressed genes
+# ------------------------------------------------
+
+#Creating a empty vector for the p-values
+
+Differential_TRA_values3 <- vector("numeric",length(diabetes_GeneExprs_sub_control[,1]))
+
+# for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
+
+for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
+  WilcoxonTest3 <- wilcox.test(x=diabetes_GeneExprs_sub_control[i,],y=pancreas_GeneExprs_sub_control[i,],alternative ="two.sided")
+  if (WilcoxonTest3$p.value < 0.05){
+    Differential_TRA_values3[i] <- WilcoxonTest3$p.value}
+    
+}
+
+# Creating a matrix with all the gene symbols and their corresponding p-values
+
+Gensymbol_pvalue_differential_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values3),nrow=length(diabetes_GeneExprs_sub_control[,1]),byrow=FALSE)
+colnames(Gensymbol_pvalue_differential_matrix) <- c("Genesymbol","p-value")
+
+# Removing all rows with a p-value = 0 (the p-value was bigger than 5%)
+
+Gensymbol_pvalue_differential_matrix  <- Gensymbol_pvalue_differential_matrix[-which(Gensymbol_pvalue_differential_matrix[,2]==0),]
+
+dim(Gensymbol_pvalue_differential_matrix)
+## 225   2
+
+## 225 genes are differential expressed with p = 5%
+
+# ------------------------------------------------
+# Creating matrix p-value + Mean Difference
+# ------------------------------------------------
+
+#Creating matrix that only contains differential expressed genes and their corresponding mean difference between the two control sets
+
+# Calculating the mean values for each of the genes
+diabetescontrolmean <- apply(diabetes_GeneExprs_sub_control,1,mean)
+pancreascontrolmean <- apply(pancreas_GeneExprs_sub_control,1,mean)
+
+# Calculating the mean difference
+differencemean <-  pancreascontrolmean - diabetescontrolmean
+differencemeanabs <- abs(pancreascontrolmean - diabetescontrolmean)
+
+# Creating matrix with the mean values for each of the genes
+differencemeanmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemean,diabetescontrolmean,pancreascontrolmean)
+differencemeanmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemeanabs,diabetescontrolmean,pancreascontrolmean)
+# Gene names of differentially expressed genes
+differentialexpressedgenenames <- Gensymbol_pvalue_differential_matrix[,1]
+
+# Selecting only the genes that are differential expressed
+differentialdifferencematrix <- differencemeanmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+differentialdifferencematrixabs <- differencemeanmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+
+# Matrix in descending order
+ordermatrix <- order(differentialdifferencematrix[,2],decreasing = TRUE)
+ordermatrixabs <- order(differentialdifferencematrixabs[,2],decreasing = TRUE)
+
+differentialdifferencematrixordered <- differentialdifferencematrix[ordermatrix,]
+differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[ordermatrixabs,]
+
+colnames(differentialdifferencematrixordered) <- c("Gensymbol","Meandifference","MeanDiabetes","MeanPancreas")
+colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Meandifferenceabs","MeanDiabetes","MeanPancreas")
+
+```
+
+
+```{r}
+# ------------------------------------------------
+# log2foldchange
+# ------------------------------------------------
+
+log2.fold.change <- function(control, test){
+  
+  # only if control have the same row numbers
+  if(nrow(control) == nrow(test)){
+    
+    # control / treatment (values combined by median)
+    ratio = sapply(1:nrow(control), function(x){
+      g1_m = median(as.numeric(control[x,]))
+      g2_m = median(as.numeric(test[x,]))
+      g2_m/g1_m # change of test to control (small value -> test, high value -> control)
+    })
+    # log2 on ratio => log2(treatment/control)
+    log2_foldchange = log2(ratio)
+    # ttest control vs treatment (expression values)
+    t = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      t.test(control[x,], test[x,])$p.value
+    })
+    # wilcoxon rank sum test control vs treatment (expression values)
+    w = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      wilcox.test(control[x,], test[x,])$p.value
+    })
+    
+  }else{print("Something has gone wrong with the dimensions of the groups (probably row numbers)!")}
+   
+  trend_t = 1:length(t)
+  trend_t[t < 0.05 & log2_foldchange > 0] = "up"
+  trend_t[t < 0.05 & log2_foldchange < 0] = "down"
+  trend_t[t >= 0.05] = "not significant"
+  
+  trend_w = 1:length(w)
+  trend_w[w < 0.05 & log2_foldchange > 0] = "up"
+  trend_w[w < 0.05 & log2_foldchange < 0] = "down"
+  trend_w[w >= 0.05] = "not significant"
+  
+  # output
+  data.frame(GeneSymbol = rownames(control), # genes
+             foldchange_ratio = ratio, # without log2
+             log2_foldchange = log2_foldchange,  # log2 foldchange
+             wilcox_raw_pvalue = w, # wilcoxon rank sum test
+             wilcox_log10_pvalue = -1*log10(w),
+             wilcox_trend = trend_w,
+             ttest_raw_pvalue = t,# ttest
+             ttest_log10_pvalue = -1*log10(t),
+             ttest_trend = trend_t)
+}
+
+differential_control_diabetes_pancreas_fc = log2.fold.change(diabetes_GeneExprs_sub_control, pancreas_GeneExprs_sub_control) # ratio = control PDAC cells / beta cells
+
+arrange(differential_control_diabetes_pancreas_fc, -log2_foldchange) # sort by how much differential expressed
+filter(differential_control_diabetes_pancreas_fc, wilcox_trend != "not significant") # only significant genes 
+
+ggplot(data = differential_control_diabetes_pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for control vs. control (GSE53454 & GSE59761)", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = control PDAC cells / beta cells") +
+  xlim(c(-max(abs(differential_control_diabetes_pancreas_fc$log2_foldchange)),
+         max(abs(differential_control_diabetes_pancreas_fc$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"), 
+                     labels = c("higher in beta cells", "not significant", "higher in PDAC cells")) + 
+  geom_text_repel(size = 2, max.overlaps = 30)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
+
+
+
+# ------------------------------------------------
+# highly and differential expressed genes in pancreatic cancer
+# ------------------------------------------------
+
+
+threshold <- 1.7*median(pancreas_GeneExprs_sub_control)
+nameshigherpanc <- rownames(pancreas_GeneExprs_sub_control[which(pancreas_ctrl_median > threshold),])
+
+# Are the highly expressed genes part of the vector with differential expressed genes
+
+differentialdifferencematrixordered[which(differentialdifferencematrixordered[,1] %in% nameshigherpanc),]
+
+filter(differential_control_diabetes_pancreas_fc, GeneSymbol %in% nameshigherpanc, wilcox_trend == "up")
+
+match(c("ANXA4","STT3A","TSPAN8"), arrange(differential_control_diabetes_pancreas_fc, -log2_foldchange)$GeneSymbol) # how much differential are these?
+## TSPAN - most differential in up regulation
+## STT3A - 4. place
+## ANXA4 - 18. place
+
+#### I realized that these two matrices are not exactly equal because foldchange is based on median values and not mean
+filter(arrange(differential_control_diabetes_pancreas_fc, -log2_foldchange), wilcox_trend != "not significant")
+differentialdifferencematrixordered
+
+filter(differential_control_diabetes_pancreas_fc, GeneSymbol %in% nameshigherpanc)
+
+# for threshold = 1.8*median:
+## TSPAN8 and GNAS are both highly expressed PDAC Genes and differential expressed
+## Problem: GNAS in diabetes higher than pancreas 
+## RPL5,RPL8,RPS9 are Ribosomal genes and not differential expressed
+
+```
+
+## Fate of pancreatic cells determined by TRA expression
+
+
+
