@@ -1,0 +1,113 @@
+---
+title: "Milestone3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## log2foldchange
+
+
+Genes that are influenced by cytokine treatment
+```{r}
+#Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
+differentialgenesdiabetestreatment <- diabetes_fc_treatment[-which(diabetes_fc_treatment[,"wilcox_trend"]=="not significant"),1]
+length(differentialgenesdiabetestreatment)
+differentialgenesdiabetestreatment
+
+#Creating a matrix with only those 47 genes for diabetescontrol, diabetestreatment and Pancreascontrol
+diabetescontroldifferentialgenes <- diabetes_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
+diabetestreatmentdifferentialgenes <- diabetes_treat[differentialgenesdiabetestreatment,]
+pancreascontroldifferentialgenes <- pancreas_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
+```
+Volcano Plot
+```{r}
+# Creating the volcano Plot for the previously selected genes for diabetes Treatment vs. Pancreas Control
+diabetesvspancreas_fc = log2.fold.change(diabetestreatmentdifferentialgenes, pancreascontroldifferentialgenes)
+ggplot(data = diabetesvspancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for beta cell treatment vs. PDAC control", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = PDAC control / beta control") +
+  xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
+         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "gray50", "chartreuse4"),labels = c("lower in PDAC", "not significant", "higher in PDAC")) + 
+  geom_text_repel(size = 2, max.overlaps = 25)
+```
+
+
+Boxplots
+```{r}
+# ------------------------------------------------
+# boxplot: differentialgenesdiabetestreatment for the 3 datasets
+# ------------------------------------------------
+
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+    boxplot(t(pancreas_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(pancreas_microarrays, siRNA == "NC")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the control PDAC dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+
+  
+  setwd(paste(projectPath, "plots", sep = "/"))
+  dev.copy2pdf(file = "boxplotcytokinegenesPDAC.pdf")  
+  
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+
+    boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Control")$number]),
+          col = rainbow(50), 
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the control beta cell dataset "), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  filename = paste0("diabetes_geneexpression_boxplot_", 
+                    rownames(diabetes_GeneExprs_sub_combined)[i],"_",
+                    rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
+  
+  setwd(paste(projectPath, "plots", sep = "/"))
+  dev.copy2pdf(file = "boxplotcytokinegenes.pdf")
+
+
+
+```
+Tabellarisches Format
+```{r}
+meandiabetescontroldifferentialgenes <- apply(diabetes_GeneExprs_sub_control[differentialgenesdiabetestreatment,],1,mean)
+meandiabetestreatmentdifferentialgenes <- apply(diabetes_treat[differentialgenesdiabetestreatment,],1,mean)
+meanpancreascontroldifferentialgenes <- apply(pancreas_GeneExprs_sub_control[differentialgenesdiabetestreatment,],1,mean)
+meandifferencediabetestreatmentPDACcontrol <- meanpancreascontroldifferentialgenes - meandiabetestreatmentdifferentialgenes 
+
+# Creating a matrix with all the mean values + Difference
+matrixdifferentialgenesdiabetestreatment <- matrix(c(differentialgenesdiabetestreatment,meandiabetescontroldifferentialgenes,meandiabetestreatmentdifferentialgenes,meanpancreascontroldifferentialgenes,meandifferencediabetestreatmentPDACcontrol),nrow=length(differentialgenesdiabetestreatment),byrow=FALSE)
+colnames(matrixdifferentialgenesdiabetestreatment) <- c("Genesymbol","Mean Diabetes Treatment","Mean Diabetes Control","Mean PDAC control","Mean Difference (PDAC-C - beta-T)")
+
+# ordering the matrix according to decreasing mean difference (mean PDAC control - beta cells treatment)
+ordermatrix2 <- order(matrixdifferentialgenesdiabetestreatment[,5],decreasing = TRUE)
+matrixdifferentialgenesdiabetestreatment <- matrixdifferentialgenesdiabetestreatment[ordermatrix2,]
+
+View(matrixdifferentialgenesdiabetestreatment)
+```
+
