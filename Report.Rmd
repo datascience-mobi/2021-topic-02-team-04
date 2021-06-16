@@ -66,7 +66,7 @@ library(RColorBrewer)
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 ```
-\maketitlepage
+
 \newpage
 # Introduction
 
@@ -623,7 +623,7 @@ dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
 
 par(las = 2, mai = c(1.2,0.8,1,0.1))
 
-boxplot(data_pancreas, names = pancreas_samples, col = rainbow(6), main = "Gene expression in mircoarrays (PDAC data set: GSE59761)\nafter normalization", cex.axis=0.6, ylab = "Intensity values")
+boxplot(data_pancreas, names = pancreas_microarrays$number, col = rainbow(6), main = "Gene expression in mircoarrays (PDAC data set: GSE59761)\nafter normalization", cex.axis=0.6, ylab = "Intensity values")
 title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
@@ -694,7 +694,7 @@ for (i in 1:5) {
 ## Descriptive Statistics
 
 \begin{itemize}
- \item distribution (mean & median & sd) -> normal or not?
+ \item distribution (mean and median and sd) -> normal or not?
  \item boxplot of gene expression for each group
  \item (PCA, diabetes time, variance for groups, compare to all TRAs)
 \end{itemize}
@@ -713,7 +713,7 @@ sd(pancreas_GeneExprs_sub_combined)
 
 
 
-```{r eval = FALSE}
+```{r eval=FALSE}
 # ----------------------------------------------------------
 # distribution (all) gene expression: both data sets
 # ----------------------------------------------------------
@@ -1128,13 +1128,13 @@ log2.fold.change <- function(control, test){
     t = sapply(1:nrow(control), function(x){
       g1 = as.numeric(control[x,])
       g2 = as.numeric(test[x,])
-      t.test(control[x,], test[x,])$p.value
+      t.test(g1, g2)$p.value
     })
     # wilcoxon rank sum test control vs treatment (expression values)
     w = sapply(1:nrow(control), function(x){
       g1 = as.numeric(control[x,])
       g2 = as.numeric(test[x,])
-      wilcox.test(control[x,], test[x,])$p.value
+      wilcox.test(g1, g2, exact = FALSE)$p.value
     })
     
   }else{print("Something has gone wrong with the dimensions of the groups (probably row numbers)!")}
