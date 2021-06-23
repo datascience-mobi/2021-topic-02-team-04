@@ -26,6 +26,8 @@ library(tidyverse)
 library(ggplot2)
 library(pheatmap)
 library(stats)
+
+library(dplyr)
 ```
 
 Diabetes type 1 dataset, GSE53454, data is downloaded from the GEO database
@@ -166,9 +168,9 @@ log2.fold.change <- function(control, test){
     
     # control / treatment (values combined by median)
     ratio = sapply(1:nrow(control), function(x){
-      g1_m = median(control[x,])
-      g2_m = median(test[x,])
-      g2_m/g1_m # change of treatment to control
+      g1_m = median(as.numeric(control[x,]))
+      g2_m = median(as.numeric(test[x,]))
+      g2_m/g1_m # change of test to control
     })
     # log2 on ratio => log2(treatment/control)
     log2_foldchange = log2(ratio)
@@ -182,15 +184,20 @@ log2.fold.change <- function(control, test){
     w = sapply(1:nrow(control), function(x){
       g1 = as.numeric(control[x,])
       g2 = as.numeric(test[x,])
-      wilcox.test(control[x,], test[x,], exact = FALSE)$p.value
+      wilcox.test(control[x,], test[x,])$p.value
     })
     
-  }else{print("Something has gone wronge with the dimensions of the groups (probably row numbers)!")}
+  }else{print("Something has gone wrong with the dimensions of the groups (probably row numbers)!")}
+   
+  trend_t = 1:length(t)
+  trend_t[t < 0.05 & log2_foldchange > 0] = "up"
+  trend_t[t < 0.05 & log2_foldchange < 0] = "down"
+  trend_t[t >= 0.05] = "not significant"
   
-  trend = 1:length(t)
-  trend[t < 0.05 & log2_foldchange > 0] = "up"
-  trend[t < 0.05 & log2_foldchange < 0] = "down"
-  trend[t >= 0.05] = "not significant"
+  trend_w = 1:length(w)
+  trend_w[w < 0.05 & log2_foldchange > 0] = "up"
+  trend_w[w < 0.05 & log2_foldchange < 0] = "down"
+  trend_w[w >= 0.05] = "not significant"
   
   # output
   data.frame(GeneSymbol = rownames(control), # genes
@@ -198,17 +205,18 @@ log2.fold.change <- function(control, test){
              log2_foldchange = log2_foldchange,  # log2 foldchange
              ttest_raw_pvalue = t,# ttest
              ttest_log10_pvalue = -1*log10(t),
-             trend = trend,
+             ttest_trend = trend_t, 
              wilcox_raw_pvalue = w, # wilcoxon rank sum test
-             wilcox_log10_pvalue = -1*log10(w)
-             )
+             wilcox_log10_pvalue = -1*log10(w),
+             wilcox_trend = trend_w)
+
 }
 
 diabetes_allgenes_fc = log2.fold.change(diabetes_ctrl, diabetes_treat)
 hist(diabetes_allgenes_fc$foldchange_ratio)
-filter(t, foldchange_ratio > 1.5) # high expressed in treatment 
-filter(t, foldchange_ratio < (1/1.2)) # low expressed in treatment
-
+filter(diabetes_allgenes_fc, foldchange_ratio > 1.5) # high expressed in treatment 
+filter(diabetes_allgenes_fc, foldchange_ratio < (1/1.2)) # low expressed in treatment
+arrange(diabetes_allgenes_fc, -foldchange_ratio)
 ```
 
 
@@ -570,6 +578,7 @@ abline(h = median(med_diab_TRA_median), col = "red")
 ```
 
 ### 2.4.2 Are there genes that are present in both 2.5% high variance control and 2.5% high variance treatment?
+
 
 ```{r}
 rownames(high_var_diabetes_ctrl_median)
