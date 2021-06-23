@@ -63,6 +63,7 @@ library(ggfortify)
 library(reshape2)
 library(ggrepel) 
 library(RColorBrewer)
+library(factoextra)
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 ```
@@ -1120,10 +1121,10 @@ log2.fold.change <- function(control, test){
     ratio = sapply(1:nrow(control), function(x){
       g1_m = median(as.numeric(control[x,]))
       g2_m = median(as.numeric(test[x,]))
-      g2_m/g1_m # change of test to control (small value -> test, high value -> control)
+      g2_m - g1_m # change of test to control (small value -> test, high value -> control)
     })
-    # log2 on ratio => log2(treatment/control)
-    log2_foldchange = log2(ratio)
+    # normalized values are already log2 transformed
+    log2_foldchange = ratio
     # ttest control vs treatment (expression values)
     t = sapply(1:nrow(control), function(x){
       g1 = as.numeric(control[x,])
@@ -1151,7 +1152,6 @@ log2.fold.change <- function(control, test){
   
   # output
   data.frame(GeneSymbol = rownames(control), # genes
-             foldchange_ratio = ratio, # without log2
              log2_foldchange = log2_foldchange,  # log2 foldchange
              wilcox_raw_pvalue = w, # wilcoxon rank sum test
              wilcox_log10_pvalue = -1*log10(w),
@@ -1216,6 +1216,174 @@ filter(differential_control_diabetes_pancreas_fc, GeneSymbol %in% nameshigherpan
 ```
 
 ## Fate of pancreatic cells determined by TRA expression
+
+
+### Difference in gene expression in Diabetes type 1 dataset caused by Cytokine treatment
+```{r}
+# ------------------------------------------------
+# PCA & kmeans
+# ------------------------------------------------
+
+# create a data frame (columns = treatment, time_h, gene expression)
+diabetes_df <- cbind(treatment = diabetes_microarrays[,"treatment"], 
+            time_h = diabetes_microarrays[,"time_h"],
+            data.frame(t(diabetes_GeneExprs_sub_combined)))
+
+# PCA on the TRA expressions (scaled & centered)
+diabetes_pca <- prcomp(diabetes_df[,-c(1,2)], scale. = TRUE, center = TRUE)
+
+# elbow method 
+set.seed(123)
+fviz_nbclust(diabetes_pca$x, kmeans, method = "wss")
+## not clear answer (no kink)
+
+#silhuette method plot
+fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
+## cluster number = 2 is highest 
+
+# plot PC1 against PC2 
+autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", main = "Principal Component Analysis on beta cell data set (GSE53454)", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
+
+# plot kmeans for k = 2 
+autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on beta cell data set (GSE53454)") + 
+  scale_color_brewer(palette = "Set1") + 
+  scale_fill_brewer(palette = "Set1")
+
+# add cluster numbers to already existing data frame (rows = microarrays)
+diabetes_pca_kmeans2 <- kmeans(diabetes_pca$x,2)
+diabetes_pca_kmeans4 <- kmeans(diabetes_pca$x,4)
+diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_pca_kmeans4$cluster, diabetes_df)
+(diabetes_df)
+sort(filter(diabetes_df,kmeans2 == 1)$time_h) # higher in general
+sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
+
+# ------------------------------------------------
+# which genes are influenced by time 
+# ------------------------------------------------
+
+find_timegenes <- function(t1 = 0.1, t2 = 0.05){
+  g1 = sort(abs(diabetes_pca$rotation[,"PC1"]), decreasing = TRUE)
+  g2 = sort(abs(diabetes_pca$rotation[,"PC2"]))
+  
+  n1 = names(g1[which(g1 > t1)])
+  n2 = names(g2[which(g2 < t2)])
+  
+  list(PC1_high = n1, PC2_low = n2, PC1_high_PC2_low = which(n2 %in% n1))
+}
+
+
+
+# genes with high PC1
+n1 = find_timegenes(0.1, 0.05)$PC1_high
+# genes with PC1 high and PC2 low
+n2 = find_timegenes(0.1, 0.05)$PC2_low[find_timegenes(0.1, 0.05)$PC1_high_PC2_low]
+
+
+pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Cytok"), time_h)$number], 
+         main = "gene expression of genes over time \nfor cytokine treated beta cells in pancreas",
+         cluster_rows = FALSE, cluster_cols = FALSE)
+pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Control"), time_h)$number], 
+         main = "gene expression of genes over time \nfor beta cells in pancreas",
+         cluster_rows = FALSE, cluster_cols = FALSE)
+
+# suggestion for linear regression: CUZD1 (Control), PNLIP (Cytokine treatment)
+
+
+# ------------------------------------------------
+# log2foldchange treatment vs control 
+# which genes are influenced by cytokine treatment
+# ------------------------------------------------
+
+diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_control, diabetes_GeneExprs_sub_treat)
+# ratio = treatment / control 
+diabetes_fc_treatment
+
+
+ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for control vs. treatment \nin diabetes type 1 data set (GSE53454)",
+       subtitle = "ratio = treatment / control", 
+       x = "log2 fold change", y = "-log10 (p-value)",
+       colour = "trend") +
+  xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
+         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"),
+                     labels = c("higher in control group", "not significant", "higher in treatment group")) + 
+  geom_text_repel(size = 2, max.time = 50)
+
+
+```
+
+### Difference in gene expression in PDAC dataset caused by TBL1X gene knockout
+
+```{r}
+pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
+            data.frame(t(pancreas_GeneExprs_sub_combined)))
+
+
+# PCA on the TRA expressions
+pancreas_pca <- prcomp(pancreas_df[,-1], scale. = TRUE)
+
+# plot PC1 against PC2
+autoplot(pancreas_pca, data = pancreas_df, colour = "treatment", main = "Principal Component Analysis on PDAC data set (GSE59761)", xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1)
+
+# plot kmeans for k = 2
+autoplot(kmeans(pancreas_pca$x,2), data = pancreas_pca$x, frame = TRUE,  xlim = c(-0.7,0.7), ylim = c(-0.7,0.7), asp = 1, main = "kmeans clustering (k=2)\nafter PCA on PDAC data set (GSE59761)") + 
+  scale_color_hue(direction = -1, h.start = 90) +
+  scale_fill_hue(direction = -1, h.start = 90)
+
+# add cluster numbers to already existing data frame (rows = microarrays)
+pancreas_df <- cbind(kmeans2 = kmeans(pancreas_pca$x,2)$cluster, pancreas_df)
+head(pancreas_df)
+
+# ------------------------------------------------
+# log2foldchange treatment vs control 
+# which genes are influenced by gene knockout
+# ------------------------------------------------
+
+
+pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, pancreas_GeneExprs_sub_treat)
+# retio = treatment/control
+pancreas_fc
+
+
+ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") + 
+  labs(title = "Volcano plot (wilcoxon rank sum test) for PDAC data set (GSE59761)", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = treatment/control") +
+  xlim(c(-max(abs(pancreas_fc$log2_foldchange)),
+         max(abs(pancreas_fc$log2_foldchange))))+
+  scale_color_manual(values = c("grey"))+ 
+  geom_text_repel(size = 2, max.overlaps = 20)
+
+# top 10 (although all not significant)
+arrange(pancreas_fc, -abs(log2_foldchange))[1:10,]
+
+pancreas_GeneExprs_combined["CHST15",]
+
+### CHST4: Carbohydrate Sulfotransferase - in Golgi,  modification of glycan structures on ligands of the lymphocyte homing receptor L-selectin
+### (found an article where CHST15 was inhibited, which led to reduction of proliferation in PDAC)
+
+### PABPC4: Poly(A) Binding Protein Cytoplasmic 4 
+
+
+### ECI2:  Enoyl-CoA delta isomerase 2 - lipid metabolism 
+### (found an article where ECI2 inhibition leads to down-regulated gene in cell cylce in prostate cancer)
+
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
