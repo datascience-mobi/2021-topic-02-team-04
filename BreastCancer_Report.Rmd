@@ -1,0 +1,353 @@
+---
+title: "Analysis of Breast Cancer Dataset"
+author: "Anna Boot, Carolyn, Blümcke, Selina Ernst, Bianca Greul"
+date: "23 6 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# libraries
+
+```{r libraries, include=FALSE}
+# Bioconductor
+library(affy)
+library(vsn)
+library(AnnotationDbi)
+library(hgu133plus2hsenstcdf)
+library(hgu133plus2hsenstprobe)
+library(hexbin)
+
+library(rstudioapi) 
+library(tidyverse) 
+library(ggplot2) 
+library(pheatmap)
+library(stats)
+library(dplyr)
+library(ggfortify)
+library(reshape2)
+library(ggrepel) 
+```
+
+## Pancreas TRAs
+
+```{r}
+# ----------------------------------------------------------
+# TRAs 
+# ----------------------------------------------------------
+
+# set working directory to folder with TRA tables (rawdata/TRA Daten)
+setwd(paste(projectPath, "rawdata", "TRA Daten", sep = "/"))
+# read in all 6 tables
+TRAs1_human <-read_csv("Human_protein_atlas_TRA_5median_genes_annotated.tsv")
+TRAs2_human <-read_tsv("tra.2014.human.5x.table.tsv")
+TRAs3_human <-read_tsv("tra.2014.human.roth.5x.table.tsv")
+TRAs4_mouse <-read_tsv("tra.2014.mouse.5x.table.tsv")
+TRAs5_mouse <-read_tsv("tra.2014.mouse.4301.5x.table.tsv")
+TRAs6_human <-read_tsv("tra.2017.human.gtex.5x.table.tsv",col_types = cols(ensembl.chrom=col_character()))
+#col_types to correct the parsing failure
+
+PancreasTRAs1_human <- TRAs1_human[grep(x=TRAs1_human$Max_tissue,"panc"),]
+PancreasTRAs2_human <- TRAs2_human[grep(x=TRAs2_human$max.tissue,"Panc"),]
+PancreasTRAs3_human <- TRAs3_human[grep(x=TRAs3_human$max.tissue,"Panc"),]
+PancreasTRAs4_mouse <- TRAs4_mouse[grep(x=TRAs4_mouse$max.tissue,"panc"),]
+PancreasTRAs5_mouse <- TRAs5_mouse[grep(x=TRAs5_mouse$max.tissue,"panc"),]
+PancreasTRAs6_human <- TRAs6_human[grep(x=TRAs6_human$max.tissue,"Panc"),]
+
+# create character vectors with pancreas specific genes (for both humans & mice)
+pancreas_gene_human <- unique(c(PancreasTRAs1_human$Symbol,PancreasTRAs2_human$gene.symbol,PancreasTRAs6_human$ensembl.symbol))
+TRA_pancreas_genes_human <- pancreas_gene_human
+
+# all TRAs
+TRA_genes_human <- unique(c(TRAs1_human$Symbol,TRAs2_human$gene.symbol,TRAs6_human$ensembl.symbol))
+```
+
+
+## Creating expression matrix
+
+```{r}
+# ----------------------------------------------------------
+# create vsnrma normalized expression matrix
+# ----------------------------------------------------------
+
+set.seed(234) # with this vsnrma gives out the same values each time
+# get CEL files
+setwd(paste(projectPath, "rawdata", "rawdata breast GSE27830", sep = "/"))
+data_breast <- ReadAffy()
+
+# change cdf
+data_breast@cdfName <- "HGU133Plus2_Hs_ENST"
+
+# create expression matrix
+breast_matrix <- exprs(data_breast)
+
+# store colnames (microarray)
+breast_microarray_information <- colnames(breast_matrix)
+
+# vsnrm normalization
+breast_vsnrma <- vsnrma(data_breast)
+
+# expression matrix of vsnrm normalized data set
+breast_vsnrma_matrix <- exprs(breast_vsnrma)
+
+# cut rownames at "." 
+rownames(breast_vsnrma_matrix) <- str_replace(rownames(breast_vsnrma_matrix),"\\..*","") 
+
+# remove ending .CEL from colnames 
+colnames(breast_vsnrma_matrix) <- str_remove(colnames(breast_vsnrma_matrix),"_.CEL")
+
+# remove control probes (AFFX) 
+breast_vsnrma_matrix = breast_vsnrma_matrix[which(!startsWith(rownames(breast_vsnrma_matrix), "AFFX")),]
+
+# transcript IDs
+breast_transcript_names = rownames(breast_vsnrma_matrix)
+
+
+# ----------------------------------------------------------
+# create data frames which hold information about micro arrays
+# ----------------------------------------------------------
+
+# create data frame with information about microarray samples
+
+breast_microarrays <- data.frame(number = substr(breast_microarray_information, 1,9), 
+                                   version = substr(breast_microarray_information, 24,27),
+                                   row.names = c(1:10))
+
+# replace old IDs sample names
+colnames(breast_matrix) <- breast_microarrays[,"number"]
+colnames(breast_vsnrma_matrix) <- breast_microarrays[,"number"]
+
+# ----------------------------------------------------------
+# convert transcript IDs to gene symbols
+# ----------------------------------------------------------
+
+# get table for converting transcript IDs to gene symbols
+setwd(paste(projectPath, "rawdata", "tables" ,sep = "/"))
+annotation = read.csv("ensemble.103.txt") 
+ensemble_transcripts  = annotation[,"Transcript.stable.ID"]
+ensemble_symbol = annotation[,"HGNC.symbol"]
+# name each gene symbol by their respective transcripts
+names(ensemble_symbol) <- ensemble_transcripts
+# select only those transcripts that are also present in the annotation
+breast_GeneExprs <- breast_vsnrma_matrix[rownames(breast_vsnrma_matrix) %in% ensemble_transcripts,]
+
+# create vector with the symbols of the transcript from expression matrix
+breast_symbol <- ensemble_symbol[rownames(breast_GeneExprs)]
+
+# use gene symbols instead of transcripts as rownames
+rownames(breast_GeneExprs) <- as.character(breast_symbol)
+
+# order genes alphabetically & remove all those rows where "" is the rowname 
+breast_GeneExprs <- breast_GeneExprs[order(rownames(breast_GeneExprs)),][1097:nrow(breast_GeneExprs),] 
+
+# replace colnames with the GSM number of the microarrays
+colnames(breast_GeneExprs) <- breast_microarrays[,"number"]
+
+
+# ----------------------------------------------------------
+# breast specific TRAs
+# ----------------------------------------------------------
+
+# create a expression matrix with only those genes
+breast_GeneExprs_sub = breast_GeneExprs[which(rownames(breast_GeneExprs) %in% TRA_pancreas_genes_human),]
+
+# ----------------------------------------------------------
+# TRAs for all tissues
+# ----------------------------------------------------------
+
+breast_GeneExprs_allTRA = breast_GeneExprs[which(rownames(breast_GeneExprs) %in% TRA_genes_human),]
+
+# ----------------------------------------------------------
+# combining transcripts for same gene via median
+# ----------------------------------------------------------
+
+combineGeneExprs_median2 <- function(exprsmatrix){
+  # create data frame with a column of all the gene symbols
+  data <- data.frame(geneSymbols = rownames(exprsmatrix),
+                     exprsmatrix, 
+                     row.names = NULL)
+  # group data frame by gene symbols and combine values of one gene by median
+  combined <- aggregate(data[-1], by = list(data$geneSymbols) , FUN = median)
+  # convert data frame to matrix (only expression values, no row names)
+  result <- as.matrix(combined[,-1])
+  # use gene symbols as row names
+  rownames(result) <- combined[,1]
+  # output
+  result
+}
+
+breast_GeneExprs_combined <- combineGeneExprs_median2(breast_GeneExprs)
+breast_GeneExprs_sub_combined <- combineGeneExprs_median2(breast_GeneExprs_sub)
+
+```
+
+## Quality control
+
+```{r}
+# ----------------------------------------------------------
+# single chip control
+# ----------------------------------------------------------
+
+setwd(paste(projectPath, "plots", sep = "/"))
+
+for (i in 1:10){
+  image(data_breast[,i], col = rainbow (100, start = 0, end = 0.75)[100:1])
+  file.name = paste(as.character(breast_microarrays[, "number"])[i],".pdf", sep = "")
+  #dev.copy2pdf(file = file.name)
+}
+
+# ----------------------------------------------------------
+# Pheno Data
+# ----------------------------------------------------------
+
+pData(data_breast)
+
+# ----------------------------------------------------------
+# meanSdPlot
+# ----------------------------------------------------------
+
+meanSdPlot(breast_vsnrma, plot = FALSE)$gg + theme(aspect.ratio = 1)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+#dev.copy2pdf(file = "breast_meanSdPlot_vsnrma_normalized.pdf")
+
+# ----------------------------------------------------------
+# RNA degradation plot: breast data set
+# ----------------------------------------------------------
+
+RNAdeg_breast <- AffyRNAdeg(data_breast)
+
+# Shift and scale
+par(pty = "s", mai = c(1.1,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_breast, col = rainbow(10))
+title(sub = "Breast Cancer Rawdata")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+#dev.copy2pdf(file = "breast_rnadeg_rawdata.pdf")
+
+# Shift
+par(pty = "s", mai = c(1.1,0.5,0.5,0.1))
+plotAffyRNAdeg(RNAdeg_breast, col = rainbow(10), transform = "shift.only")
+title(sub = "Breast Cancer Scaled")
+#dev.copy2pdf(file = "breast_rnadeg_shift_rawdata.pdf")
+
+## No crossing of lines. Quality of the chips is good.
+
+# ----------------------------------------------------------
+# histogram before and after normalization
+# ----------------------------------------------------------
+
+## Before normalization
+par(mai = c(0.9,0.9,0.9,0.5))
+
+hist(data_breast, 
+     col = rainbow(10), 
+     main = "Density function of log intensity of breast cancer (data set: GSE27830)\nbefore normalization")
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+#dev.copy2pdf(file = "breast_hist_rawdata.pdf")
+
+## After normalization
+par(mai = c(0.9,0.9,0.9,0.5))
+
+plot(density(breast_vsnrma_matrix), 
+     type = "n", xlab = "log Intensity", ylim = c(0, 0.6),
+     main = "Density function of log intensity of breast cancer (data set: GSE27830)\nafter normalization")
+
+for (i in 1:ncol(breast_vsnrma_matrix)){
+  lines(density(breast_vsnrma_matrix[,i]), col = rainbow(10)[i])
+}
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+#dev.copy2pdf(file = "breast_hist_vsnrma_normalized.pdf")
+
+# ----------------------------------------------------------
+# boxplot before and after normalization
+# ----------------------------------------------------------
+
+## Before normalization
+par(las = 2, mai = c(1, 0.8, 0.7, 0.1)) 
+
+boxplot(data_breast, names = breast_microarrays[, "number"], 
+        col = rainbow(10),  ylab = "Intensity values",
+        main = "Gene expression in breast cancer (data set: GSE27830)\nbefore vsnrma normalization", 
+        cex.axis=0.8)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+#dev.copy2pdf(file = "breast_boxplot_rawdata.pdf")
+
+## After normalization
+
+par(las = 2, mai = c(1, 0.8, 0.7, 0.1)) 
+
+boxplot(breast_vsnrma_matrix, names = breast_microarrays[, "number"], 
+        col = rainbow(10), ylab = "Intensity values",
+        main = "Gene expression in breast cancer (data set: GSE27830)\nafter vsnrma normalization", 
+        cex.axis=0.8)
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+#dev.copy2pdf(file = "breast_boxplot_vsnrma_normalized.pdf")
+
+# ----------------------------------------------------------
+# scatterplots
+# ----------------------------------------------------------
+
+setwd(paste(projectPath, "plots" ,sep = "/"))
+par(mai = c(0.9, 0.9, 0.7, 0.3))
+
+for (i in 1:9) {
+  for (j in (i+1):10){
+    
+    plot(breast_vsnrma_matrix[,i], breast_vsnrma_matrix[,j], pch = ".",
+       xlab = breast_microarrays[, "number"][i], 
+       ylab = breast_microarrays[, "number"][j])
+    abline(0, 1, col = "red")
+    
+    title(main = paste("Scatterplot of probe",
+                     breast_microarrays[, "number"] [i],
+                     "and", 
+                     breast_microarrays[, "number"] [i+1],
+                     sep = " ", collapse = NULL))
+    
+    file.name = paste("Scatterplot_",
+                    as.character(breast_microarrays[, "number"] [i], 
+                    "_", as.character(breast_microarrays[, "number"][i+1]), ".pdf", 
+                    sep =" "))
+    #dev.copy2pdf(file = file.name)
+    
+  }
+}
+```
+
+## Descriptive Statistics
+
+```{r}
+# ----------------------------------------------------------
+# boxplots
+# ----------------------------------------------------------
+
+par(las = 2)
+
+boxplot(t(breast_GeneExprs_sub_combined),
+         col = rainbow(250),
+         main="Breast Cancer TRA gene expression")
+abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
+
+# ----------------------------------------------------------
+# heatmaps
+# ----------------------------------------------------------
+
+filenames <- rownames(pData(data_breast)) 
+breast_samples <- substr(filenames, 1, 9)
+
+pheatmap(t(breast_GeneExprs_sub), 
+         labels_row = paste(breast_samples),
+         labels_col = rep("",nrow(breast_GeneExprs_sub)))
+
+# after combining
+pheatmap(t(combineGeneExprs_median2(breast_GeneExprs_sub)), 
+         labels_row = paste(breast_samples),
+         labels_col = rep("",nrow(breast_GeneExprs_sub)))
+```
