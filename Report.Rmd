@@ -1419,12 +1419,86 @@ ggplot(data = diabetesvspancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_p
   geom_text_repel(size = 2, max.overlaps = 25)
 ```
 
+```{r}
+# ------------------------------------------------
+# boxplot: differentialgenesdiabetestreatment for the 3 datasets
+# ------------------------------------------------
+
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+    boxplot(t(pancreas_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(pancreas_microarrays, siRNA == "NC")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the control PDAC dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+
+  
+  setwd(paste(projectPath, "plots", sep = "/"))
+  dev.copy2pdf(file = "boxplotcytokinegenesPDAC.pdf")  
+  
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+
+    boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Control")$number]),
+          col = rainbow(50), 
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the control beta cell dataset "), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  
+  setwd(paste(projectPath, "plots", sep = "/"))
+  dev.copy2pdf(file = "boxplotcytokinegenes.pdf")
+
+
+
+```
 
 
 
 
+```{r}
+# Combined Boxplot of the cytokine dependent genes of the 3 datasets
+
+boxplotmatrix <- cbind(diabetescontroldifferentialgenes,diabetestreatmentdifferentialgenes,pancreascontroldifferentialgenes)
+mel2 <- melt(t(boxplotmatrix))
+
+# vector to annotate the values from mel with treatment
+
+treatm <- diabetes_microarrays[,"treatment"] 
+names(treatm) <- diabetes_microarrays[,"number"]
+treatm = unname(treatm[as.character(mel2$Var1)])
+#Replacing Na with Pancreas cancer
+treatm <- replace_na(treatm, "Pancreas")
 
 
+# create data frame (used for ggplot)
+boxplotmatrix2 <- cbind(treatment = treatm , mel2)
+head(boxplotmatrix2)
+
+
+
+ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 90, size = 5)) +
+  xlab("Genes")
+
+```
 
 
 
