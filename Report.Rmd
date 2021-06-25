@@ -44,6 +44,7 @@ knitr::opts_chunk$set(
 )
 
 ```
+
 ```{r libraries}
 # Bioconductor
 library(affy)
@@ -85,12 +86,12 @@ There are 4 tables for human TRAs and 2 tables for mouse TRAs.
 # set working directory to folder with TRA tables (rawdata/TRA Daten)
 setwd(paste(projectPath, "rawdata", "TRA Daten", sep = "/"))
 # read in all 6 tables
-TRAs1_human <-read_csv("Human_protein_atlas_TRA_5median_genes_annotated.tsv")
-TRAs2_human <-read_tsv("tra.2014.human.5x.table.tsv")
-TRAs3_human <-read_tsv("tra.2014.human.roth.5x.table.tsv")
-TRAs4_mouse <-read_tsv("tra.2014.mouse.5x.table.tsv")
-TRAs5_mouse <-read_tsv("tra.2014.mouse.4301.5x.table.tsv")
-TRAs6_human <-read_tsv("tra.2017.human.gtex.5x.table.tsv",col_types = cols(ensembl.chrom=col_character()))
+TRAs1_human <- read_csv("Human_protein_atlas_TRA_5median_genes_annotated.tsv")
+TRAs2_human <- read_tsv("tra.2014.human.5x.table.tsv")
+TRAs3_human <- read_tsv("tra.2014.human.roth.5x.table.tsv")
+TRAs4_mouse <- read_tsv("tra.2014.mouse.5x.table.tsv")
+TRAs5_mouse <- read_tsv("tra.2014.mouse.4301.5x.table.tsv")
+TRAs6_human <- read_tsv("tra.2017.human.gtex.5x.table.tsv",col_types = cols(ensembl.chrom=col_character()))
 #col_types to correct the parsing failure
 
 # 
@@ -160,6 +161,7 @@ label3 = paste0(rownames(GewebeTabelleProzent3), " (", as.character(round(Gewebe
 label4 = paste0(rownames(GewebeTabelleProzent4), " (", as.character(round(GewebeTabelleProzent4[,"Anteil"],3)*100), "%)")
 label5 = paste0(rownames(GewebeTabelleProzent5), " (", as.character(round(GewebeTabelleProzent5[,"Anteil"],3)*100), "%)")
 label6 = paste0(rownames(GewebeTabelleProzent6), " (", as.character(round(GewebeTabelleProzent6[,"Anteil"],3)*100), "%)")
+
 ## not all tissues included
 label1[c(11:26,28:33)] = "" # pancreas is [27]
 label2[c(11:15,17:61)] = ""
@@ -168,6 +170,8 @@ label4[c(11:42,44:60)] = ""
 label5[c(11:59,61:91)] = ""
 label6[c(11:20,22:53)] = ""
 ```
+
+
 
 
 ```{r include = TRUE}
@@ -218,7 +222,7 @@ PancreasTRAs1ChromX <- gsub(x=PancreasTRAs1_human$Chromosome,pattern="X",replace
 PancreasTRAs1ChromX <- as.integer(PancreasTRAs1ChromX)
 PancreasTRAs1ChromXorder <- PancreasTRAs1ChromX[order(PancreasTRAs1ChromX)]
 
-plot(table(PancreasTRAs1ChromXorder),main="Verteilung der TRAs1 über die Chromosomen",xlab="Chromosom") 
+hist(PancreasTRAs1ChromXorder,breaks=23,xlim=range(1:23),right=FALSE,main="Distribution TRAs1 across the chromosomes",xlab="Chromosom", col="lightsteelblue")
 
 # TRAs2 (human)
 
@@ -226,7 +230,7 @@ PancreasTRAs2ChromX <- gsub(x=PancreasTRAs2_human$chrom,pattern="X",replacement=
 PancreasTRAs2ChromX <- as.integer(PancreasTRAs2ChromX)
 PancreasTRAs2ChromXorder <- PancreasTRAs2ChromX[order(PancreasTRAs2ChromX)]
 
-plot(table(PancreasTRAs2ChromXorder),main="Verteilung der TRAs2 über die Chromosomen",xlab="Chromosom")
+hist(PancreasTRAs2ChromXorder,breaks=23,xlim=range(1:23),right=FALSE,main="Distribution TRAs2 across the chromosomes",xlab="Chromosom", col="lightsteelblue")
 
 # TRAs6 (human)
 
@@ -234,7 +238,7 @@ PancreasTRAs6ChromX <- gsub(x=PancreasTRAs6_human$ensembl.chrom,pattern="X",repl
 PancreasTRAs6ChromX <- as.integer(PancreasTRAs6ChromX)
 PancreasTRAs6ChromXorder <- PancreasTRAs6ChromX[order(PancreasTRAs6ChromX)]
 
-plot(table(PancreasTRAs6ChromXorder),main="Verteilung der TRAs6 über die Chromosomen",xlab="Chromosom")
+hist(PancreasTRAs6ChromXorder,breaks=23,xlim=range(1:23),right=FALSE,main="Distribution TRAs6 across the chromosomes",xlab="Chromosom", col="lightsteelblue")
 
 # TRAs4 (mouse)
 
@@ -242,7 +246,7 @@ PancreasTRAs4ChromX <- gsub(x=PancreasTRAs4_mouse$chrom,pattern="X",replacement=
 PancreasTRAs4ChromX <- as.integer(PancreasTRAs4ChromX)
 PancreasTRAs4ChromXorder <- PancreasTRAs4ChromX[order(PancreasTRAs4ChromX)]
 
-plot(table(PancreasTRAs4ChromXorder),main="Verteilung der TRAs4 über die Chromosomen",xlab="Chromosom")
+hist(PancreasTRAs4ChromXorder,breaks=20,xlim=range(1:20),right=FALSE,main="Distribution TRAs4 across the chromosomes",xlab="Chromosom", col="lightsteelblue4")
 
 # TRAs5 (mouse)
 
@@ -250,9 +254,11 @@ PancreasTRAs5ChromX <- gsub(x=PancreasTRAs5_mouse$chrom,pattern="X",replacement=
 PancreasTRAs5ChromX <- as.integer(PancreasTRAs5ChromX)
 PancreasTRAs5ChromXorder <- PancreasTRAs5ChromX[order(PancreasTRAs5ChromX)]
 
-plot(table(PancreasTRAs5ChromXorder),main="Verteilung der TRAs5 über die Chromosomen",xlab="Chromosom")
+hist(PancreasTRAs5ChromXorder,breaks=20,xlim=range(1:20),right=FALSE,main="Distribution TRAs5 across the chromosomes",xlab="Chromosom", col="lightsteelblue4")
 
 ```
+
+
 
 
 ## Microarrays
@@ -798,7 +804,8 @@ pheatmap(pancreas_GeneExprs_sub,
          labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
          cluster_rows = TRUE, treeheight_row = 0,
          fontsize_row = 8, fontsize_col = 7, fontsize = 9,
-         main = "TRA gene expression in pancreatic cancer cells before combining via median\ndata set: GSE59761")
+         main = "TRA gene expression in PDAC cells before combining via median\ndata set: GSE59761")
+
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "pancreas_heatmap_TRAs.pdf")
@@ -1032,8 +1039,7 @@ colnames(Gensymbol_pvalue_lower_matrix) <- c("Genesymbol","p-value")
 
 # Removing all rows with a p-value = 0 (the p-value was bigger than 5%)
 Gensymbol_pvalue_lower_matrix <- Gensymbol_pvalue_lower_matrix[-which(Gensymbol_pvalue_lower_matrix[,2]==0),]
-dim(Gensymbol_pvalue_lower_matrix)
-## 190   2
+
 
 ## 40 genes are higher expressed in pancreatic cancer cells in comparison to ß cells 
 ## 190 genes are lower expressed in pancreatic cancer cells in comparison to ß cells
@@ -1077,22 +1083,22 @@ dim(Gensymbol_pvalue_differential_matrix)
 #Creating matrix that only contains differential expressed genes and their corresponding mean difference between the two control sets
 
 # Calculating the mean values for each of the genes
-diabetescontrolmean <- apply(diabetes_GeneExprs_sub_control,1,mean)
-pancreascontrolmean <- apply(pancreas_GeneExprs_sub_control,1,mean)
+diabetescontrolmedian <- apply(diabetes_GeneExprs_sub_control,1,median)
+pancreascontrolmedian <- apply(pancreas_GeneExprs_sub_control,1,median)
 
 # Calculating the mean difference
-differencemean <-  pancreascontrolmean - diabetescontrolmean
-differencemeanabs <- abs(pancreascontrolmean - diabetescontrolmean)
+differencemedian <-  pancreascontrolmedian - diabetescontrolmedian
+differencemedianabs <- abs(pancreascontrolmedian - diabetescontrolmedian)
 
 # Creating matrix with the mean values for each of the genes
-differencemeanmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemean,diabetescontrolmean,pancreascontrolmean)
-differencemeanmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemeanabs,diabetescontrolmean,pancreascontrolmean)
+differencemedianmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedian,diabetescontrolmedian,pancreascontrolmedian)
+differencemedianmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedianabs,diabetescontrolmedian,pancreascontrolmedian)
 # Gene names of differentially expressed genes
 differentialexpressedgenenames <- Gensymbol_pvalue_differential_matrix[,1]
 
 # Selecting only the genes that are differential expressed
-differentialdifferencematrix <- differencemeanmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
-differentialdifferencematrixabs <- differencemeanmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+differentialdifferencematrix <- differencemedianmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+differentialdifferencematrixabs <- differencemedianmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
 
 # Matrix in descending order
 ordermatrix <- order(differentialdifferencematrix[,2],decreasing = TRUE)
@@ -1101,8 +1107,8 @@ ordermatrixabs <- order(differentialdifferencematrixabs[,2],decreasing = TRUE)
 differentialdifferencematrixordered <- differentialdifferencematrix[ordermatrix,]
 differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[ordermatrixabs,]
 
-colnames(differentialdifferencematrixordered) <- c("Gensymbol","Meandifference","MeanDiabetes","MeanPancreas")
-colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Meandifferenceabs","MeanDiabetes","MeanPancreas")
+colnames(differentialdifferencematrixordered) <- c("Gensymbol","Mediandifference","MedianDiabetes","MedianPancreas")
+colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Mediandifferenceabs","MedianDiabetes","MedianPancreas")
 
 ```
 
@@ -1377,6 +1383,41 @@ pancreas_GeneExprs_combined["CHST15",]
 
 
 
+## log2foldchange
+
+
+Genes that are influenced by cytokine treatment
+```{r}
+#Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
+
+diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_control, diabetes_GeneExprs_sub_treat)
+differentialgenesdiabetestreatment <- diabetes_fc_treatment[-which(diabetes_fc_treatment[,"wilcox_trend"]=="not significant"),1]
+length(differentialgenesdiabetestreatment)
+differentialgenesdiabetestreatment
+
+
+
+#Creating a matrix with only those 47 genes for diabetescontrol, diabetestreatment and Pancreascontrol
+diabetescontroldifferentialgenes <- diabetes_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
+diabetestreatmentdifferentialgenes <- diabetes_GeneExprs_sub_treat[differentialgenesdiabetestreatment,]
+pancreascontroldifferentialgenes <- pancreas_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
+
+```
+Volcano Plot
+```{r}
+# Creating the volcano Plot for the previously selected genes for diabetes Treatment vs. Pancreas Control
+diabetesvspancreas_fc = log2.fold.change(diabetestreatmentdifferentialgenes, pancreascontroldifferentialgenes)
+ggplot(data = diabetesvspancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for beta cell treatment vs. PDAC control", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = PDAC control / beta control") +
+  xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
+         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "gray50", "chartreuse4"),labels = c("lower in PDAC", "not significant", "higher in PDAC")) + 
+  geom_text_repel(size = 2, max.overlaps = 25)
+```
 
 
 
