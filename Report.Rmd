@@ -481,7 +481,7 @@ plotAffyRNAdeg(RNAdeg_diabetes, col=rainbow(24), transform = "shift.scale")
 title(sub = "beta cell data set (GSE53454) rawdata")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "diabetes_rnadeg_rawdata.pdf")
+# dev.copy2pdf(file = "diabetes_rnadeg_rawdata.pdf")
 
 # use only shift
 par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
@@ -489,7 +489,7 @@ plotAffyRNAdeg(RNAdeg_diabetes, col = rainbow(24), transform = "shift.only")
 title(sub = "beta cell data set (GSE53454) rawdata")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
+# dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 
 # ----------------------------------------------------------
 # RNA degeneration plot: PDAC data set
@@ -503,7 +503,7 @@ plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6))
 title(sub = "PDAC data set (GSE59761) rawdata")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "pancreas_rnadeg_shiftt_scale_rawdata.pdf")
+# dev.copy2pdf(file = "pancreas_rnadeg_shiftt_scale_rawdata.pdf")
 
 ## shift
 par(pty = "s", mai = c(1.4,0.5,0.5,0.1))
@@ -511,7 +511,7 @@ plotAffyRNAdeg(RNAdeg_PDAC, col = rainbow(6), transform = "shift.only")
 title(sub = "PDAC data set (GSE59761) rawdata")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "pancreas_rnadeg_shift_rawdata.pdf")
+# dev.copy2pdf(file = "pancreas_rnadeg_shift_rawdata.pdf")
 
 
 # ----------------------------------------------------------
@@ -521,7 +521,7 @@ dev.copy2pdf(file = "pancreas_rnadeg_shift_rawdata.pdf")
 meanSdPlot(diabetes_vsnrma, plot = FALSE)$gg + theme(aspect.ratio = 1)
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "diabetes_meanSdPlot_vsnrma_normalized.pdf")
+# dev.copy2pdf(file = "diabetes_meanSdPlot_vsnrma_normalized.pdf")
 
 # ----------------------------------------------------------
 # meanSdPlot: PDAC data set
@@ -530,7 +530,7 @@ dev.copy2pdf(file = "diabetes_meanSdPlot_vsnrma_normalized.pdf")
 meanSdPlot(pancreas_vsnrma, plot = FALSE)$gg + theme(aspect.ratio = 1) 
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
+# dev.copy2pdf(file = "pancreas_meanSdPlot_vsnrma_normalized.pdf")
 
 # ----------------------------------------------------------
 # histogram before and after normalization: diabetes data set
@@ -543,7 +543,7 @@ hist(data_diabetes,
 title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
+# dev.copy2pdf(file = "diabetes_hist_rawdata.pdf")
 
 par(mai = c(1.2,1,1,0.5))
 
@@ -557,7 +557,7 @@ for (i in 1:ncol(diabetes_vsnrma_matrix)){
 }
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "diabetes_hist_vsnrma_normalized.pdf")
+# dev.copy2pdf(file = "diabetes_hist_vsnrma_normalized.pdf")
 
 # ----------------------------------------------------------
 # histogram before and after normalization: PDAC data set
@@ -568,7 +568,7 @@ hist(data_pancreas, col = rainbow(6), main = "Density function of log intensity 
 title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
+# dev.copy2pdf(file = "pancreas_hist_rawdata.pdf")
 
 par(mai = c(1.2,1,1,0.5))
 plot(density(pancreas_vsnrma_matrix[,1]), type = "n", xlab = "log intensity", main = "Density function of log intensity of PDAC cells (data set: GSE59761)\nafter normalization", ylim = c(0,0.4))
@@ -579,7 +579,7 @@ for (i in 1:ncol(pancreas_vsnrma_matrix)){
 }
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "pancreas_hist_vsnrma_normalized.pdf")
+# dev.copy2pdf(file = "pancreas_hist_vsnrma_normalized.pdf")
 
 
 # ----------------------------------------------------------
@@ -595,7 +595,7 @@ boxplot(data_diabetes, names = substr(colnames(diabetes_matrix), 1,10),
 title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
+# dev.copy2pdf(file = "diabetes_boxplot_rawdata.pdf")
 
 par(las = 2, mai = c(1.2,0.8,1,0.1))
 
@@ -607,7 +607,7 @@ title(sub = "data from: (Lopes et al., 2014) ; (Marroqui et al., 2015)", cex.sub
 abline(v = median(diabetes_vsnrma_matrix))
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf") 
+# dev.copy2pdf(file = "diabetes_boxplot_vsnrma_normalized.pdf") 
 
 
 # ----------------------------------------------------------
@@ -620,7 +620,7 @@ boxplot(data_pancreas, names = pancreas_microarrays$number, col = rainbow(6), ma
 title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
+# dev.copy2pdf(file = "pancreas_boxplot_rawdata.pdf")
 
 par(las = 2, mai = c(1.2,0.8,1,0.1))
 
@@ -628,7 +628,7 @@ boxplot(data_pancreas, names = pancreas_microarrays$number, col = rainbow(6), ma
 title(sub = "data from: (Stoy et al., 2015)", cex.sub = 0.7, line = 4.5)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
-dev.copy2pdf(file = "pancreas_boxplot_vsnrma_normalized.pdf")
+# dev.copy2pdf(file = "pancreas_boxplot_vsnrma_normalized.pdf")
 # ----------------------------------------------------------
 # scatterplots: diabetes data set
 # ----------------------------------------------------------
@@ -734,7 +734,7 @@ legend("topright",
        fill = c("red", "blue"))
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
+# dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
 
 
 par(mai = c(0.85,0.85,0.5,0.1))
@@ -752,7 +752,7 @@ legend("topright",
        fill = c("red", "blue"))
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
+# dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
 
 # ----------------------------------------------------------
 # heatmap TRA gene expression with hclustering: diabetes data set
@@ -790,7 +790,7 @@ pheatmap(pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) == "TBL1X"),],
          fontsize_row = 8, fontsize_col = 7, fontsize = 9)
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
+# dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
 
 # pancreas TRAs
 pheatmap(pancreas_GeneExprs_sub,
@@ -801,7 +801,7 @@ pheatmap(pancreas_GeneExprs_sub,
          main = "TRA gene expression in pancreatic cancer cells before combining via median\ndata set: GSE59761")
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_heatmap_TRAs.pdf")
+# dev.copy2pdf(file = "pancreas_heatmap_TRAs.pdf")
 
 # after combining
 pheatmap(pancreas_GeneExprs_sub_combined,
@@ -812,7 +812,7 @@ pheatmap(pancreas_GeneExprs_sub_combined,
          main = "TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_heatmap_TRA_combined.pdf")
+# dev.copy2pdf(file = "pancreas_heatmap_TRA_combined.pdf")
 
 # ------------------------------------------------
 # boxplots: diabetes data set
@@ -845,7 +845,7 @@ for (i in seq(1,250,by = 50)){
                     rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
   print(filename)
   setwd(paste(projectPath, "plots", sep = "/"))
-  dev.copy2pdf(file = filename)
+  # dev.copy2pdf(file = filename)
 }
 
 # ------------------------------------------------
@@ -879,7 +879,7 @@ for (i in seq(1,250,by = 50)){
                     rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
   print(filename)
   setwd(paste(projectPath, "plots", sep = "/"))
-  dev.copy2pdf(file = filename)
+  # dev.copy2pdf(file = filename)
 }
 
 ```
@@ -980,7 +980,7 @@ boxplot(t(pancreas_GeneExprs_sub_control[(which(pancreas_ctrl_median > threshold
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_boxplot_highexpression.pdf")
+# dev.copy2pdf(file = "pancreas_boxplot_highexpression.pdf")
 
 remove(threshold)
 
@@ -1074,7 +1074,8 @@ dim(Gensymbol_pvalue_differential_matrix)
 # Creating matrix p-value + Mean Difference
 # ------------------------------------------------
 
-#Creating matrix that only contains differential expressed genes and their corresponding mean difference between the two control sets
+#Creating matrix that only contains differential expressed genes and their corresponding median difference between the two control sets
+
 
 # Calculating the mean values for each of the genes
 diabetescontrolmean <- apply(diabetes_GeneExprs_sub_control,1,mean)
@@ -1087,6 +1088,19 @@ differencemeanabs <- abs(pancreascontrolmean - diabetescontrolmean)
 # Creating matrix with the mean values for each of the genes
 differencemeanmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemean,diabetescontrolmean,pancreascontrolmean)
 differencemeanmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemeanabs,diabetescontrolmean,pancreascontrolmean)
+
+# Calculating the median values for each of the genes
+diabetescontrolmedian <- apply(diabetes_GeneExprs_sub_control,1,median)
+pancreascontrolmedian <- apply(pancreas_GeneExprs_sub_control,1,median)
+
+# Calculating the median difference
+differencemedian <-  pancreascontrolmedian - diabetescontrolmedian
+differencemedianabs <- abs(pancreascontrolmedian - diabetescontrolmedian)
+
+# Creating matrix with the median values for each of the genes
+differencemedianmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedian,diabetescontrolmedian,pancreascontrolmedian)
+differencemedianmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedianabs,diabetescontrolmedian,pancreascontrolmedian)
+
 # Gene names of differentially expressed genes
 differentialexpressedgenenames <- Gensymbol_pvalue_differential_matrix[,1]
 
@@ -1177,10 +1191,10 @@ ggplot(data = differential_control_diabetes_pancreas_fc, aes(x = log2_foldchange
          max(abs(differential_control_diabetes_pancreas_fc$log2_foldchange))))+ 
   scale_color_manual(values = c("navyblue", "grey", "orange"), 
                      labels = c("higher in beta cells", "not significant", "higher in PDAC cells")) + 
-  geom_text_repel(size = 2, max.overlaps = 30)
+  geom_text_repel(size = 2, max.overlaps = 30, show.legend = FALSE)
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
+# dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
 
 
 
@@ -1203,7 +1217,7 @@ match(c("ANXA4","STT3A","TSPAN8"), arrange(differential_control_diabetes_pancrea
 ## STT3A - 4. place
 ## ANXA4 - 18. place
 
-#### I realized that these two matrices are not exactly equal because foldchange is based on median values and not mean
+
 filter(arrange(differential_control_diabetes_pancreas_fc, -log2_foldchange), wilcox_trend != "not significant")
 differentialdifferencematrixordered
 
@@ -1218,5 +1232,281 @@ filter(differential_control_diabetes_pancreas_fc, GeneSymbol %in% nameshigherpan
 
 ## Fate of pancreatic cells determined by TRA expression
 
+
+### Difference in gene expression in Diabetes type 1 dataset caused by Cytokine treatment
+```{r}
+# ------------------------------------------------
+# PCA & kmeans
+# ------------------------------------------------
+
+# create a data frame (columns = treatment, time_h, gene expression)
+diabetes_df <- cbind(treatment = diabetes_microarrays[,"treatment"], 
+            time_h = diabetes_microarrays[,"time_h"],
+            data.frame(t(diabetes_GeneExprs_sub_combined)))
+
+# PCA on the TRA expressions (scaled & centered)
+diabetes_pca <- prcomp(diabetes_df[,-c(1,2)], scale. = TRUE, center = TRUE)
+
+# elbow method 
+set.seed(123)
+fviz_nbclust(diabetes_pca$x, kmeans, method = "wss")
+## not clear answer (no kink)
+
+#silhuette method plot
+fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
+## cluster number = 2 is highest 
+
+# plot PC1 against PC2 
+autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", main = "Principal Component Analysis on beta cell data set (GSE53454)", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
+
+# plot kmeans for k = 2 
+autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on beta cell data set (GSE53454)") + 
+  scale_color_brewer(palette = "Set1") + 
+  scale_fill_brewer(palette = "Set1")
+
+# add cluster numbers to already existing data frame (rows = microarrays)
+diabetes_pca_kmeans2 <- kmeans(diabetes_pca$x,2)
+diabetes_pca_kmeans4 <- kmeans(diabetes_pca$x,4)
+diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_pca_kmeans4$cluster, diabetes_df)
+(diabetes_df)
+sort(filter(diabetes_df,kmeans2 == 1)$time_h) # higher in general
+sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
+
+# ------------------------------------------------
+# which genes are influenced by time 
+# ------------------------------------------------
+
+find_timegenes <- function(t1 = 0.1, t2 = 0.05){
+  g1 = sort(abs(diabetes_pca$rotation[,"PC1"]), decreasing = TRUE)
+  g2 = sort(abs(diabetes_pca$rotation[,"PC2"]))
+  
+  n1 = names(g1[which(g1 > t1)])
+  n2 = names(g2[which(g2 < t2)])
+  
+  list(PC1_high = n1, PC2_low = n2, PC1_high_PC2_low = which(n2 %in% n1))
+}
+
+
+
+# genes with high PC1
+n1 = find_timegenes(0.1, 0.05)$PC1_high
+# genes with PC1 high and PC2 low
+n2 = find_timegenes(0.1, 0.05)$PC2_low[find_timegenes(0.1, 0.05)$PC1_high_PC2_low]
+
+
+pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Cytok"), time_h)$number], 
+         main = "gene expression of genes over time \nfor cytokine treated beta cells in pancreas",
+         cluster_rows = FALSE, cluster_cols = FALSE)
+pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Control"), time_h)$number], 
+         main = "gene expression of genes over time \nfor beta cells in pancreas",
+         cluster_rows = FALSE, cluster_cols = FALSE)
+
+remove(n1,n2)
+# suggestion for linear regression: CUZD1 (Control), PNLIP (Cytokine treatment)
+
+
+# ------------------------------------------------
+# log2foldchange treatment vs control 
+# which genes are influenced by cytokine treatment
+# ------------------------------------------------
+
+diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_control, diabetes_GeneExprs_sub_treat)
+# ratio = treatment / control 
+diabetes_fc_treatment
+
+
+ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for control vs. treatment \nin diabetes type 1 data set (GSE53454)",
+       subtitle = "ratio = treatment / control", 
+       x = "log2 fold change", y = "-log10 (p-value)",
+       colour = "trend") +
+  xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
+         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"),
+                     labels = c("higher in control group", "not significant", "higher in treatment group")) + 
+  geom_text_repel(size = 2, max.time = 50, show.legend = FALSE)
+
+
+```
+
+### Difference in gene expression in PDAC dataset caused by TBL1X gene knockout
+
+```{r}
+pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
+            data.frame(t(pancreas_GeneExprs_sub_combined)))
+
+
+# PCA on the TRA expressions
+pancreas_pca <- prcomp(pancreas_df[,-1], scale. = TRUE)
+
+# plot PC1 against PC2
+autoplot(pancreas_pca, data = pancreas_df, colour = "treatment", main = "Principal Component Analysis on PDAC data set (GSE59761)", xlim = c(-0.8,0.8), ylim = c(-0.8,0.8), asp = 1)
+
+# plot kmeans for k = 2
+autoplot(kmeans(pancreas_pca$x,2), data = pancreas_pca$x, frame = TRUE, xlim = c(-0.8,0.8), ylim = c(-0.8,0.8), asp = 1, main = "kmeans clustering (k=2)\nafter PCA on PDAC data set (GSE59761)") + 
+  scale_color_hue(direction = -1, h.start = 90) +
+  scale_fill_hue(direction = -1, h.start = 90)
+
+# add cluster numbers to already existing data frame (rows = microarrays)
+pancreas_df <- cbind(kmeans2 = kmeans(pancreas_pca$x,2)$cluster, pancreas_df)
+head(pancreas_df)
+
+# ------------------------------------------------
+# log2foldchange treatment vs control 
+# which genes are influenced by gene knockout
+# ------------------------------------------------
+
+
+pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, pancreas_GeneExprs_sub_treat)
+# retio = treatment/control
+pancreas_fc
+
+
+ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") + 
+  labs(title = "Volcano plot (wilcoxon rank sum test) for PDAC data set (GSE59761)", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = treatment/control") +
+  xlim(c(-max(abs(pancreas_fc$log2_foldchange)),
+         max(abs(pancreas_fc$log2_foldchange))))+
+  scale_color_manual(values = c("grey"))+ 
+  geom_text_repel(size = 2, max.overlaps = 20, show.legend = FALSE)
+
+# top 10 (although all not significant)
+arrange(pancreas_fc, -abs(log2_foldchange))[1:10,]
+
+### CHST4: Carbohydrate Sulfotransferase - in Golgi,  modification of glycan structures on ligands of the lymphocyte homing receptor L-selectin
+### (found an article where CHST15 was inhibited, which led to reduction of proliferation in PDAC)
+
+### PABPC4: Poly(A) Binding Protein Cytoplasmic 4 
+
+
+### ECI2:  Enoyl-CoA delta isomerase 2 - lipid metabolism 
+### (found an article where ECI2 inhibition leads to down-regulated gene in cell cylce in prostate cancer)
+
+```
+
+
+
+## log2foldchange
+
+
+Genes that are influenced by cytokine treatment
+```{r}
+#Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
+
+diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_control, diabetes_GeneExprs_sub_treat)
+differentialgenesdiabetestreatment <- diabetes_fc_treatment[-which(diabetes_fc_treatment[,"wilcox_trend"]=="not significant"),1]
+length(differentialgenesdiabetestreatment) 
+# 47
+differentialgenesdiabetestreatment
+
+
+#Creating a matrix with only those 47 genes for diabetescontrol, diabetestreatment and Pancreascontrol
+diabetescontroldifferentialgenes <- diabetes_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
+diabetestreatmentdifferentialgenes <- diabetes_GeneExprs_sub_treat[differentialgenesdiabetestreatment,]
+pancreascontroldifferentialgenes <- pancreas_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
+
+```
+
+Volcano Plot
+```{r}
+# Creating the volcano Plot for the previously selected genes for diabetes Treatment vs. Pancreas Control
+diabetesvspancreas_fc = log2.fold.change(diabetestreatmentdifferentialgenes, pancreascontroldifferentialgenes) # ratio = pancreas/diabetes
+ggplot(data = diabetesvspancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for beta cell treatment vs. PDAC control", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = PDAC control / beta control") +
+  xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
+         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "gray50", "chartreuse4"),labels = c("lower in PDAC", "not significant", "higher in PDAC")) + 
+  geom_text_repel(size = 2, max.overlaps = 25, show.legend = FALSE)
+```
+
+```{r}
+# ------------------------------------------------
+# boxplot: differentialgenesdiabetestreatment for the 3 datasets
+# ------------------------------------------------
+
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+    boxplot(t(pancreas_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(pancreas_microarrays, siRNA == "NC")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the control PDAC dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+
+  
+  setwd(paste(projectPath, "plots", sep = "/"))
+  # dev.copy2pdf(file = "boxplotcytokinegenesPDAC.pdf")  
+  
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+
+    boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Control")$number]),
+          col = rainbow(50), 
+          main= paste0("boxplot of cytokine dependent TRA gene expression in the control beta cell dataset "), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  
+  setwd(paste(projectPath, "plots", sep = "/"))
+  # dev.copy2pdf(file = "boxplotcytokinegenes.pdf")
+
+
+
+```
+
+
+
+
+```{r}
+# Combined Boxplot of the cytokine dependent genes of the 3 datasets
+
+boxplotmatrix <- cbind(diabetescontroldifferentialgenes,diabetestreatmentdifferentialgenes,pancreascontroldifferentialgenes)
+mel2 <- melt(t(boxplotmatrix))
+
+# vector to annotate the values from mel with treatment
+
+treatm <- diabetes_microarrays[,"treatment"] 
+names(treatm) <- diabetes_microarrays[,"number"]
+treatm = unname(treatm[as.character(mel2$Var1)])
+#Replacing Na with Pancreas cancer
+treatm <- replace_na(treatm, "Pancreas")
+
+
+# create data frame (used for ggplot)
+boxplotmatrix2 <- cbind(treatment = treatm , mel2)
+head(boxplotmatrix2)
+
+
+
+ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 90, size = 5)) +
+  xlab("Genes")
+
+```
 
 
