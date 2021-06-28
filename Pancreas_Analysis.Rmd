@@ -353,17 +353,18 @@ dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
 ## heatmap of TBL1X gene
 ```{r}
 # check if the knockout of TBL1X can be seen
+anno <- select(pancreas_microarrays,siRNA)
+rownames(anno) <- pancreas_microarrays$number
+
 par(mai = c(1,0.1,2,1))
 pheatmap(pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) == "TBL1X"),], 
-         labels_col = paste(pancreas_microarrays[,"number"], 
-                            "\n siRNA:", pancreas_microarrays[,"siRNA"]),
          main = "TBL1X - Gene expression in pancreatic cancer cells\ndata set: GSE59761 (Stoy et al., 2015)",
+         annotation_col = anno,
          cluster_rows = TRUE, treeheight_row = 0, 
          fontsize_row = 8, fontsize_col = 7, fontsize = 9)
 
 setwd(paste(projectPath, "plots", sep = "/"))
 dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
-
 
 ```
 
@@ -371,21 +372,23 @@ dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
 ## heatmap of TRAs
 
 ```{r}
+anno <- select(pancreas_microarrays,siRNA)
+rownames(anno) <- pancreas_microarrays$number
 
 pheatmap(pancreas_GeneExprs_sub,
-         labels_col = paste(pancreas_microarrays[,"number"],"\n", "siRNA:",
-                            pancreas_microarrays[,"siRNA"]),
+         annotation_col = anno,
          labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
          cluster_rows = TRUE, treeheight_row = 0,
          fontsize_row = 8, fontsize_col = 7, fontsize = 9,
          main = "Heatmap of TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
 
 setwd(paste(projectPath, "plots", sep = "/"))
-dev.copy2pdf(file = "pancreas_heatmap_allTRAs.pdf")
+dev.copy2pdf(file = "pancreas_heatmap_TRAs.pdf")
+
 ```
 
 
-## heatmap of TRAs
+## boxplot of TRAs
 ```{r fig.height=12}
 # ------------------------------------------------
 # boxplot (very unfinished, just to get an overview)

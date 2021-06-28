@@ -8,3 +8,8 @@
 *.html
 *.csv
 .Rhistory
+*.aux
+*.gz
+*.toc
+*.log
+
