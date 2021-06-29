@@ -1546,4 +1546,61 @@ ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) +
 
 ```
 
+##regression model
 
+```{r}
+## regression model
+
+CUZD1exprdieabcontr <- matrix(
+  c(0,1,2,4,8,12,24,36,48,60,72,84,diabetes_GeneExprs_sub_control[56,1],
+ diabetes_GeneExprs_sub_control[56,3],
+diabetes_GeneExprs_sub_control[56,5],
+diabetes_GeneExprs_sub_control[56,8],
+ diabetes_GeneExprs_sub_control[56,12],
+diabetes_GeneExprs_sub_control[56,2],
+ diabetes_GeneExprs_sub_control[56,4],
+diabetes_GeneExprs_sub_control[56,6],
+ diabetes_GeneExprs_sub_control[56,7],
+diabetes_GeneExprs_sub_control[56,9],
+ diabetes_GeneExprs_sub_control[56,10],
+diabetes_GeneExprs_sub_control[56,11]),
+ncol=2)
+
+colnames(CUZD1exprdieabcontr) <- c("time", "expression")
+rownames(CUZD1exprdieabcontr) <-c("GSM1293805",
+ "GSM1293807","GSM1293809", "GSM1293812", "GSM1293816","GSM1293806", "GSM1293808","GSM1293810", "GSM1293811","GSM1293813", "GSM1293814", "GSM1293815")
+
+```
+```{r}
+b1 = cor(CUZD1exprdieabcontr[,1], CUZD1exprdieabcontr[,2]) * (sd(CUZD1exprdieabcontr[,2])/sd(CUZD1exprdieabcontr[,1]))
+b0 = mean(CUZD1exprdieabcontr[,2]) - b1*mean(CUZD1exprdieabcontr[,1])
+modelvalue = b0 +b1*96
+modelprediction <- matrix(c(96, modelvalue), nrow = 1)
+colnames(modelprediction) <- c("time", "expression")
+rownames(modelprediction) <- c("modelprediciton")
+
+  
+meanprediction <- matrix(c(96, mean(CUZD1exprdieabcontr[,2])), nrow=1)
+colnames(meanprediction) <- c("time", "expression")
+rownames(meanprediction) <- c("meanprediciton")
+
+realvalue <- matrix(c(96,diabetes_GeneExprs_sub_control[56,13]), nrow=1)
+colnames(realvalue) <- c("time", "expression")
+rownames(realvalue) <- c("GSM1293817")
+
+plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression in ß-cell control", xlim=c(0, 100), ylim=c(8, 13))
+points(modelprediction, col="red", pch=20)
+points(meanprediction, col="blue", pch=20)
+points(realvalue, col="black", pch=20)
+
+legend("bottomleft", 
+  legend = c("mean predicition", "linear model predicition", "true value"), 
+  col = c("blue", "red", "black"), 
+  pch = c(19,19, 19), 
+  bty = "n", 
+  pt.cex = 1, 
+  cex = 0.65, 
+  text.col = "black", 
+  horiz = F , 
+  inset = c(0.05, 0.1))
+```
