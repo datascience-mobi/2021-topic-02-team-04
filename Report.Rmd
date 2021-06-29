@@ -63,6 +63,7 @@ library(ggfortify)
 library(reshape2)
 library(ggrepel) 
 library(RColorBrewer)
+library(VennDiagram)#new
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 ```
@@ -1214,6 +1215,42 @@ filter(differential_control_diabetes_pancreas_fc, GeneSymbol %in% nameshigherpan
 ## Problem: GNAS in diabetes higher than pancreas 
 ## RPL5,RPL8,RPS9 are Ribosomal genes and not differential expressed
 
+```
+```{r}
+###Venn-Diagramm (highly expressed ẞ-cells, highly expressed PDAC, differently expressed)
+
+threshold <- 1.7*median(diabetes_GeneExprs_sub_treat)
+nameshigherdiabetes <- rownames(diabetes_GeneExprs_sub_treat[which(diabetes_ctrl_median > threshold),])
+
+x <- list(
+  A = nameshigherpanc, 
+  B = nameshigherdiabetes, 
+  C = differentialdifferencematrixordered[,1]
+  
+  )
+
+library(VennDiagram)
+
+display_venn <- function(x, ...){
+  library(VennDiagram)
+  grid.newpage()
+  venn_object <- venn.diagram(x, filename = NULL, ...)
+  grid.draw(venn_object)
+}
+display_venn(x, category.names = c("high in PDAC" , "high in treated ß-cells " , "differently expressed"),
+# Circles
+        lwd = 2,
+        lty = 'blank',
+        fill = c("deepskyblue", "deeppink", "yellow"),
+        # Numbers
+        cex = .9,
+        fontface = "italic",
+        # Set names
+        cat.cex = 1,
+        cat.fontface = "bold",
+        cat.default.pos = "outer",
+      cat.dist = c(-0.05, -0.25 , -0.05)
+)
 ```
 
 ## Fate of pancreatic cells determined by TRA expression
