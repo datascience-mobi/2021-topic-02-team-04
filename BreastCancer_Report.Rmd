@@ -434,3 +434,35 @@ which(breast_median > (1.5 * median(breast_median)))
 breast_median_Gene_Exprs <- breast_GeneExprs[which(breast_median > (1.5 * median(breast_median)))]
 breast_median_Gene_Exprs
 ```
+
+```{r}
+
+# pancreas TRA with an median expression above the overall median
+
+meanbreast2 <- median(breast_GeneExprs_sub_combined)
+
+length(which(apply(breast_GeneExprs_sub_combined,1,median) > meanbreast2))
+
+# 124 genes have a higher expression than the overall median
+
+#Creating matrix with overexpressed TRAs in decreasing order
+
+overexpressedbreast <- breast_GeneExprs_sub_combined[which(apply(breast_GeneExprs_sub_combined,1,median)> meanbreast2),]
+overexpressedbreastordered <- overexpressedbreast[order(apply(overexpressedbreast,1,median),decreasing=TRUE),]
+
+# Boxplot with all the genes that are higher expressed than overall median
+
+par(las = 2)
+
+boxplot(t(overexpressedbreast),
+         col = rainbow(250),
+         main="Breast Cancer gene expression of overexpressed pancreas TRAs")
+
+abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
+
+boxplot(t(overexpressedbreastordered[1:25,]),
+         col = rainbow(250),
+         main="Gene expression of the 25 highest expressed pancreas TRAs")
+abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
+
+```
