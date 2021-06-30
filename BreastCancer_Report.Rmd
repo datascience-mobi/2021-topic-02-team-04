@@ -410,7 +410,10 @@ dim(high_var_breast_sub)
 par(las = 2)
 par(mai = c(0.7,0.4,0.5,0.1))
 
-boxplot(t(high_var_breast_sub), col = rainbow(63), cex.axis=0.5, main = "Top 25% high variance genes of breast data set"); 
+boxplot(t(high_var_breast_sub), 
+        col = rainbow(63), 
+        cex.axis = 0.5, 
+        main = "Top 25% high variance genes of breast data set"); 
 abline(h = median(breast_GeneExprs_sub_combined), col = "red")
 ```
 
@@ -425,7 +428,7 @@ median(breast_median)
 
 ## Median: 6.754704
 
-## Search for genes, whose median gene expression are more than 1.8 times that of the median.
+## Search for genes, whose median gene expression are more than 1.5 times that of the median.
 which(breast_median > (1.5 * median(breast_median)))
 ## Names of genes that fit this criteria: 10 in total.
 ## CYB5A     GNAS    NUPR1     RPL5     RPL8     RPS9 SERPINA3     SPP1     SSR4     XBP1
@@ -435,34 +438,34 @@ breast_median_Gene_Exprs <- breast_GeneExprs[which(breast_median > (1.5 * median
 breast_median_Gene_Exprs
 ```
 
-```{r}
+```{r fig.height=10}
 
-# pancreas TRA with an median expression above the overall median
+# Pancreas TRA with an median expression above the overall median:
 
-meanbreast2 <- median(breast_GeneExprs_sub_combined)
+medianbreast <- median(breast_GeneExprs_sub_combined)
+length(which(apply(breast_GeneExprs_sub_combined,1,median) > medianbreast))
 
-length(which(apply(breast_GeneExprs_sub_combined,1,median) > meanbreast2))
+# 124 genes have a higher expression than the overall median.
 
-# 124 genes have a higher expression than the overall median
-
-#Creating matrix with overexpressed TRAs in decreasing order
-
+# Creating matrix with overexpressed TRAs in decreasing order:
 overexpressedbreast <- breast_GeneExprs_sub_combined[which(apply(breast_GeneExprs_sub_combined,1,median)> meanbreast2),]
 overexpressedbreastordered <- overexpressedbreast[order(apply(overexpressedbreast,1,median),decreasing=TRUE),]
 
-# Boxplot with all the genes that are higher expressed than overall median
-
+# Boxplot with all the genes that are higher expressed than overall median.
 par(las = 2)
 
 boxplot(t(overexpressedbreast),
-         col = rainbow(250),
-         main="Breast Cancer gene expression of overexpressed pancreas TRAs")
-
+        col = rainbow(124),
+        cex.axis = 0.5, 
+        main="Breast Cancer gene expression of overexpressed pancreas TRAs")
 abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
+
+# Boxplot with the top 25 genes that are higher expressed than the median.
+par(las =2, mai = c(1.2,0.6,0.6,0.2))
 
 boxplot(t(overexpressedbreastordered[1:25,]),
-         col = rainbow(250),
+         col = rainbow(25),
+         cex.axis = 1,
          main="Gene expression of the 25 highest expressed pancreas TRAs")
 abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
-
 ```
