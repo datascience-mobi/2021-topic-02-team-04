@@ -1,7 +1,7 @@
 ---
 title: "Analysis of Breast Cancer Dataset"
-author: "Anna Boot, Carolyn, Blümcke, Selina Ernst, Bianca Greul"
-date: "Closing date: 19.07.2021"
+author: "Anna Boot, Carolyn Blümcke, Selina Ernst, Bianca Greul"
+Closing date: "19.07.2021"
 output: html_document
 ---
 
@@ -58,7 +58,6 @@ TRA_pancreas_genes_human <- pancreas_gene_human
 # all TRAs
 TRA_genes_human <- unique(c(TRAs1_human$Symbol,TRAs2_human$gene.symbol,TRAs6_human$ensembl.symbol))
 ```
-
 
 ## Creating expression matrix
 
@@ -326,17 +325,34 @@ for (i in 1:9) {
 
 ```{r fig.height=20}
 # ----------------------------------------------------------
-# Boxplot of all TRA genes present in breast cancer
+# Boxplots containing all TRA genes present in breast cancer
 # ----------------------------------------------------------
 
-par(las = 2)
+# Five boxplots are created, each counting 50 genes, to ensure better visibility and accessibility of each gene.
 
-boxplot(t(breast_GeneExprs_sub_combined),
-        col = rainbow(250),
-        main="Breast Cancer TRA gene expression (data set: GSE27830, Foekens et al.)",
-        cex.axis=0.5)
-abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.4,0.4,0.1), mfrow = c(2,1))
 
+for (i in seq(1,250,by = 50)){
+  
+  generange = paste0("(", rownames(breast_GeneExprs_sub_combined)[i],
+                     " - ", 
+                     rownames(breast_GeneExprs_sub_combined)[i+49],")")
+  
+  boxplot(t(breast_GeneExprs_sub_combined[i:(i+49),filter(breast_microarrays)$number]),
+          col = rainbow(50), 
+          main= paste0("Boxplot of TRA gene expression in breast cancer ", generange, "\ndata set: GSE27830 (Foekens et al.)"),
+          horizontal = FALSE)
+  abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
+  
+  filename = paste0("breast_geneexpression_boxplot_", 
+                    rownames(breast_GeneExprs_sub_combined)[i],"_",
+                    rownames(breast_GeneExprs_sub_combined)[i+49],".pdf")
+  print(filename)
+  setwd(paste(projectPath, "plots", sep = "/"))
+  # dev.copy2pdf(file = filename)
+}
 ```
 
 ```{r}
@@ -370,21 +386,17 @@ pheatmap(t(breast_GeneExprs_sub_combined),
 ## Analysis
 
 ```{r}
-## Mean of entire set and of all chips
+## Mean of entire set
 mean(breast_GeneExprs_sub_combined)
 ## 7.241704
-apply(breast_GeneExprs_sub_combined, 2, mean)
 
-## Median of entire set and of all chips
+## Median of entire set
 median(breast_GeneExprs_sub_combined)
 ## 6.766971
-apply(breast_GeneExprs_sub_combined, 2, median)
 
-## Standard deviation of entire set and of all chips
+## Standard deviation of entire set
 sd(breast_GeneExprs_sub_combined)
 ## 1.41852
-apply(breast_GeneExprs_sub_combined, 2, sd)
-
 ```
 
 ```{r}
@@ -445,7 +457,6 @@ breast_median_Gene_Exprs
 
 # Pancreas TRA with an median expression above the overall median:
 
-medianbreast <- median(breast_GeneExprs_sub_combined)
 length(which(apply(breast_GeneExprs_sub_combined,1,median) > medianbreast))
 
 # 124 genes have a higher expression than the overall median.
