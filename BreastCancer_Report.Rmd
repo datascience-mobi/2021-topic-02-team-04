@@ -1,7 +1,7 @@
 ---
 title: "Analysis of Breast Cancer Dataset"
 author: "Anna Boot, Carolyn, Blümcke, Selina Ernst, Bianca Greul"
-date: "23 6 2021"
+date: "Closing date: 19.07.2021"
 output: html_document
 ---
 
@@ -19,16 +19,9 @@ library(AnnotationDbi)
 library(hgu133plus2hsenstcdf)
 library(hgu133plus2hsenstprobe)
 library(hexbin)
-
-library(rstudioapi) 
-library(tidyverse) 
-library(ggplot2) 
 library(pheatmap)
-library(stats)
-library(dplyr)
-library(ggfortify)
-library(reshape2)
-library(ggrepel) 
+library(rstudioapi)
+library(tidyverse)
 ```
 
 ## Pancreas TRAs
@@ -250,7 +243,7 @@ par(mai = c(0.9,0.9,0.9,0.5))
 
 hist(data_breast, 
      col = rainbow(10), 
-     main = "Density function of log intensity of breast cancer (data set: GSE27830)\nbefore normalization")
+     main = "Density function of log intensity of breast cancer (data set: GSE27830, Foekens et al.)\nbefore normalization")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 #dev.copy2pdf(file = "breast_hist_rawdata.pdf")
@@ -260,7 +253,7 @@ par(mai = c(0.9,0.9,0.9,0.5))
 
 plot(density(breast_vsnrma_matrix), 
      type = "n", xlab = "log Intensity", ylim = c(0, 0.6),
-     main = "Density function of log intensity of breast cancer (data set: GSE27830)\nafter normalization")
+     main = "Density function of log intensity of breast cancer (data set: GSE27830, Foekens et al.)\nafter normalization")
 
 for (i in 1:ncol(breast_vsnrma_matrix)){
   lines(density(breast_vsnrma_matrix[,i]), col = rainbow(10)[i])
@@ -278,7 +271,7 @@ par(las = 2, mai = c(1, 0.8, 0.7, 0.1))
 
 boxplot(data_breast, names = breast_microarrays[, "number"], 
         col = rainbow(10),  ylab = "Intensity values",
-        main = "Gene expression in breast cancer (data set: GSE27830)\nbefore vsnrma normalization", 
+        main = "Gene expression in breast cancer before vsnrma normalization\ndata set: GSE27830 (Foekens et al.)", 
         cex.axis=0.8)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
@@ -290,7 +283,7 @@ par(las = 2, mai = c(1, 0.8, 0.7, 0.1))
 
 boxplot(breast_vsnrma_matrix, names = breast_microarrays[, "number"], 
         col = rainbow(10), ylab = "Intensity values",
-        main = "Gene expression in breast cancer (data set: GSE27830)\nafter vsnrma normalization", 
+        main = "Gene expression in breast cancer after vsnrma normalization\ndata set: GSE27830 (Foekens et al.)", 
         cex.axis=0.8)
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
@@ -340,7 +333,7 @@ par(las = 2)
 
 boxplot(t(breast_GeneExprs_sub_combined),
         col = rainbow(250),
-        main="Breast Cancer TRA gene expression",
+        main="Breast Cancer TRA gene expression (data set: GSE27830, Foekens et al.)",
         cex.axis=0.5)
 abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
 
@@ -354,14 +347,24 @@ abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
 filenames <- rownames(pData(data_breast)) 
 breast_samples <- substr(filenames, 1, 9)
 
+# Heatmap of the gene expression in breast cancer.
 pheatmap(t(breast_GeneExprs_sub), 
          labels_row = paste(breast_samples),
-         labels_col = rep("",nrow(breast_GeneExprs_sub)))
+         labels_col = rep("",nrow(breast_GeneExprs_sub)),
+         main = "Gene expression in breast cancer \ndata set: GSE27830 (Foekens et al.)",
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE,
+         fontsize_row = 8, fontsize = 10)
 
-# after combining
-pheatmap(t(combineGeneExprs_median2(breast_GeneExprs_sub)), 
+# Gene expression of breast cancer after combining.
+pheatmap(t(breast_GeneExprs_sub_combined), 
          labels_row = paste(breast_samples),
-         labels_col = rep("",nrow(breast_GeneExprs_sub)))
+         labels_col = rep("",nrow(breast_GeneExprs_sub_combined)),
+         main = "Gene expression in breast cancer after combination \ndata set: GSE27830 (Foekens et al.)",
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE,
+         fontsize_row = 8, fontsize = 10)
+
 ```
 
 ## Analysis
@@ -413,7 +416,7 @@ par(mai = c(0.7,0.4,0.5,0.1))
 boxplot(t(high_var_breast_sub), 
         col = rainbow(63), 
         cex.axis = 0.5, 
-        main = "Top 25% high variance genes of breast data set"); 
+        main = "Top 25% high variance genes \ndata set: GSE27830 (Foekens et al.)"); 
 abline(h = median(breast_GeneExprs_sub_combined), col = "red")
 ```
 
@@ -448,16 +451,16 @@ length(which(apply(breast_GeneExprs_sub_combined,1,median) > medianbreast))
 # 124 genes have a higher expression than the overall median.
 
 # Creating matrix with overexpressed TRAs in decreasing order:
-overexpressedbreast <- breast_GeneExprs_sub_combined[which(apply(breast_GeneExprs_sub_combined,1,median)> meanbreast2),]
+overexpressedbreast <- breast_GeneExprs_sub_combined[which(apply(breast_GeneExprs_sub_combined,1,median)> medianbreast),]
 overexpressedbreastordered <- overexpressedbreast[order(apply(overexpressedbreast,1,median),decreasing=TRUE),]
 
 # Boxplot with all the genes that are higher expressed than overall median.
-par(las = 2)
+par(las =2, mai = c(0.7,0.6,0.6,0.2))
 
 boxplot(t(overexpressedbreast),
         col = rainbow(124),
         cex.axis = 0.5, 
-        main="Breast Cancer gene expression of overexpressed pancreas TRAs")
+        main="Breast Cancer gene expression of overexpressed pancreas TRAs \ndata set: GSE27830 (Foekens et al.)")
 abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
 
 # Boxplot with the top 25 genes that are higher expressed than the median.
@@ -466,6 +469,6 @@ par(las =2, mai = c(1.2,0.6,0.6,0.2))
 boxplot(t(overexpressedbreastordered[1:25,]),
          col = rainbow(25),
          cex.axis = 1,
-         main="Gene expression of the 25 highest expressed pancreas TRAs")
+         main="Gene expression of the 25 highest expressed pancreas TRAs \ndata set: GSE27830 (Foekens et al.)")
 abline(h = median(apply(breast_vsnrma_matrix, 1, median)))
 ```
