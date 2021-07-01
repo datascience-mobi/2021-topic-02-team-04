@@ -63,6 +63,7 @@ library(ggfortify)
 library(reshape2)
 library(ggrepel) 
 library(RColorBrewer)
+library(factoextra)
 library(VennDiagram)#new
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -1246,7 +1247,6 @@ x <- list(
 library(VennDiagram)
 
 display_venn <- function(x, ...){
-  library(VennDiagram)
   grid.newpage()
   venn_object <- venn.diagram(x, filename = NULL, ...)
   grid.draw(venn_object)
@@ -1294,10 +1294,10 @@ fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
 ## cluster number = 2 is highest 
 
 # plot PC1 against PC2 
-autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", main = "Principal Component Analysis on beta cell data set (GSE53454)", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
+autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", main = "PC analysis on ß- cell set (GSE53454)", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
 
 # plot kmeans for k = 2 
-autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on beta cell data set (GSE53454)") + 
+autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on ß-cell set (GSE53454)") + 
   scale_color_brewer(palette = "Set1") + 
   scale_fill_brewer(palette = "Set1")
 
@@ -1308,39 +1308,9 @@ diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_
 (diabetes_df)
 sort(filter(diabetes_df,kmeans2 == 1)$time_h) # higher in general
 sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
+```
 
-# ------------------------------------------------
-# which genes are influenced by time 
-# ------------------------------------------------
-
-find_timegenes <- function(t1 = 0.1, t2 = 0.05){
-  g1 = sort(abs(diabetes_pca$rotation[,"PC1"]), decreasing = TRUE)
-  g2 = sort(abs(diabetes_pca$rotation[,"PC2"]))
-  
-  n1 = names(g1[which(g1 > t1)])
-  n2 = names(g2[which(g2 < t2)])
-  
-  list(PC1_high = n1, PC2_low = n2, PC1_high_PC2_low = which(n2 %in% n1))
-}
-
-
-
-# genes with high PC1
-n1 = find_timegenes(0.1, 0.05)$PC1_high
-# genes with PC1 high and PC2 low
-n2 = find_timegenes(0.1, 0.05)$PC2_low[find_timegenes(0.1, 0.05)$PC1_high_PC2_low]
-
-
-pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Cytok"), time_h)$number], 
-         main = "gene expression of genes over time \nfor cytokine treated beta cells in pancreas",
-         cluster_rows = FALSE, cluster_cols = FALSE)
-pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Control"), time_h)$number], 
-         main = "gene expression of genes over time \nfor beta cells in pancreas",
-         cluster_rows = FALSE, cluster_cols = FALSE)
-
-remove(n1,n2)
-# suggestion for linear regression: CUZD1 (Control), PNLIP (Cytokine treatment)
-
+```{r}
 
 # ------------------------------------------------
 # log2foldchange treatment vs control 
@@ -1547,10 +1517,43 @@ ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) +
 ```
 
 ##regression model
-
 ```{r}
-## regression model
+# ------------------------------------------------
+# which genes are influenced by time 
+# ------------------------------------------------
 
+find_timegenes <- function(t1 = 0.1, t2 = 0.05){
+  g1 = sort(abs(diabetes_pca$rotation[,"PC1"]), decreasing = TRUE)
+  g2 = sort(abs(diabetes_pca$rotation[,"PC2"]))
+  
+  n1 = names(g1[which(g1 > t1)])
+  n2 = names(g2[which(g2 < t2)])
+  
+  list(PC1_high = n1, PC2_low = n2, PC1_high_PC2_low = which(n2 %in% n1))
+}
+
+
+
+# genes with high PC1
+n1 = find_timegenes(0.1, 0.05)$PC1_high
+# genes with PC1 high and PC2 low
+n2 = find_timegenes(0.1, 0.05)$PC2_low[find_timegenes(0.1, 0.05)$PC1_high_PC2_low]
+
+
+pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Cytok"), time_h)$number], 
+         main = "gene expression over time for cytokine treated ß-cells",
+         cluster_rows = FALSE, cluster_cols = FALSE)
+pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Control"), time_h)$number], 
+         main = "gene expression over time for ß-cells",
+         cluster_rows = FALSE, cluster_cols = FALSE)
+
+remove(n1,n2)
+# suggestion for linear regression: CUZD1 (Control), PNLIP (Cytokine treatment)
+```
+```{r}
+# ------------------------------------------------
+# compare linear regression and mean model
+# ------------------------------------------------
 CUZD1exprdieabcontr <- matrix(
   c(0,1,2,4,8,12,24,36,48,60,72,84,diabetes_GeneExprs_sub_control[56,1],
  diabetes_GeneExprs_sub_control[56,3],
@@ -1570,8 +1573,6 @@ colnames(CUZD1exprdieabcontr) <- c("time", "expression")
 rownames(CUZD1exprdieabcontr) <-c("GSM1293805",
  "GSM1293807","GSM1293809", "GSM1293812", "GSM1293816","GSM1293806", "GSM1293808","GSM1293810", "GSM1293811","GSM1293813", "GSM1293814", "GSM1293815")
 
-```
-```{r}
 b1 = cor(CUZD1exprdieabcontr[,1], CUZD1exprdieabcontr[,2]) * (sd(CUZD1exprdieabcontr[,2])/sd(CUZD1exprdieabcontr[,1]))
 b0 = mean(CUZD1exprdieabcontr[,2]) - b1*mean(CUZD1exprdieabcontr[,1])
 modelvalue = b0 +b1*96
@@ -1579,7 +1580,11 @@ modelprediction <- matrix(c(96, modelvalue), nrow = 1)
 colnames(modelprediction) <- c("time", "expression")
 rownames(modelprediction) <- c("modelprediciton")
 
-  
+modelvalues <- c(b0 +b1*0, b0 +b1* 1 ,b0 +b1*2, b0 +b1*4, b0 +b1*8, b0 +b1*12, b0 +b1*24, b0 +b1*36, b0 +b1*48, b0 +b1*60, b0 +b1*72, b0 +b1*84, b0 + b1*96)
+remove(b0,b1)
+modelvaluesmatrix <- matrix(c(0,1,2,4,8,12,24,36,48,60,72,84,96, modelvalues), ncol=2)
+colnames(modelvaluesmatrix) <- c("time", "expression")
+
 meanprediction <- matrix(c(96, mean(CUZD1exprdieabcontr[,2])), nrow=1)
 colnames(meanprediction) <- c("time", "expression")
 rownames(meanprediction) <- c("meanprediciton")
@@ -1588,13 +1593,18 @@ realvalue <- matrix(c(96,diabetes_GeneExprs_sub_control[56,13]), nrow=1)
 colnames(realvalue) <- c("time", "expression")
 rownames(realvalue) <- c("GSM1293817")
 
-plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression in ß-cell control", xlim=c(0, 100), ylim=c(8, 13))
+plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression \nin untreated ß-cells", xlim=c(0, 100), ylim=c(8, 13))
 points(modelprediction, col="red", pch=20)
 points(meanprediction, col="blue", pch=20)
 points(realvalue, col="black", pch=20)
 
+lines(c(0,1,2,4,8,12,24,36,48,60,72,84,96),modelvalues, col="indianred1", lwd=2)
+
+lines(0:96, rep(mean(CUZD1exprdieabcontr[,2]), 97), col="lightblue", lwd=2)
+
+
 legend("bottomleft", 
-  legend = c("mean predicition", "linear model predicition", "true value"), 
+  legend = c("mean", "linear model", "true value"), 
   col = c("blue", "red", "black"), 
   pch = c(19,19, 19), 
   bty = "n", 
@@ -1603,4 +1613,30 @@ legend("bottomleft",
   text.col = "black", 
   horiz = F , 
   inset = c(0.05, 0.1))
+```
+```{r}
+## F-test
+
+CUZD1exprdieabcontr.df <- data.frame(
+   time = c(0,1,2,4,8,12,24,36,48,60,72,84), 
+   expression = c(diabetes_GeneExprs_sub_control[56,1],
+ diabetes_GeneExprs_sub_control[56,3],
+diabetes_GeneExprs_sub_control[56,5],
+diabetes_GeneExprs_sub_control[56,8],
+ diabetes_GeneExprs_sub_control[56,12],
+diabetes_GeneExprs_sub_control[56,2],
+ diabetes_GeneExprs_sub_control[56,4],
+diabetes_GeneExprs_sub_control[56,6],
+ diabetes_GeneExprs_sub_control[56,7],
+diabetes_GeneExprs_sub_control[56,9],
+ diabetes_GeneExprs_sub_control[56,10],
+diabetes_GeneExprs_sub_control[56,11]),
+   stringsAsFactors = FALSE)
+rownames(CUZD1exprdieabcontr) <-c("GSM1293805",
+ "GSM1293807","GSM1293809", "GSM1293812", "GSM1293816","GSM1293806", "GSM1293808","GSM1293810", "GSM1293811","GSM1293813", "GSM1293814", "GSM1293815")
+
+CUZD1diabctr.lm = lm(expression ~ time, data=CUZD1exprdieabcontr.df)
+
+summary(CUZD1diabctr.lm) 
+
 ```
