@@ -314,10 +314,10 @@ diabetes_matrix <- exprs(data_diabetes)
 # store colnames (microarray)
 pancreas_microarray_information <- colnames(pancreas_matrix)
 diabetes_microarray_information <- colnames(diabetes_matrix)
-# vsnrm normalization
+# vsnrma normalization
 pancreas_vsnrma <- vsnrma(data_pancreas)
 diabetes_vsnrma <- vsnrma(data_diabetes)
-# expression matrix of vsnrm normalized data set
+# expression matrix of vsnrma normalized data set
 pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
 diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
 # cut rownames at "." 
@@ -437,7 +437,7 @@ diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_s
 
 \begin{itemize}
  \item single chip control 
- \item RNA degeneration plot 
+ \item RNA degradation plot 
  \item meanSdPlot
  \item histogram before and after normalization
  \item boxplot before and after normalization
@@ -472,7 +472,7 @@ for (i in 1:6){
 }
 
 # ----------------------------------------------------------
-# RNA degeneration plot: diabetes data set
+# RNA degradation plot: diabetes data set
 # ----------------------------------------------------------
 
 RNAdeg_diabetes = AffyRNAdeg(data_diabetes)
@@ -494,7 +494,7 @@ setwd(paste(projectPath, "plots" ,sep = "/"))
 # dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 
 # ----------------------------------------------------------
-# RNA degeneration plot: PDAC data set
+# RNA degradation plot: PDAC data set
 # ----------------------------------------------------------
 
 RNAdeg_PDAC <- AffyRNAdeg(data_pancreas)
@@ -1289,7 +1289,7 @@ set.seed(123)
 fviz_nbclust(diabetes_pca$x, kmeans, method = "wss")
 ## not clear answer (no kink)
 
-#silhuette method plot
+#silhouette method plot
 fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
 ## cluster number = 2 is highest 
 
@@ -1367,7 +1367,7 @@ head(pancreas_df)
 
 
 pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, pancreas_GeneExprs_sub_treat)
-# retio = treatment/control
+# ratio = treatment/control
 pancreas_fc
 
 
