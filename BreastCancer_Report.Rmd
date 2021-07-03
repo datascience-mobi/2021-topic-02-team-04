@@ -9,7 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# libraries
 
 ```{r libraries, include=FALSE}
 # Bioconductor
@@ -81,7 +80,7 @@ breast_matrix <- exprs(data_breast)
 # store colnames (microarray)
 breast_microarray_information <- colnames(breast_matrix)
 
-# vsnrm normalization
+# vsnrma normalization
 breast_vsnrma <- vsnrma(data_breast)
 
 # expression matrix of vsnrm normalized data set
@@ -101,7 +100,7 @@ breast_transcript_names <- rownames(breast_vsnrma_matrix)
 
 
 # ----------------------------------------------------------
-# Create data frames which hold information about micro arrays
+# Create data frames which hold information about microarrays
 # ----------------------------------------------------------
 
 # create data frame with information about microarray samples
@@ -184,7 +183,7 @@ breast_GeneExprs_sub_combined <- combineGeneExprs_median2(breast_GeneExprs_sub)
 # Single chip control
 # ----------------------------------------------------------
 
-setwd(paste(projectPath, "plots", sep = "/"))
+#setwd(paste(projectPath, "plots", sep = "/"))
 
 for (i in 1:10){
   image(data_breast[,i], col = rainbow (100, start = 0, end = 0.75)[100:1])
@@ -206,7 +205,7 @@ pData(data_breast)
 
 meanSdPlot(breast_vsnrma, plot = FALSE)$gg + theme(aspect.ratio = 1)
 
-setwd(paste(projectPath, "plots", sep = "/"))
+#setwd(paste(projectPath, "plots", sep = "/"))
 #dev.copy2pdf(file = "breast_meanSdPlot_vsnrma_normalized.pdf")
 
 ## Red line is mostly horizontal. Therefore, mean - standard deviation have no dependence. However, there is a slight upwards trend of the standard deviation.
@@ -222,7 +221,7 @@ par(pty = "s", mai = c(1.1,0.5,0.5,0.1))
 plotAffyRNAdeg(RNAdeg_breast, col = rainbow(10))
 title(sub = "Breast Cancer Rawdata")
 
-setwd(paste(projectPath, "plots" ,sep = "/"))
+#setwd(paste(projectPath, "plots" ,sep = "/"))
 #dev.copy2pdf(file = "breast_rnadeg_rawdata.pdf")
 
 # Shift
@@ -242,9 +241,9 @@ par(mai = c(0.9,0.9,0.9,0.5))
 
 hist(data_breast, 
      col = rainbow(10), 
-     main = "Density function of log intensity of breast cancer (data set: GSE27830, Foekens et al.)\nbefore normalization")
+     main = "Density function of log intensity (data set: GSE27830, Foekens et al.)\nbefore normalization")
 
-setwd(paste(projectPath, "plots" ,sep = "/"))
+#setwd(paste(projectPath, "plots" ,sep = "/"))
 #dev.copy2pdf(file = "breast_hist_rawdata.pdf")
 
 ## After normalization
@@ -252,13 +251,13 @@ par(mai = c(0.9,0.9,0.9,0.5))
 
 plot(density(breast_vsnrma_matrix), 
      type = "n", xlab = "log Intensity", ylim = c(0, 0.6),
-     main = "Density function of log intensity of breast cancer (data set: GSE27830, Foekens et al.)\nafter normalization")
+     main = "Density function of log intensity (data set: GSE27830, Foekens et al.)\nafter normalization")
 
 for (i in 1:ncol(breast_vsnrma_matrix)){
   lines(density(breast_vsnrma_matrix[,i]), col = rainbow(10)[i])
 }
 
-setwd(paste(projectPath, "plots" ,sep = "/"))
+#setwd(paste(projectPath, "plots" ,sep = "/"))
 #dev.copy2pdf(file = "breast_hist_vsnrma_normalized.pdf")
 
 # ----------------------------------------------------------
@@ -273,7 +272,7 @@ boxplot(data_breast, names = breast_microarrays[, "number"],
         main = "Gene expression in breast cancer before vsnrma normalization\ndata set: GSE27830 (Foekens et al.)", 
         cex.axis=0.8)
 
-setwd(paste(projectPath, "plots" ,sep = "/"))
+#setwd(paste(projectPath, "plots" ,sep = "/"))
 #dev.copy2pdf(file = "breast_boxplot_rawdata.pdf")
 
 ## After normalization
@@ -285,14 +284,14 @@ boxplot(breast_vsnrma_matrix, names = breast_microarrays[, "number"],
         main = "Gene expression in breast cancer after vsnrma normalization\ndata set: GSE27830 (Foekens et al.)", 
         cex.axis=0.8)
 
-setwd(paste(projectPath, "plots" ,sep = "/"))
+#setwd(paste(projectPath, "plots" ,sep = "/"))
 #dev.copy2pdf(file = "breast_boxplot_vsnrma_normalized.pdf")
 
 # ----------------------------------------------------------
 # Scatterplots
 # ----------------------------------------------------------
 
-setwd(paste(projectPath, "plots" ,sep = "/"))
+#setwd(paste(projectPath, "plots" ,sep = "/"))
 par(mai = c(0.9, 0.9, 0.7, 0.3))
 
 for (i in 1:9) {
@@ -456,7 +455,7 @@ breast_median_Gene_Exprs
 ```{r fig.height=10}
 
 # Pancreas TRA with an median expression above the overall median:
-
+medianbreast <- median(breast_GeneExprs_sub_combined)
 length(which(apply(breast_GeneExprs_sub_combined,1,median) > medianbreast))
 
 # 124 genes have a higher expression than the overall median.
