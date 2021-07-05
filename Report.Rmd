@@ -73,7 +73,7 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 # Introduction
 
 # Information to data
-## TRA genes 
+## pancreas specifc TRA genes 
 
 TRA tables that list tissue specific genes are downloaded. \
 There are 4 tables for human TRAs and 2 tables for mouse TRAs. 
@@ -172,17 +172,14 @@ label6[c(11:20,22:53)] = ""
 ```
 
 
-```{r include = TRUE}
+```{r}
 # TRAs1
 par(mai = c(0,0,0.5,0))
 pie(GewebeTabelleProzent1[,1], labels = label1, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues (Uhlen et al. 2015)")
 
 setwd(paste(projectPath, "plots" ,sep = "/"))
 #dev.copy2pdf(file = "TRA1_human_piechart.pdf")
-```
 
-
-```{r}
 # TRAs2
 par(mai = c(0,0,0.5,0))
 pie(GewebeTabelleProzent2[,1],labels = label2, col = colorRampPalette(brewer.pal(9,"Blues"))(9)[9:1], cex = 0.9, radius = 0.95, clockwise = TRUE, border = FALSE, main = "TRA expression in human tissues (Su et al. 2002 & 2004)")
@@ -314,10 +311,10 @@ diabetes_matrix <- exprs(data_diabetes)
 # store colnames (microarray)
 pancreas_microarray_information <- colnames(pancreas_matrix)
 diabetes_microarray_information <- colnames(diabetes_matrix)
-# vsnrma normalization
+# vsnrm normalization
 pancreas_vsnrma <- vsnrma(data_pancreas)
 diabetes_vsnrma <- vsnrma(data_diabetes)
-# expression matrix of vsnrma normalized data set
+# expression matrix of vsnrm normalized data set
 pancreas_vsnrma_matrix <- exprs(pancreas_vsnrma)
 diabetes_vsnrma_matrix <- exprs(diabetes_vsnrma)
 # cut rownames at "." 
@@ -356,8 +353,7 @@ pancreas_microarrays <- data.frame(number = substr(pancreas_microarray_informati
                                    version = substr(pancreas_microarray_information, 24,27),
                                    siRNA = c("TBL1", "TBL1", "TBL1", "NC", "NC", "NC"), 
                                    time = rep("24h",6),
-                                   Affymetrix = rep("G-U133_Plus_2",6),
-                                   row.names = c(1:6))
+                                   Affymetrix = rep("HG-U133_Plus_2",6),
 
 # replace old IDs sample names
 colnames(pancreas_matrix) <- pancreas_microarrays[,"number"]
@@ -437,7 +433,7 @@ diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_s
 
 \begin{itemize}
  \item single chip control 
- \item RNA degradation plot 
+ \item RNA degeneration plot 
  \item meanSdPlot
  \item histogram before and after normalization
  \item boxplot before and after normalization
@@ -472,7 +468,7 @@ for (i in 1:6){
 }
 
 # ----------------------------------------------------------
-# RNA degradation plot: diabetes data set
+# RNA degeneration plot: diabetes data set
 # ----------------------------------------------------------
 
 RNAdeg_diabetes = AffyRNAdeg(data_diabetes)
@@ -494,7 +490,7 @@ setwd(paste(projectPath, "plots" ,sep = "/"))
 # dev.copy2pdf(file = "diabetes_rnadegl_rawdata.pdf")
 
 # ----------------------------------------------------------
-# RNA degradation plot: PDAC data set
+# RNA degeneration plot: PDAC data set
 # ----------------------------------------------------------
 
 RNAdeg_PDAC <- AffyRNAdeg(data_pancreas)
@@ -690,11 +686,7 @@ for (i in 1:5) {
 
 ```
 
-
-
-# Analysis
-
-## Descriptive Statistics
+### Descriptive Statistics
 
 \begin{itemize}
  \item distribution (mean and median and sd) -> normal or not?
@@ -716,7 +708,7 @@ sd(pancreas_GeneExprs_sub_combined)
 
 
 
-```{r eval=FALSE}
+```{r fig.cap = "Histogram of gene expression for both micorarray data sets", fig.show="hold", fig.align="default", include=TRUE}
 # ----------------------------------------------------------
 # distribution (all) gene expression: both data sets
 # ----------------------------------------------------------
@@ -726,8 +718,10 @@ par(mai = c(0.85,0.85,0.5,0.1))
 hist(diabetes_GeneExprs_combined, 
      xlab = "gene expression values",
      ylab = "probability",
-     main = paste("Histogram of gene expression (diabetes data set: GSE53454)"), 
-     freq = FALSE)
+     main = paste("diabetes type 1 data set: GSE53454"), 
+     freq = FALSE, 
+     xlim = c(4,16), 
+     ylim = c(0,0.5)) 
 abline(v = c(mean(diabetes_GeneExprs_combined), median(diabetes_GeneExprs_combined)), 
        col = c("red", "blue"), lwd = 2)
 legend("topright", 
@@ -744,8 +738,10 @@ par(mai = c(0.85,0.85,0.5,0.1))
 hist(pancreas_GeneExprs_combined, 
      xlab = "gene expression values",
      ylab = "probability",
-     main = paste("Histogram of gene expression (PDAC data set: GSE59761)"), 
-     freq = FALSE)
+     main = paste("PDAC data set: GSE59761"), 
+     freq = FALSE, 
+     xlim = c(4,16), 
+     ylim = c(0,0.5))
 abline(v = c(mean(pancreas_GeneExprs_combined), median(pancreas_GeneExprs_combined)), 
        col = c("red", "blue"), lwd = 2)
 legend("topright", 
@@ -755,7 +751,10 @@ legend("topright",
 
 setwd(paste(projectPath, "plots", sep = "/"))
 # dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
+```
 
+
+```{r eval=FALSE}
 # ----------------------------------------------------------
 # heatmap TRA gene expression with hclustering: diabetes data set
 # ----------------------------------------------------------
@@ -885,6 +884,8 @@ for (i in seq(1,250,by = 50)){
 }
 
 ```
+
+# Analysis
 
 ## Differential TRA expression in pancreatic cancer and $\beta$ cells
 
@@ -1128,57 +1129,42 @@ colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Meandifferenc
 # log2foldchange
 # ------------------------------------------------
 
-log2.fold.change <- function(control, test){
+log2.fold.change <- function(group1, group2){
   
-  # only if control have the same row numbers
-  if(nrow(control) == nrow(test)){
+  # only if both groups have the same row numbers
+  if(nrow(group1) == nrow(group2)){
     
-    # control / treatment (values combined by median)
-    ratio = sapply(1:nrow(control), function(x){
-      g1_m = median(as.numeric(control[x,]))
-      g2_m = median(as.numeric(test[x,]))
-      g2_m/g1_m # change of test to control (small value -> test, high value -> control)
+    # compute log2(group1/group2) of median values 
+    # values are already log transformed!
+    log2_foldchange = sapply(1:nrow(group1), function(x){
+      g1_m = median(as.numeric(group1[x,]))
+      g2_m = median(as.numeric(group2[x,]))
+      g1_m - g2_m # log2(group1/group2) 
     })
-    # log2 on ratio => log2(treatment/control)
-    log2_foldchange = log2(ratio)
-    # ttest control vs treatment (expression values)
-    t = sapply(1:nrow(control), function(x){
-      g1 = as.numeric(control[x,])
-      g2 = as.numeric(test[x,])
-      t.test(g1, g2)$p.value
-    })
-    # wilcoxon rank sum test control vs treatment (expression values)
-    w = sapply(1:nrow(control), function(x){
-      g1 = as.numeric(control[x,])
-      g2 = as.numeric(test[x,])
+    
+    # wilcoxon rank sum test group1 vs group2 for each gene 
+    w = sapply(1:nrow(group1), function(x){
+      g1 = as.numeric(group1[x,])
+      g2 = as.numeric(group2[x,])
       wilcox.test(g1, g2, exact = FALSE)$p.value
     })
     
-  }else{print("Something has gone wrong with the dimensions of the groups (probably row numbers)!")}
-   
-  trend_t = 1:length(t)
-  trend_t[t < 0.05 & log2_foldchange > 0] = "up"
-  trend_t[t < 0.05 & log2_foldchange < 0] = "down"
-  trend_t[t >= 0.05] = "not significant"
+    trend_w = 1:length(w)
+    trend_w[w < 0.05 & log2_foldchange > 0] = "up" # group1 higher 
+    trend_w[w < 0.05 & log2_foldchange < 0] = "down" # group2 higher
+    trend_w[w >= 0.05] = "not significant" 
   
-  trend_w = 1:length(w)
-  trend_w[w < 0.05 & log2_foldchange > 0] = "up"
-  trend_w[w < 0.05 & log2_foldchange < 0] = "down"
-  trend_w[w >= 0.05] = "not significant"
-  
-  # output
-  data.frame(GeneSymbol = rownames(control), # genes
-             foldchange_ratio = ratio, # without log2
-             log2_foldchange = log2_foldchange,  # log2 foldchange
-             wilcox_raw_pvalue = w, # wilcoxon rank sum test
-             wilcox_log10_pvalue = -1*log10(w),
-             wilcox_trend = trend_w,
-             ttest_raw_pvalue = t,# ttest
-             ttest_log10_pvalue = -1*log10(t),
-             ttest_trend = trend_t)
+    # output
+    data.frame(GeneSymbol = rownames(group1), # genes
+               log2_foldchange = log2_foldchange,  # log2 foldchange
+               wilcox_raw_pvalue = w, # wilcoxon rank sum test
+               wilcox_log10_pvalue = -1*log10(w),
+               wilcox_trend = trend_w)
+    
+  }else{print("Something has gone wrong!")}
 }
 
-differential_control_diabetes_pancreas_fc = log2.fold.change(diabetes_GeneExprs_sub_control, pancreas_GeneExprs_sub_control) # ratio = control PDAC cells / beta cells
+differential_control_diabetes_pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, diabetes_GeneExprs_sub_control) # ratio = control PDAC cells / beta cells
 
 arrange(differential_control_diabetes_pancreas_fc, -log2_foldchange) # sort by how much differential expressed
 filter(differential_control_diabetes_pancreas_fc, wilcox_trend != "not significant") # only significant genes 
@@ -1199,11 +1185,9 @@ setwd(paste(projectPath, "plots", sep = "/"))
 # dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
 
 
-
 # ------------------------------------------------
 # highly and differential expressed genes in pancreatic cancer
 # ------------------------------------------------
-
 
 threshold <- 1.7*median(pancreas_GeneExprs_sub_control)
 nameshigherpanc <- rownames(pancreas_GeneExprs_sub_control[which(pancreas_ctrl_median > threshold),])
@@ -1244,7 +1228,6 @@ x <- list(
   
   )
 
-library(VennDiagram)
 
 display_venn <- function(x, ...){
   grid.newpage()
@@ -1289,7 +1272,7 @@ set.seed(123)
 fviz_nbclust(diabetes_pca$x, kmeans, method = "wss")
 ## not clear answer (no kink)
 
-#silhouette method plot
+#silhuette method plot
 fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
 ## cluster number = 2 is highest 
 
@@ -1317,7 +1300,7 @@ sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
 # which genes are influenced by cytokine treatment
 # ------------------------------------------------
 
-diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_control, diabetes_GeneExprs_sub_treat)
+diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_treat, diabetes_GeneExprs_sub_control)
 # ratio = treatment / control 
 diabetes_fc_treatment
 
@@ -1366,8 +1349,8 @@ head(pancreas_df)
 # ------------------------------------------------
 
 
-pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, pancreas_GeneExprs_sub_treat)
-# ratio = treatment/control
+pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_treat, pancreas_GeneExprs_sub_control)
+# retio = treatment/control
 pancreas_fc
 
 
@@ -1405,7 +1388,7 @@ Genes that are influenced by cytokine treatment
 ```{r}
 #Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
 
-diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_control, diabetes_GeneExprs_sub_treat)
+diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_treat, diabetes_GeneExprs_sub_control)
 differentialgenesdiabetestreatment <- diabetes_fc_treatment[-which(diabetes_fc_treatment[,"wilcox_trend"]=="not significant"),1]
 length(differentialgenesdiabetestreatment) 
 # 47
@@ -1422,7 +1405,7 @@ pancreascontroldifferentialgenes <- pancreas_GeneExprs_sub_control[differentialg
 Volcano Plot
 ```{r}
 # Creating the volcano Plot for the previously selected genes for diabetes Treatment vs. Pancreas Control
-diabetesvspancreas_fc = log2.fold.change(diabetestreatmentdifferentialgenes, pancreascontroldifferentialgenes) # ratio = pancreas/diabetes
+diabetesvspancreas_fc = log2.fold.change(pancreascontroldifferentialgenes, diabetestreatmentdifferentialgenes) # ratio = pancreas/diabetes
 ggplot(data = diabetesvspancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
