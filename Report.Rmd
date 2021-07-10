@@ -1,6 +1,6 @@
 ---
 title: "TRA expression in pancreas"
-subtitle: "Analysis of TRA expression in pancreatic cancer and diabetes type"
+subtitle: "Analysis of TRA expression in pancreatic cancer and diabetes type 1"
 author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
 output: 
   pdf_document:
@@ -64,7 +64,7 @@ library(reshape2)
 library(ggrepel) 
 library(RColorBrewer)
 library(factoextra)
-library(VennDiagram)#new
+library(VennDiagram)
 
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 ```
@@ -286,7 +286,7 @@ steps for microarray gene expression matrix:
  \item vsnrma normalization
  \item remove control probe sets 
  \item convert transcript IDs to gene symbols 
- \item remove transcripts woth no gene symbol 
+ \item remove transcripts with no gene symbol 
  \item select genes that are pancreas specific TRAs
  \item combine expression values for genes that are mentioned more than once
 \end{itemize}
@@ -353,7 +353,7 @@ pancreas_microarrays <- data.frame(number = substr(pancreas_microarray_informati
                                    version = substr(pancreas_microarray_information, 24,27),
                                    siRNA = c("TBL1", "TBL1", "TBL1", "NC", "NC", "NC"), 
                                    time = rep("24h",6),
-                                   Affymetrix = rep("HG-U133_Plus_2",6),
+                                   Affymetrix = rep("HG-U133_Plus_2",6))
 
 # replace old IDs sample names
 colnames(pancreas_matrix) <- pancreas_microarrays[,"number"]
