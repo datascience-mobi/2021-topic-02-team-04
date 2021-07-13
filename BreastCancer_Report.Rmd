@@ -1,6 +1,6 @@
 ---
 title: "Analysis of Breast Cancer Dataset"
-author: "Anna Boot, Carolyn Blümcke, Selina Ernst, Bianca Greul"
+author: "Topic 2 Team 4: Anna Boot, Carolyn Blümcke, Selina Ernst, Bianca Greul"
 Closing date: "19.07.2021"
 output: html_document
 ---
@@ -291,38 +291,39 @@ boxplot(breast_vsnrma_matrix, names = breast_microarrays[, "number"],
 # Scatterplots
 # ----------------------------------------------------------
 
-#setwd(paste(projectPath, "plots" ,sep = "/"))
-par(mai = c(0.9, 0.9, 0.7, 0.3))
+## We plotted all scatterplots and found no abnormal distribution. Therefore, we decided against showing the numerous scatterplots. However, if there is need to review them, below you can see the code we used.
 
-for (i in 1:9) {
-  for (j in (i+1):10){
+#setwd(paste(projectPath, "plots" ,sep = "/"))
+#par(mai = c(0.9, 0.9, 0.7, 0.3))
+
+#for (i in 1:9) {
+  #for (j in (i+1):10){
     
-    plot(breast_vsnrma_matrix[,i], breast_vsnrma_matrix[,j], pch = ".",
-       xlab = breast_microarrays[, "number"][i], 
-       ylab = breast_microarrays[, "number"][j])
-    abline(0, 1, col = "red")
+    #plot(breast_vsnrma_matrix[,i], breast_vsnrma_matrix[,j], pch = ".",
+       #xlab = breast_microarrays[, "number"][i], 
+       #ylab = breast_microarrays[, "number"][j])
+    #abline(0, 1, col = "red")
     
-    title(main = paste("Scatterplot of probe",
-                     breast_microarrays[, "number"] [i],
-                     "and", 
-                     breast_microarrays[, "number"] [i+1],
-                     sep = " ", collapse = NULL))
+    #title(main = paste("Scatterplot of probe",
+                     #breast_microarrays[, "number"] [i],
+                     #"and", 
+                     #breast_microarrays[, "number"] [i+1],
+                     #sep = " ", collapse = NULL))
     
-    file.name = paste("Scatterplot_",
-                    as.character(breast_microarrays[, "number"] [i], 
-                    "_", as.character(breast_microarrays[, "number"][i+1]), ".pdf", 
-                    sep =" "))
+    #file.name = paste("Scatterplot_",
+                    #as.character(breast_microarrays[, "number"] [i], 
+                    #"_", as.character(breast_microarrays[, "number"][i+1]), ".pdf", 
+                    #sep =" "))
     #dev.copy2pdf(file = file.name)
     
-  }
-}
+  #}
+#}
 
-## The scatterplots never show an abnormal distribution.
 ```
 
 ## Descriptive Statistics
 
-```{r fig.height=20}
+```{r}
 # ----------------------------------------------------------
 # Boxplots containing all TRA genes present in breast cancer
 # ----------------------------------------------------------
@@ -331,7 +332,7 @@ for (i in 1:9) {
 
 par(las = 2, 
     cex.axis = 0.5, cex.main = 0.8,
-    mai = c(0.65,0.4,0.4,0.1), mfrow = c(2,1))
+    mai = c(0.65,0.4,0.4,0.1))
 
 for (i in seq(1,250,by = 50)){
   
@@ -407,14 +408,14 @@ sd(breast_GeneExprs_sub_combined)
 var_breast <- apply(breast_GeneExprs_sub_combined, 1, var, na.rm=TRUE)
 
 ## Create function to filter out the top 25% of variance.
-top5 <- function(x) {
+top25 <- function(x) {
   x >= quantile(x, 0.75)
 }
 
-## Apply function to variance set, to determine the top 5% of variance.
-top5_breast <- top5(var_breast)
-top5_breast_names <- which(top5_breast == "TRUE")
-high_var_breast_sub <- breast_GeneExprs_sub_combined[top5_breast_names, , drop = FALSE]
+## Apply function to variance set, to determine the top 25% of variance.
+top25_breast <- top25(var_breast)
+top25_breast_names <- which(top25_breast == "TRUE")
+high_var_breast_sub <- breast_GeneExprs_sub_combined[top25_breast_names, , drop = FALSE]
 dim(high_var_breast_sub)
 ## data set complete: 250 genes
 ## data set high variance: 63 genes
@@ -445,7 +446,7 @@ median(breast_median)
 ## Search for genes, whose median gene expression are more than 1.5 times that of the median.
 which(breast_median > (1.5 * median(breast_median)))
 ## Names of genes that fit this criteria: 10 in total.
-## CYB5A     GNAS    NUPR1     RPL5     RPL8     RPS9 SERPINA3     SPP1     SSR4     XBP1
+## CYB5A     GNAS    NUPR1     RPL5     RPL8     RPS9     SERPINA3     SPP1     SSR4     XBP1
 
 ## Expression values of those genes:
 breast_median_Gene_Exprs <- breast_GeneExprs[which(breast_median > (1.5 * median(breast_median)))]
