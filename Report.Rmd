@@ -1287,7 +1287,7 @@ Geminin (GMNN) is responsible for the regulation of DNA replication in interacti
 
 ### Difference in gene expression in diabetes data set
 
-$\beta$-cells have a highly increased cell death rate in diabetes type 1 (Eizirik et al., 2020), while pancreatic cancer cells are known for their fast proliferation (Takakura et al., 2015). Here the gene expression of TRAs in treated and untreated $\beta$- and pancreatic cancer cells is compared to establish similarities and differences in their intracellular pathways leading them to their respective fates. \
+$\beta$-cells have a highly increased cell death rate in diabetes type 1 (Eizirik \textit{et al.}, 2020), while pancreatic cancer cells are known for their fast proliferation (Takakura \textit{et al.}, 2015). Here the gene expression of TRAs in treated and untreated $\beta$- and pancreatic cancer cells is compared to establish similarities and differences in their intracellular pathways leading them to their respective fates. \
 First, the difference in healthy and stressed $\beta$-cells was deduced to determine which genes are influenced by the cytokine treatment. \
 To achieve this goal, a Principal Component Analysis (PCA) was conducted, which can be seen below. The optimal number of two clusters was determined by the silhouette method. Those clusters for the microarray chips were allocated by k-means. The conclusion was reached that the pancreatic-specific TRA expression overall is not considerably affected by the cytokine treatment but rather by the temporal component.
 
@@ -1372,7 +1372,7 @@ ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_p
 
 ```
 
-A significantly upregulated gene in the treated group is CXCL11. This gene is known to be induced by IFN-$\gamma$ (Tokunaga et al., 2018), which was part of the treatment. This gene induces leukocytic infiltration into pancreatic tissue, that leads to $\beta$-cell destruction and ultimately, to type 1 diabetes mellitus (Burke et al., 2016).
+A significantly upregulated gene in the treated group is CXCL11. This gene is known to be induced by IFN-$\gamma$ (Tokunaga \textit{et al.}, 2018), which was part of the treatment. This gene induces leukocytic infiltration into pancreatic tissue, that leads to $\beta$-cell destruction and ultimately, to type 1 diabetes mellitus (Burke \textit{et al.}, 2016).
 
 ### Difference in gene expression in PDAC data set
 
@@ -1586,19 +1586,19 @@ ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) +
 The two genes that are the highest expressed genes in pancreatic cancer and lowly expressed in diabetes are GMNN and STT3A. \
 Geminin (GMNN) was previously discussed and plays an important role in the regulation of DNA replication. \
 
-STT3A is upregulated in pancreatic cancer compared to the expression in the normal pancreas (Pan et al., 2014). STT3A is a subunit of oligosaccharyltransferase (OST), which is a membrane protein complex catalyzing Asn-linked glycosylation of polypeptides (Ruiz-Canada et al., 2009). Epithelial-to-mesenchymal transition (EMT) in tumor cells induces upregulation of OST to ensure cell surface expression of PD-L1, leading to immune evasion (Harada et al., 2019). \
+STT3A is upregulated in pancreatic cancer compared to the expression in the normal pancreas (Pan \textit{et al.}, 2014). STT3A is a subunit of oligosaccharyltransferase (OST), which is a membrane protein complex catalyzing Asn-linked glycosylation of polypeptides (Ruiz-Canada \textit{et al.}, 2009). Epithelial-to-mesenchymal transition (EMT) in tumor cells induces upregulation of OST to ensure cell surface expression of PD-L1, leading to immune evasion (Harada \textit{et al.}, 2019). \
 
 The high expression of those two genes is therefore being proven to be part of the pathways that lead cells into tumorigenesis. The related pathways are regulation of DNA replication and OST. They result in genomic instability as well as immune evasion. Hence, overexpression of GMNN and STT3A promotes tumor growth. \
 
 Meanwhile, finding genes that are highly expressed in diabetes and lowly expressed in pancreatic cancer was challenging. Some of the found genes related to pathways introducing $\beta$-cell death and therefore diabetes, were ambiguous. Two examples were chosen to demonstrate difficulties that were encountered as well as one gene which reflects the desired results. \
 
-The highest differentially expressed gene in diabetes is SPINK1. Serine protease inhibitor Kazal type 1 (SPINK1) is a trypsin inhibitor maintaining the integrity of pancreatic tissue, which is associated with pancreatitis as well as diabetes (Muller et al., 2019). There is little information up to this date solely concerning the role of SPINK1 in diabetes. Most published scientific papers focus on the role of SPINK1 in relation to pancreatitis and how this disease correlates with diabetes and pancreatic cancer. \
+The highest differentially expressed gene in diabetes is SPINK1. Serine protease inhibitor Kazal type 1 (SPINK1) is a trypsin inhibitor maintaining the integrity of pancreatic tissue, which is associated with pancreatitis as well as diabetes (Muller \textit{et al.}, 2019). There is little information up to this date solely concerning the role of SPINK1 in diabetes. Most published scientific papers focus on the role of SPINK1 in relation to pancreatitis and how this disease correlates with diabetes and pancreatic cancer. \
 
-Another example is REG1A, which encodes a protein called Pancreatic Stone Protein (PSP). A high expression and subsequent secretion of PSP is induced by $\beta$-cells undergoing apoptosis in neighboring pancreatic cells (Bacon et al., 2012). PSP is associated with islet regeneration and proliferation as a reaction to the $\beta$-cell loss in diabetes (Yang et al., 2015). However, REG1A is also linked to pancreatic cancer. A high expression of REG1A is associated with a poor prognosis in pancreatic cancer, especially in patients with diabetes, as it promotes cell proliferation and tumor growth (Zhou et al., 2010). Evidently, that was not the case in our data set, but since the gene is associated with both diabetes and cancer, it cannot be used to predict the fate of pancreatic cells. \
+Another example is REG1A, which encodes a protein called Pancreatic Stone Protein (PSP). A high expression and subsequent secretion of PSP is induced by $\beta$-cells undergoing apoptosis in neighboring pancreatic cells (Bacon \textit{et al.}, 2012). PSP is associated with islet regeneration and proliferation as a reaction to the $\beta$-cell loss in diabetes (Yang \textit{et al.}, 2015). However, REG1A is also linked to pancreatic cancer. A high expression of REG1A is associated with a poor prognosis in pancreatic cancer, especially in patients with diabetes, as it promotes cell proliferation and tumor growth (Zhou \textit{et al.}, 2010). Evidently, that was not the case in our data set, but since the gene is associated with both diabetes and cancer, it cannot be used to predict the fate of pancreatic cells. \
 
 SPINK1 and REG1A can not be applicated in the prediction of diabetes, because of insufficient research of the respective genes as well as a strong relation to pancreatic cancer. Nevertheless, we also found genes that are only associated with diabetes. \
 
-A successfully identified gene is CXCL11, which was previously mentioned as upregulated in cells treated with cytokines. CXCL11 is a chemokine that regulates immune cell migration and induces inflammation (Kochumon et al., 2020). Diabetes is induced by the ensuing $\beta$-cell death (Burke et al., 2016). \
+A successfully identified gene is CXCL11, which was previously mentioned as upregulated in cells treated with cytokines. CXCL11 is a chemokine that regulates immune cell migration and induces inflammation (Kochumon \textit{et al.}, 2020). Diabetes is induced by the ensuing $\beta$-cell death (Burke \textit{et al.}, 2016). \
 
 There are quite a few genes that are expressed differently in pancreatic cancer and diabetes compared to normal $\beta$-cells. However, the most prominent ones are GMNN and STT3A for a high cancer expression as well as SPINK1 and REG1A for diabetes. They induce aforementioned pathways leading $\beta$-cells to their respective fates. 
 
@@ -1747,3 +1747,34 @@ summary(CUZD1diabctr.lm)
 
 # Discussion
 
+
+
+## References
+
+Bacon, S., Kyithar, M. P., Schmid, J., Rizvi, S. R., Bonner, C., Graf, R., Prehn, J. H., & Byrne, M. M. (2012). Serum levels of pancreatic stone protein (PSP)/reg1A as an indicator of beta-cell apoptosis suggest an increased apoptosis rate in hepatocyte nuclear factor 1 alpha (HNF1A-MODY) carriers from the third decade of life onward. BMC Endocr. Disord. \textit{12}, 13. \
+
+Burke, S. J., Karlstad, M. D., Eder, A. E., Regal, K. M., Lu, D., Burk, D. H., & Collier, J. J. (2016). Pancreatic β-Cell production of CXCR3 ligands precedes diabetes onset. BioFactors \textit{42}, 703–715. \
+
+Eizirik, D. L., Pasquali, L., & Cnop, M. (2020). Pancreatic β-cells in type 1 and type 2 diabetes mellitus: different pathways to failure. Nat. Rev. Endocrinol. \textit{16}, 349–362. \
+
+Harada, Y., Ohkawa, Y., Kizuka, Y., & Taniguchi, N. (2019). Oligosaccharyltransferase: A Gatekeeper of Health and Tumor Progression. Int. J. Mol. Sci. \textit{20}, 6074. \
+
+Kochumon, S., Madhoun, A. A., Al-Rashed, F., Azim, R., Al-Ozairi, E., Al-Mulla, F., & Ahmad, R. (2020). Adipose tissue gene expression of CXCL10 and CXCL11 modulates inflammatory markers in obesity: implications for metabolic inflammation and insulin resistance. Ther. Adv. Endocrinol. Metab. \textit{11}, 2042018820930902. \
+
+Kushwaha, P. P., Rapalli, K. C., & Kumar, S. (2016). Geminin a multi task protein involved in cancer pathophysiology and developmental process: A review. Biochimie \textit{131}, 115–127. \
+
+Muller, N., Sarantitis I., Rouanet, M., de Mestier, L., Halloran, C., Greenhalf, W., Férec, C., Masson, E., Ruszniewski, P., Lévy, P., Neoptolemos, J., Buscail, L. & Rebours V. (2019). Natural history of SPINK1 germline mutation related-pancreatitis. EBioMedicine \textit{48}, 581–591. \
+
+Pan, S., Chen, R., Tamura, Y., Crispin, D. A., Lai, L. A., May, D. H., McIntosh, M. W., Goodlett, D. R., & Brentnall, T. A. (2014). Quantitative glycoproteomics analysis reveals changes in N-glycosylation level associated with pancreatic ductal adenocarcinoma. J. Proteome Res. \textit{13}, 1293–1306. \
+
+Ruiz-Canada, C., Kelleher, D. J., & Gilmore, R. (2009). Cotranslational and posttranslational N-glycosylation of polypeptides by distinct mammalian OST isoforms. Cell \textit{136}, 272–283. \
+
+Salabat, M. R., Melstrom, L. G., Strouch, M. J., Ding, X. Z., Milam, B. M., Ujiki, M. B., Chen, C., Pelling, J. C., Rao, S., Grippo, P. J., McGarry, T. J., & Bentrem, D. J. (2008). Geminin is overexpressed in human pancreatic cancer and downregulated by the bioflavanoid apigenin in pancreatic cancer cell lines. Mol. Carcinog. \textit{47}, 835–844. \
+
+Takakura, K., Shibazaki, Y., Yoneyama, H., Fujii, M., Hashiguchi, T., Ito, Z., Kajihara, M., Misawa, T., Homma, S., Ohkusa, T., & Koido, S. (2015). Inhibition of Cell Proliferation and Growth of Pancreatic Cancer by Silencing of Carbohydrate Sulfotransferase 15 In Vitro and in a Xenograft Model. PloS one \textit{10}, e0142981. \
+
+Tokunaga, R., Zhang, W., Naseem, M., Puccini, A., Berger, M. D., Soni, S., McSkane, M., Baba, H., & Lenz, H. J. (2018). CXCL9, CXCL10, CXCL11/CXCR3 axis for immune activation - A target for novel cancer therapy. Cancer Treat Rev. \textit{63}, 40–47. \
+
+Yang, J., Li, L., Raptis, D., Li, X., Li, F., Chen, B., He, J., Graf, R., & Sun, Z. (2015). Pancreatic stone protein/regenerating protein (PSP/reg): a novel secreted protein up-regulated in type 2 diabetes mellitus. Endocrine \textit{48}, 856–862. \
+
+Zhou, L., Zhang, R., Wang, L., Shen, S., Okamoto, H., Sugawara, A., Xia, L., Wang, X., Noguchi, N., Yoshikawa, T., Uruno, A., Yao, W., & Yuan, Y. (2010). Upregulation of REG Ialpha accelerates tumor progression in pancreatic cancer with diabetes. Int. J. Cancer. \textit{127}, 1795–1803. 
