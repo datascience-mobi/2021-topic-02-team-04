@@ -5,22 +5,21 @@ author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
 output: 
   pdf_document:
     keep_tex: true
-    toc: true
+    toc: false
     toc_depth: 2 # section & subsection in toc 
     number_sections: true # all sections are numbered in output
     fig_caption: true # (true by default)
 documentclass: article
 papersize: a4
-fontsize: 10pt
+fontsize: 12pt
 geometry: left = 2 cm, right = 2 cm, top = 2 cm, bottom = 2 cm, headsep = 20pt
 secnumdepth: 2
 linestretch: 1
-out.width: "50%"
+out.width: "60%"
 fig.align: "center"
 header-includes:
   \usepackage{float}
   \usepackage{graphicx}
-  \usepackage[utf8]{inputenc}
   \usepackage[T1]{fontenc}
   \usepackage[greek, ngerman, main=english]{babel}
   \usepackage{helvet}
@@ -70,13 +69,21 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 ```
 
 \newpage
+\pagenumbering{arabic} 
+
 # Introduction
 
-# Information to data
-## pancreas specifc TRA genes 
+In this project the expression of tissue restricted antigens (TRAs) in pancreatic cells is examined, concentrating on two cell types: $\beta$-cells and pancreatic ductal adenocarcinoma (PDAC) cells. \
+TRAs are highly expressed in specific tissues and in the thymus, where they have part in establishing the central tolerance of the immune system. A malfunction in the negative selection of developing T-cells can lead to autoimmune diseases, like diabetes type 1 (Kyewski & Klein, 2006).\		 Here autoreactive T-cells attack $\beta$-cells that, as part of the endocrine pancreatic islet, synthesize and secrete the hormone insulin (Jingli et al., 2020).\					Another cause is the release of proinflammatory cytokines which, among mediating the innate immune response, can activate apoptotic pathways (Clark et al., 2017). Together this leads to the elimination of $\beta$-cells and results in insulin deficiency and hyperglycemia. \
+The other cell type are PDAC cells. Pancreatic adenocarcinoma is the most common pancreatic cancer and originates from epithelial cells from the exocrine component producing digestive enzymes. Mutations of the oncogenes and the tumor-suppressor genes stimulate cell growth, division, and survival pathways (Wolfgang et al. 2013). \
+With a 5-year survival rate of around 5% pancreatic cancer is the 4th leading cause of death by cancer in Western societies (Siegel et al., 2015). Therefore, identifying highly expressed TRAs that are, compared to healthy and stressed $\beta$-cells, unique to PDAC could be used to facilitate the diagnosis and development of new treatment options. Additionally, pathways leading to pancreatic cancer and diabetes were analyzed and differences established. \
 
-TRA tables that list tissue specific genes are downloaded. \
-There are 4 tables for human TRAs and 2 tables for mouse TRAs. 
+# Information to data
+## Pancreas specifc TRA genes 
+
+The base of the project are TRAs that are significantly higher expressed in the pancreas compared to other tissues. \
+The first step of the project was therefore to find pancreas-specific genes. The tables used were provided by Dr. Dinkelacker and came from multiple sources, all of which focused on TRA expression in human and mice tissues. By selecting all genes that were associated with the pancreas, we could gather 330 pancreas-specific TRAs in the human and 59 in mice.\
+Because we are working with TRA expression in human pancreatic cells, we are going to concentrate on human pancreas-specific TRAs. \ 
 
 ```{r}
 # ----------------------------------------------------------
@@ -254,42 +261,18 @@ barplot(table(PancreasTRAs5ChromXorder),main="mouse pancreas specific TRAs5",xla
 ```
 
 
-## Microarrays
+## Gene expression  measured by microarrays
 
-### Data sets
+### Microarray Data sets
 
+Microarrays were used to analyze the expression of a large number of genes in human pancreas cells. This was done by hybridizing labelled cDNA (target) to a specific DNA sequence (probe) with a defined position on the microarray chip. After hybridization the fluorescence emission was examined. \
+The pancreas cell types used for this project are PDAC Capan-1 cells (data set GSE59761) and $\beta$-cells (data set GSE53454). These data sets were downloaded from the GEO database. For both the same Affymetrix chip was used (HG-U133 Plus 2) which means that the same transcripts were analyzed. \ 
+Data set GSE59761 includes six chips. For three of those, the pancreatic cancer cells were transfected with unspecified small interfering RNA (siRNA) as negative control (NC). The other three were treated with siRNA targeted against the TBL1X gene, which encodes a transcriptional cofactor. This knockout causes decreased proliferation in the pancreatic cancer cells (Stoy et al., 2015). \
 
-PDAC Capan-1 Zellen dataset (GSE59761) and Diabetes type 1 dataset (GSE53454) are downloaded from the GEO database. \\
-
-GSE59761: 6 chips
-\begin{itemize}
- \item pancreatic cancer cells (PDAC)
- \item control: 3 chips, treated with unspecified siRNA
- \item treatment: 3 chips, treated with siRNA targeted against TBL1X gene 
-\end{itemize}
-
-GSE53454: 24 chips
-\begin{itemize}
- \item $\beta$ cells
- \item control: 13 chips
- \item treatment: 11 chips, treated with IFN-$\gamma$ and IL-1$\beta$
- \item analyzed 0-96 hours
-\end{itemize}
+Data set GSE53454 consists of 24 chips. 13 of those form the control group, where the $\beta$-cells were observed over several time periods from 0 to 96 hours. The remaining eleven microarray chips provide gene expression data to $\beta$-cells that were treated with cytokines interleukin-1$\beta$ and interferon-$\gamma$ to simulate the actions of the immune system in diabetes type 1. This treatment was also conducted over a time period ranging from 1 to 96 hours (Lopes et al., 2014).
 
 
 ### Creating expression matrix
-
-
-steps for microarray gene expression matrix:
-\begin{itemize}
- \item upload
- \item vsnrma normalization
- \item remove control probe sets 
- \item convert transcript IDs to gene symbols 
- \item remove transcripts with no gene symbol 
- \item select genes that are pancreas specific TRAs
- \item combine expression values for genes that are mentioned more than once
-\end{itemize}
 
 ```{r}
 # ----------------------------------------------------------
@@ -429,16 +412,214 @@ diabetes_GeneExprs_sub_combined <- combineGeneExprs_median2(diabetes_GeneExprs_s
 
 ```
 
+The raw values from the microarrays are not suited to be used in the analysis. First, they have to be processed to allow comparison between the gene expression of different chips. An important part of this processing is the normalization using the 'vsnrma' function of the programming language R.
+
+```{r, eval=FALSE, echo=TRUE, include=TRUE}
+pancreas_vsnrma <- vsnrma(data_pancreas) # GSE59761
+diabetes_vsnrma <- vsnrma(data_diabetes) # GSE53454
+```
+
+This function does several steps at once: vsn normalization, background correction and summary of probesets. The resulting expression values are log 2 transformed.\
+
+The resulting matrix contains the expression values for all transcripts for each chip. We translated the transcripts into the corresponding gene symbols and selected the pancreas-specific TRAs. Then we combined multiples of the same gene by using the median of the respective expression values. Their expression values were included into the final expression matrix, which contains 250 out of the original 330 pancreas TRAs. \
+
+The following graphs show the histogram, mean and median obtained from expression matrices. As seen in these graphs, both sets have a right-skewed distribution and are therefore not suitable for t-tests. Instead Wilcoxon rank-sum tests were used in the following statistical analysis. 
+
+```{r}
+mean(diabetes_GeneExprs_sub_combined)
+median(diabetes_GeneExprs_sub_combined)
+sd(diabetes_GeneExprs_sub_combined)
+
+
+mean(pancreas_GeneExprs_sub_combined)
+median(pancreas_GeneExprs_sub_combined)
+sd(pancreas_GeneExprs_sub_combined)
+```
+
+
+
+
+```{r fig.cap = "Histogram of gene expression for both microarray data sets. The expression matrix used contains all genes from the microarray, where a gene is a summary of the corresponding transcripts.", fig.show="hold", fig.align="default", include=TRUE, eval=TRUE, out.width= "50%"}
+# ----------------------------------------------------------
+# distribution (all) gene expression: both data sets
+# ----------------------------------------------------------
+
+par(mai = c(0.85,0.85,0.5,0.1))
+
+hist(diabetes_GeneExprs_combined, 
+     xlab = "gene expression values",
+     ylab = "probability",
+     main = paste("Diabetes type 1 data set: GSE53454"), 
+     freq = FALSE, 
+     xlim = c(4,16), 
+     ylim = c(0,0.5)) 
+abline(v = c(mean(diabetes_GeneExprs_combined), median(diabetes_GeneExprs_combined)), 
+       col = c("red", "blue"), lwd = 2)
+legend("topright", 
+       legend = c(paste0("mean = ",round(mean(diabetes_GeneExprs_combined),2)), 
+                  paste0("median = ", round(median(diabetes_GeneExprs_combined),2))), 
+       fill = c("red", "blue"))
+
+setwd(paste(projectPath, "plots", sep = "/"))
+# dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
+
+
+par(mai = c(0.85,0.85,0.5,0.1))
+
+hist(pancreas_GeneExprs_combined, 
+     xlab = "gene expression values",
+     ylab = "probability",
+     main = paste("PDAC data set: GSE59761"), 
+     freq = FALSE, 
+     xlim = c(4,16), 
+     ylim = c(0,0.5))
+abline(v = c(mean(pancreas_GeneExprs_combined), median(pancreas_GeneExprs_combined)), 
+       col = c("red", "blue"), lwd = 2)
+legend("topright", 
+       legend = c(paste0("mean = ",round(mean(pancreas_GeneExprs_combined),2)), 
+                  paste0("median = ", round(median(pancreas_GeneExprs_combined),2))), 
+       fill = c("red", "blue"))
+
+setwd(paste(projectPath, "plots", sep = "/"))
+# dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
+```
+
+
+```{r eval=FALSE}
+# ----------------------------------------------------------
+# heatmap TRA gene expression with hclustering: diabetes data set
+# ----------------------------------------------------------
+
+anno <- select(diabetes_microarrays,treatment, time_h)
+rownames(anno) <- diabetes_microarrays$number
+
+pheatmap(diabetes_GeneExprs_sub, 
+         labels_row = rep("",nrow(diabetes_GeneExprs_sub)),
+         annotation_col = anno,
+         treeheight_row = 0,
+         main = "TRA gene expression in beta cells (GSE53454)")
+
+# after combining
+pheatmap(diabetes_GeneExprs_sub_combined, 
+         labels_row = rep("",nrow(diabetes_GeneExprs_sub)),
+         annotation_col = anno,
+         treeheight_row = 0,
+         main = "TRA gene expression in beta cells (GSE53454)\nafter combining transcripts from one gene over median")
+
+# ----------------------------------------------------------
+# heatmap gene expression with hclustering: PDAC data set
+# ----------------------------------------------------------
+
+# check if the knockout of TBL1X can be seen
+anno <- select(pancreas_microarrays,siRNA)
+rownames(anno) <- pancreas_microarrays$number
+
+par(mai = c(1,0.1,2,1))
+pheatmap(pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) == "TBL1X"),], 
+         main = "TBL1X - Gene expression in pancreatic cancer cells\ndata set: GSE59761 (Stoy et al., 2015)",
+         annotation_col = anno,
+         cluster_rows = TRUE, treeheight_row = 0, 
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+# dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
+
+# pancreas TRAs
+pheatmap(pancreas_GeneExprs_sub,
+         annotation_col = anno,
+         labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
+         cluster_rows = TRUE, treeheight_row = 0,
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9,
+         main = "TRA gene expression in pancreatic cancer cells before combining via median\ndata set: GSE59761")
+
+setwd(paste(projectPath, "plots", sep = "/"))
+# dev.copy2pdf(file = "pancreas_heatmap_TRAs.pdf")
+
+# after combining
+pheatmap(pancreas_GeneExprs_sub_combined,
+         annotation_col = anno,
+         labels_row = rep("",nrow(pancreas_GeneExprs_sub_combined)),
+         cluster_rows = TRUE, treeheight_row = 0,
+         fontsize_row = 8, fontsize_col = 7, fontsize = 9,
+         main = "TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
+
+setwd(paste(projectPath, "plots", sep = "/"))
+# dev.copy2pdf(file = "pancreas_heatmap_TRA_combined.pdf")
+
+# ------------------------------------------------
+# boxplots: diabetes data set
+# ------------------------------------------------
+
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+
+for (i in seq(1,250,by = 50)){
+  
+  generange = paste0("(", rownames(diabetes_GeneExprs_sub_combined)[i],
+                     "-", 
+                     rownames(diabetes_GeneExprs_sub_combined)[i+49],")")
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Control")$number]),
+          col = rainbow(50), 
+          main= paste0("boxplot of TRA gene expression in beta cells ", generange, "\ndata set: GSE53454"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Cytok")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of TRA gene expression in beta cells treated with cytokines", generange, "\ndata set: GSE53454"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  filename = paste0("diabetes_geneexpression_boxplot_", 
+                    rownames(diabetes_GeneExprs_sub_combined)[i],"_",
+                    rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
+  print(filename)
+  setwd(paste(projectPath, "plots", sep = "/"))
+  # dev.copy2pdf(file = filename)
+}
+
+# ------------------------------------------------
+# boxplots: PDAC data set
+# ------------------------------------------------
+
+par(las = 2, 
+    cex.axis = 0.5, cex.main = 0.8,
+    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
+
+for (i in seq(1,250,by = 50)){
+  
+  generange = paste0("(", rownames(pancreas_GeneExprs_sub_combined)[i],
+                     "-", 
+                     rownames(pancreas_GeneExprs_sub_combined)[i+49],")")
+  
+  boxplot(t(pancreas_GeneExprs_sub_combined[i:(i+49),filter(pancreas_microarrays, siRNA == "NC")$number]),
+          col = rainbow(50), 
+          main= paste0("boxplot of TRA gene expression in pancreatic cancer cells ", generange, "\ndata set: GSE59761"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  boxplot(t(pancreas_GeneExprs_sub_combined[i:(i+49),filter(pancreas_microarrays, siRNA == "TBL1")$number]),
+          col = rainbow(50),
+          main= paste0("boxplot of TRA gene expression in pancreatic cancer cells after knockout of TBL1X ", generange, "\ndata set: GSE59761"), 
+          horizontal = FALSE)
+  grid(NA,NULL)
+  
+  filename = paste0("pancreas_geneexpression_boxplot_", 
+                    rownames(diabetes_GeneExprs_sub_combined)[i],"_",
+                    rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
+  print(filename)
+  setwd(paste(projectPath, "plots", sep = "/"))
+  # dev.copy2pdf(file = filename)
+}
+
+```
+
 ### Quality control of chips
 
-\begin{itemize}
- \item single chip control 
- \item RNA degradation plot 
- \item meanSdPlot
- \item histogram before and after normalization
- \item boxplot before and after normalization
- \item scatterplots
-\end{itemize}
+To ensure that the used microarrays are all of high quality and the potential mistakes made by the experimenter do not interfere with the analysis, a quality control is necessary. \
+Looking at the images of each chip there was no abnormality detected for both data sets. Likewise, no considerable outliers were found between the microarrays after normalization. To determine this, boxplots of the microarrays and scatterplots were reviewed. The conclusion was to keep all chips from both data sets. 
 
 ```{r eval=FALSE}
 # ----------------------------------------------------------
@@ -686,210 +867,23 @@ for (i in 1:5) {
 
 ```
 
-### Descriptive Statistics
-
-\begin{itemize}
- \item distribution (mean and median and sd) -> normal or not?
- \item boxplot of gene expression for each group
- \item (PCA, diabetes time, variance for groups, compare to all TRAs)
-\end{itemize}
-
-```{r}
-mean(diabetes_GeneExprs_sub_combined)
-median(diabetes_GeneExprs_sub_combined)
-sd(diabetes_GeneExprs_sub_combined)
-
-
-mean(pancreas_GeneExprs_sub_combined)
-median(pancreas_GeneExprs_sub_combined)
-sd(pancreas_GeneExprs_sub_combined)
-```
-
-
-
-
-```{r fig.cap = "Histogram of gene expression for both micorarray data sets", fig.show="hold", fig.align="default", include=TRUE}
-# ----------------------------------------------------------
-# distribution (all) gene expression: both data sets
-# ----------------------------------------------------------
-
-par(mai = c(0.85,0.85,0.5,0.1))
-
-hist(diabetes_GeneExprs_combined, 
-     xlab = "gene expression values",
-     ylab = "probability",
-     main = paste("diabetes type 1 data set: GSE53454"), 
-     freq = FALSE, 
-     xlim = c(4,16), 
-     ylim = c(0,0.5)) 
-abline(v = c(mean(diabetes_GeneExprs_combined), median(diabetes_GeneExprs_combined)), 
-       col = c("red", "blue"), lwd = 2)
-legend("topright", 
-       legend = c(paste0("mean = ",round(mean(diabetes_GeneExprs_combined),2)), 
-                  paste0("median = ", round(median(diabetes_GeneExprs_combined),2))), 
-       fill = c("red", "blue"))
-
-setwd(paste(projectPath, "plots", sep = "/"))
-# dev.copy2pdf(file = "diabetes_histogram_microarrays.pdf")
-
-
-par(mai = c(0.85,0.85,0.5,0.1))
-
-hist(pancreas_GeneExprs_combined, 
-     xlab = "gene expression values",
-     ylab = "probability",
-     main = paste("PDAC data set: GSE59761"), 
-     freq = FALSE, 
-     xlim = c(4,16), 
-     ylim = c(0,0.5))
-abline(v = c(mean(pancreas_GeneExprs_combined), median(pancreas_GeneExprs_combined)), 
-       col = c("red", "blue"), lwd = 2)
-legend("topright", 
-       legend = c(paste0("mean = ",round(mean(pancreas_GeneExprs_combined),2)), 
-                  paste0("median = ", round(median(pancreas_GeneExprs_combined),2))), 
-       fill = c("red", "blue"))
-
-setwd(paste(projectPath, "plots", sep = "/"))
-# dev.copy2pdf(file = "pancreas_histogram_microarrays.pdf")
-```
-
-
-```{r eval=FALSE}
-# ----------------------------------------------------------
-# heatmap TRA gene expression with hclustering: diabetes data set
-# ----------------------------------------------------------
-
-anno <- select(diabetes_microarrays,treatment, time_h)
-rownames(anno) <- diabetes_microarrays$number
-
-pheatmap(diabetes_GeneExprs_sub, 
-         labels_row = rep("",nrow(diabetes_GeneExprs_sub)),
-         annotation_col = anno,
-         treeheight_row = 0,
-         main = "TRA gene expression in beta cells (GSE53454)")
-
-# after combining
-pheatmap(diabetes_GeneExprs_sub_combined, 
-         labels_row = rep("",nrow(diabetes_GeneExprs_sub)),
-         annotation_col = anno,
-         treeheight_row = 0,
-         main = "TRA gene expression in beta cells (GSE53454)\nafter combining transcripts from one gene over median")
-
-# ----------------------------------------------------------
-# heatmap gene expression with hclustering: PDAC data set
-# ----------------------------------------------------------
-
-# check if the knockout of TBL1X can be seen
-anno <- select(pancreas_microarrays,siRNA)
-rownames(anno) <- pancreas_microarrays$number
-
-par(mai = c(1,0.1,2,1))
-pheatmap(pancreas_GeneExprs[which(rownames(pancreas_GeneExprs) == "TBL1X"),], 
-         main = "TBL1X - Gene expression in pancreatic cancer cells\ndata set: GSE59761 (Stoy et al., 2015)",
-         annotation_col = anno,
-         cluster_rows = TRUE, treeheight_row = 0, 
-         fontsize_row = 8, fontsize_col = 7, fontsize = 9)
-
-setwd(paste(projectPath, "plots", sep = "/"))
-# dev.copy2pdf(file = "pancreas_heatmap_TBL1X.pdf")
-
-# pancreas TRAs
-pheatmap(pancreas_GeneExprs_sub,
-         annotation_col = anno,
-         labels_row = rep("",nrow(pancreas_GeneExprs_sub)),
-         cluster_rows = TRUE, treeheight_row = 0,
-         fontsize_row = 8, fontsize_col = 7, fontsize = 9,
-         main = "TRA gene expression in pancreatic cancer cells before combining via median\ndata set: GSE59761")
-
-setwd(paste(projectPath, "plots", sep = "/"))
-# dev.copy2pdf(file = "pancreas_heatmap_TRAs.pdf")
-
-# after combining
-pheatmap(pancreas_GeneExprs_sub_combined,
-         annotation_col = anno,
-         labels_row = rep("",nrow(pancreas_GeneExprs_sub_combined)),
-         cluster_rows = TRUE, treeheight_row = 0,
-         fontsize_row = 8, fontsize_col = 7, fontsize = 9,
-         main = "TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
-
-setwd(paste(projectPath, "plots", sep = "/"))
-# dev.copy2pdf(file = "pancreas_heatmap_TRA_combined.pdf")
-
-# ------------------------------------------------
-# boxplots: diabetes data set
-# ------------------------------------------------
-
-par(las = 2, 
-    cex.axis = 0.5, cex.main = 0.8,
-    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
-
-for (i in seq(1,250,by = 50)){
-  
-  generange = paste0("(", rownames(diabetes_GeneExprs_sub_combined)[i],
-                     "-", 
-                     rownames(diabetes_GeneExprs_sub_combined)[i+49],")")
-  
-  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Control")$number]),
-          col = rainbow(50), 
-          main= paste0("boxplot of TRA gene expression in beta cells ", generange, "\ndata set: GSE53454"), 
-          horizontal = FALSE)
-  grid(NA,NULL)
-  
-  boxplot(t(diabetes_GeneExprs_sub_combined[i:(i+49),filter(diabetes_microarrays, treatment == "Cytok")$number]),
-          col = rainbow(50),
-          main= paste0("boxplot of TRA gene expression in beta cells treated with cytokines", generange, "\ndata set: GSE53454"), 
-          horizontal = FALSE)
-  grid(NA,NULL)
-  
-  filename = paste0("diabetes_geneexpression_boxplot_", 
-                    rownames(diabetes_GeneExprs_sub_combined)[i],"_",
-                    rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
-  print(filename)
-  setwd(paste(projectPath, "plots", sep = "/"))
-  # dev.copy2pdf(file = filename)
-}
-
-# ------------------------------------------------
-# boxplots: PDAC data set
-# ------------------------------------------------
-
-par(las = 2, 
-    cex.axis = 0.5, cex.main = 0.8,
-    mai = c(0.65,0.5,0.4,0.1), mfrow = c(2,1))
-
-for (i in seq(1,250,by = 50)){
-  
-  generange = paste0("(", rownames(pancreas_GeneExprs_sub_combined)[i],
-                     "-", 
-                     rownames(pancreas_GeneExprs_sub_combined)[i+49],")")
-  
-  boxplot(t(pancreas_GeneExprs_sub_combined[i:(i+49),filter(pancreas_microarrays, siRNA == "NC")$number]),
-          col = rainbow(50), 
-          main= paste0("boxplot of TRA gene expression in pancreatic cancer cells ", generange, "\ndata set: GSE59761"), 
-          horizontal = FALSE)
-  grid(NA,NULL)
-  
-  boxplot(t(pancreas_GeneExprs_sub_combined[i:(i+49),filter(pancreas_microarrays, siRNA == "TBL1")$number]),
-          col = rainbow(50),
-          main= paste0("boxplot of TRA gene expression in pancreatic cancer cells after knockout of TBL1X ", generange, "\ndata set: GSE59761"), 
-          horizontal = FALSE)
-  grid(NA,NULL)
-  
-  filename = paste0("pancreas_geneexpression_boxplot_", 
-                    rownames(diabetes_GeneExprs_sub_combined)[i],"_",
-                    rownames(diabetes_GeneExprs_sub_combined)[i+49],".pdf")
-  print(filename)
-  setwd(paste(projectPath, "plots", sep = "/"))
-  # dev.copy2pdf(file = filename)
-}
-
-```
 
 # Analysis
 
-## Differential TRA expression in pancreatic cancer and $\beta$ cells
+##  Identification of a possible biomarker or therapeutic target for pancreatic cancer
 
-### highly expressed genes in pancreatic cancer cells & $\beta$ cells 
+### Introduction 
+
+The high mortality of pancreatic cancer is partly due to the cancer commonly only being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Another reason are asymptomatic or unspecific symptoms, further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments(Quelle:). \
+
+The most widely used biomarker is Serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Hongbeom et al, 2020). \
+
+In brief, this shows why it is so important to extend the search for other biomarkers in hope of improving both the diagnostic as well as the treatment options. \
+
+In this first part of the report, we will concentrate on the two control sets and determine if we can find highly expressed pancreatic specific antigens in the cancer cells but not in the neighboring $\beta$-cells. \
+
+
+###  Identifying differentially expressed genes
 
 ```{r}
 # ------------------------------------------------
@@ -989,8 +983,6 @@ remove(threshold)
 
 ```
 
-
-### differentially expressed genes between cancer cells and $\beta$ cells
 
 ```{r}
 #Creating a empty vector for the p-values
@@ -1167,24 +1159,10 @@ log2.fold.change <- function(group1, group2){
 differential_control_diabetes_pancreas_fc = log2.fold.change(pancreas_GeneExprs_sub_control, diabetes_GeneExprs_sub_control) # ratio = control PDAC cells / beta cells
 
 arrange(differential_control_diabetes_pancreas_fc, -log2_foldchange) # sort by how much differential expressed
-filter(differential_control_diabetes_pancreas_fc, wilcox_trend != "not significant") # only significant genes 
+filter(differential_control_diabetes_pancreas_fc, wilcox_trend != "not significant") # only significant genes
+```
 
-ggplot(data = differential_control_diabetes_pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
-  geom_point() + 
-  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
-  labs(title = "Volcano plot (wilcox test) for control vs. control (GSE53454 & GSE59761)", 
-       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
-       subtitle = "ratio = control PDAC cells / beta cells") +
-  xlim(c(-max(abs(differential_control_diabetes_pancreas_fc$log2_foldchange)),
-         max(abs(differential_control_diabetes_pancreas_fc$log2_foldchange))))+ 
-  scale_color_manual(values = c("navyblue", "grey", "orange"), 
-                     labels = c("higher in beta cells", "not significant", "higher in PDAC cells")) + 
-  geom_text_repel(size = 2, max.overlaps = 30, show.legend = FALSE)
-
-setwd(paste(projectPath, "plots", sep = "/"))
-# dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
-
-
+```{r}
 # ------------------------------------------------
 # highly and differential expressed genes in pancreatic cancer
 # ------------------------------------------------
@@ -1215,6 +1193,51 @@ filter(differential_control_diabetes_pancreas_fc, GeneSymbol %in% nameshigherpan
 ## RPL5,RPL8,RPS9 are Ribosomal genes and not differential expressed
 
 ```
+
+Our approach here was to first identify differentially expressed genes between the untreated $\beta$- and PDAC cells. For this we performed a Wilcoxon rank-sum test for each gene.
+
+```{r eval=FALSE, echo=TRUE, include=TRUE}
+# for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
+
+for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
+  WilcoxonTest3 <- wilcox.test(x = diabetes_GeneExprs_sub_control[i,], 
+                               y = pancreas_GeneExprs_sub_control[i,], 
+                               alternative ="two.sided")
+  if (WilcoxonTest3$p.value < 0.05){
+    Differential_TRA_values3[i] <- WilcoxonTest3$p.value}
+}
+```
+
+It determined whether the difference in gene expression was significant or due to statistical fluctuation. \
+
+With the p-value set at p < 0.05 we found that 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. \
+
+
+```{r}
+differentialdifferencematrixordered[1:5,-1]
+```
+
+In this context we also calculated the log2 fold change (code zeigen für log2 fold change?) and created a volcano plot with that information. It shows the significance versus the magnitude, quantifying the difference in gene expression of a gene. \
+
+```{r fig.cap = "Genes that are significantly higher expressed in the PDAC cells are represented in orange. A higher expression in beta-cells leads to the blue color. Genes with a p-value higher than 0.05 in the Wilcoxon Rank sum test are marked as not significant in grey.", include=TRUE, eval=TRUE}
+
+ggplot(data = differential_control_diabetes_pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for control vs. control (GSE53454 & GSE59761)", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = control PDAC cells / beta cells") +
+  xlim(c(-max(abs(differential_control_diabetes_pancreas_fc$log2_foldchange)),
+         max(abs(differential_control_diabetes_pancreas_fc$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"), 
+                     labels = c("higher in beta cells", "not significant", "higher in PDAC cells")) + 
+  geom_text_repel(size = 2, max.overlaps = 30, show.legend = FALSE)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+# dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
+```
+
+
 ```{r}
 ###Venn-Diagramm (highly expressed ẞ-cells, highly expressed PDAC, differently expressed)
 
@@ -1249,11 +1272,25 @@ display_venn(x, category.names = c("high in PDAC" , "high in treated ß-cells " 
       cat.dist = c(-0.05, -0.25 , -0.05)
 )
 ```
+### Selecting possible biomarkers 
+
+Now having identified the differential expressed genes - for a possible biomarker they also would have to be highly expressed in the cancer cells. For this the gene expression of the differential expressed genes was compared against the highest expressed genes in the cancer cell. \
+
+We then looked for existing literature in context of an association to pancreatic cancer with those identified genes. Out of all those genes two stood out - several publications indicate TSPAN8 and GMNN as possible biomarkers for pancreatic cancer. \
+
+TSPAN8 is a member of the tetraspanin superfamily that forms TSPAN8-mediated protein complexes by interacting with themselves and other various cellular signalling molecules. Multiple such complexes build tetraspanin-enriched microdomains that mediate intracellular signal transduction. In normal physiological conditions they are involved in the regulation of diverse biological processes like cell adhesion, proliferation and differentiation. Overexpression has been linked to the progression and metastasis of several cancers by several studies by interacting with various binding partners (Kyun Heo, Sumook Lee ,2020). \
+To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes, which could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang et al.,2013). \
+
+Geminin (GMNN) is responsible for the regulation of DNA replication in interaction with Cdc10-dependent transcript (Cdt1). Overexpression of geminin leads to replication defects and genomic instability, which are associated with cancer formation (Kushwaha et al., 2016). An unrelated study confirmed that geminin is overexpressed in pancreatic cancer (Salabat et al., 2008).  \
 
 ## Fate of pancreatic cells determined by TRA expression
 
+### Difference in gene expression in diabetes data set
 
-### Difference in gene expression in Diabetes type 1 dataset caused by Cytokine treatment
+$\beta$-cells have a highly increased cell death rate in diabetes type 1 (Eizirik et al., 2020), while pancreatic cancer cells are known for their fast proliferation (Takakura et al., 2015). Here the gene expression of TRAs in treated and untreated $\beta$- and pancreatic cancer cells is compared to establish similarities and differences in their intracellular pathways leading them to their respective fates. \
+First, we determined the difference in healthy and stressed $\beta$-cells to determine which genes are influenced by the cytokine treatment. \
+To achieve this goal, we conducted a Principal Component Analysis (PCA). The optimal number of two clusters was determined by the silhouette method. Those clusters for the microarray chips were allocated by k-means. The conclusion was reached that the pancreatic-specific TRA expression overall is not considerably affected by the cytokine treatment but by the temporal component.
+
 ```{r}
 # ------------------------------------------------
 # PCA & kmeans
@@ -1292,8 +1329,9 @@ diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_
 sort(filter(diabetes_df,kmeans2 == 1)$time_h) # higher in general
 sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
 ```
+Moreover, a volcano plot was created reflecting the gene expression of treated versus untreated $\beta$-cells. We used a Wilcoxon rank-sum test to extract single genes that show a significant difference in their gene expression before and after cytokine treatment. \
 
-```{r}
+```{r fig.cap = "Genes that are significantly higher expressed in stressed beta-cells are represented in orange. A higher expression in the normal beta-cells leads to the blue color. Genes with a p-value higher than 0.05 in the Wilcoxon rank-sum test are marked as not significant in grey.", include=TRUE, eval=TRUE}
 
 # ------------------------------------------------
 # log2foldchange treatment vs control 
@@ -1302,7 +1340,6 @@ sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
 
 diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_treat, diabetes_GeneExprs_sub_control)
 # ratio = treatment / control 
-diabetes_fc_treatment
 
 
 ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
@@ -1313,15 +1350,18 @@ ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_p
        x = "log2 fold change", y = "-log10 (p-value)",
        colour = "trend") +
   xlim(c(-max(abs(diabetes_fc_treatment$log2_foldchange)),
-         max(abs(diabetes_fc_treatment$log2_foldchange))))+ 
+         max(abs(diabetes_fc_treatment$log2_foldchange)))) + 
   scale_color_manual(values = c("navyblue", "grey", "orange"),
                      labels = c("higher in control group", "not significant", "higher in treatment group")) + 
   geom_text_repel(size = 2, max.time = 50, show.legend = FALSE)
 
 
 ```
+A significantly upregulated gene in the treated group is CXCL11. This gene is known to be induced by IFN-$\gamma$ (Tokunaga et al., 2018), that was part of the treatment. This gene induces leukocytic infiltration into pancreatic tissue, which leads to $\beta$-cell destruction and ultimately, to type 1 diabetes mellitus (Burke et al., 2016).
 
-### Difference in gene expression in PDAC dataset caused by TBL1X gene knockout
+### Difference in gene expression in PDAC data set
+
+We followed the same steps for the PDAC cells as for the analysis of the $\beta$-cells. This time the k-means following the PCA detected two clusters: control and treatment. There is a definite divide in the overall TRA expression between these groups though no single differing gene could be identified through Wilcoxon rank-sum test.\
 
 ```{r}
 pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
@@ -1381,10 +1421,13 @@ arrange(pancreas_fc, -abs(log2_foldchange))[1:10,]
 
 
 
-## log2foldchange
+### Comparing the two pathways on the basis of the cytokine dependent genes
+
+After establishing the differences of the respective control and treatment data sets, we set ourselves the goal to find genes that are related to pathways which either lead cells to uncontrolled proliferation or cell death. \
+
+First, we extracted all 47 genes of the $\beta$-cell data set that showed a significant p-value in the Wilcoxon rank-sum test comparing treated and untreated cells. On the basis of a volcano plot we worked out specific genes that are significantly overexpressed in one data set, while showing little expression in the second one. The boxplot below shows the gene expression in healthy, stressed $\beta$- and pancreatic cancer cells. \
 
 
-Genes that are influenced by cytokine treatment
 ```{r}
 #Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
 
@@ -1402,7 +1445,6 @@ pancreascontroldifferentialgenes <- pancreas_GeneExprs_sub_control[differentialg
 
 ```
 
-Volcano Plot
 ```{r}
 # Creating the volcano Plot for the previously selected genes for diabetes Treatment vs. Pancreas Control
 diabetesvspancreas_fc = log2.fold.change(pancreascontroldifferentialgenes, diabetestreatmentdifferentialgenes) # ratio = pancreas/diabetes
@@ -1504,7 +1546,7 @@ par(las = 2,
 
 ```
 
-```{r fig.width=8}
+```{r fig.width=8, fig.cap = "The boxplots depicts the 47 cytokine-dependent genes and their differing gene expression in untreated (red), treated beta- (green) and pancreatic cancer cells (blue)", include=TRUE, eval=TRUE}
 # Combined Boxplot of the cytokine dependent genes of the 3 datasets
 
 boxplotmatrix <- cbind(diabetescontroldifferentialgenes,diabetestreatmentdifferentialgenes,pancreascontroldifferentialgenes)
@@ -1521,19 +1563,47 @@ treatm <- replace_na(treatm, "Pancreas")
 
 # create data frame (used for ggplot)
 boxplotmatrix2 <- cbind(treatment = treatm , mel2)
-head(boxplotmatrix2)
 
 
 
 ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) + 
   geom_boxplot() + 
   theme(axis.text.x = element_text(angle = 90, size = 5)) +
-  labs(title = "Boxplot of ", 
-       x = "Genes", y = "expression value")
+  labs(title = "Different gene expression of data sets in comparison", 
+       x = "genes", y = "gene expression") + 
+  theme(axis.text.x = element_text(angle = 90, size = 5)) + 
+  scale_color_manual(values = c("red", "green", "blue"), labels = c("Control", "Cytokine", "PDAC")) 
+
 
 ```
 
-##regression model
+The two genes that are the highest expressed genes in pancreatic cancer and lowly expressed in diabetes are GMNN and STT3A. \
+Geminin (GMNN) was previously discussed and plays an important role in the regulation of DNA replication. \
+
+STT3A is upregulated in pancreatic cancer compared to the expression in the normal pancreas (Pan et al., 2014). STT3A is a subunit of oligosaccharyltransferase (OST), which is a membrane protein complex catalyzing Asn-linked glycosylation of polypeptides (Ruiz-Canada et al., 2009). Epithelial-to-mesenchymal transition (EMT) in tumor cells induces upregulation of OST to ensure cell surface expression of PD-L1, leading to immune evasion (Harada et al., 2019). \
+
+The high expression of those two genes is therefore being proven to be part of the pathways that lead cells into tumorigenesis. The related pathways are regulation of DNA replication and OST. They result in genomic instability as well as immune evasion. Hence, overexpression of GMNN and STT3A promotes tumor growth. \
+
+Meanwhile, finding genes that are highly expressed in diabetes and lowly expressed in pancreatic cancer was challenging. Some of the found genes related to pathways introducing $\beta$-cell death and therefore diabetes were ambiguous. We picked two examples to demonstrate difficulties we encountered as well as one gene which reflects the desired results. \
+
+The highest differentially expressed gene in diabetes is SPINK1. Serine protease inhibitor Kazal type 1 (SPINK1) is a trypsin inhibitor maintaining the integrity of pancreatic tissue, which is associated with pancreatitis as well as diabetes (Muller et al., 2019). There is little information up to this date solely concerning the role of SPINK1 in diabetes. Most published scientific papers focus on the role of SPINK1 in relation to pancreatitis and how this disease correlates with diabetes and pancreatic cancer. \
+
+Another example is REG1A, which encodes a protein called Pancreatic Stone Protein (PSP). A high expression and subsequent secretion of PSP is induced by $\beta$-cells undergoing apoptosis in neighboring pancreatic cells (Bacon et al., 2012). PSP is associated with islet regeneration and proliferation as a reaction to the $\beta$-cell loss in diabetes (Yang et al., 2015). However, REG1A is also linked to pancreatic cancer. A high expression of REG1A is associated with a poor prognosis in pancreatic cancer, especially in patients with diabetes, as it promotes cell proliferation and tumor growth (Zhou et al., 2010). Evidently, that was not the case in our data set, but since the gene is associated with both diabetes and cancer, it cannot be used to predict the fate of pancreatic cells. \
+
+SPINK1 and REG1A can not be used to predict diabetes, because of insufficient research of the gene as well as a strong relation to pancreatic cancer. Nevertheless, we also found genes that are only associated with diabetes. \
+
+A successfully identified gene is CXCL11, which was previously mentioned as upregulated in cells treated with cytokines. CXCL11 is a chemokine that regulates immune cell migration and induces inflammation (Kochumon et al., 2020). Diabetes is induced by the ensuing $\beta$-cell death (Burke et al., 2016). \
+
+There are quite a few genes that are expressed differently in pancreatic cancer and diabetes compared to normal $\beta$-cells. However, the most prominent ones are GMNN and STT3A for a high cancer expression as well as SPINK1 and REG1A for diabetes. They induce aforementioned pathways leading $\beta$-cells to their respective fates. 
+
+
+## regression model
+
+A linear regression model was applied to emulate the influence of time on a gene in untreated $\beta$-cells. \
+To identify highly time-influenced genes we first extracted genes, which had a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then we looked at the remaining genes in a heatmap and chose the gene with the most variation: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong et. al., 2004). \
+
+\newpage
+
 ```{r}
 # ------------------------------------------------
 # which genes are influenced by time 
@@ -1560,13 +1630,18 @@ n2 = find_timegenes(0.1, 0.05)$PC2_low[find_timegenes(0.1, 0.05)$PC1_high_PC2_lo
 pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Cytok"), time_h)$number], 
          main = "gene expression over time for cytokine treated ß-cells",
          cluster_rows = FALSE, cluster_cols = FALSE)
+```
+
+
+```{r fig.cap = "The heatmap shows all genes in untreated $/beta$-cells that are highly influenced by time. CUZD1 has the most variation.", include=TRUE, eval=TRUE}
 pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Control"), time_h)$number], 
-         main = "gene expression over time for ß-cells",
+         main = "gene expression over time for beta-cells",
          cluster_rows = FALSE, cluster_cols = FALSE)
 
 remove(n1,n2)
 # suggestion for linear regression: CUZD1 (Control), PNLIP (Cytokine treatment)
 ```
+
 ```{r}
 # ------------------------------------------------
 # compare linear regression and mean model
@@ -1609,7 +1684,10 @@ rownames(meanprediction) <- c("meanprediciton")
 realvalue <- matrix(c(96,diabetes_GeneExprs_sub_control[56,13]), nrow=1)
 colnames(realvalue) <- c("time", "expression")
 rownames(realvalue) <- c("GSM1293817")
+```
+Using only the time points from 0h to 84h, we developed a linear regression model to predict the expression of CUZD1 at 96h and compared this value to the actual value as well as to a value predicted by a mean-based model, shown in the plot below.
 
+```{r fig.cap = "The expression of CUZD1 at different time points (grey) is used to develop a linear regression model (red) to predict the value at 96h. The mean-based model is depicted in blue.", include=TRUE, eval=TRUE}
 plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression \nin untreated ß-cells", xlim=c(0, 100), ylim=c(8, 13))
 points(modelprediction, col="red", pch=20)
 points(meanprediction, col="blue", pch=20)
@@ -1631,6 +1709,9 @@ legend("bottomleft",
   horiz = F , 
   inset = c(0.05, 0.1))
 ```
+A F-test confirmed that the variable time is very significant
+$(p<10^{-4})$. Also, over 80% of the overall variance is explained by the model. Finally, the linear model as a whole is superior to the mean model. \
+
 ```{r}
 ## F-test
 
@@ -1657,3 +1738,6 @@ CUZD1diabctr.lm = lm(expression ~ time, data=CUZD1exprdieabcontr.df)
 summary(CUZD1diabctr.lm) 
 
 ```
+
+# Discussion
+
