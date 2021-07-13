@@ -1288,8 +1288,8 @@ Geminin (GMNN) is responsible for the regulation of DNA replication in interacti
 ### Difference in gene expression in diabetes data set
 
 $\beta$-cells have a highly increased cell death rate in diabetes type 1 (Eizirik et al., 2020), while pancreatic cancer cells are known for their fast proliferation (Takakura et al., 2015). Here the gene expression of TRAs in treated and untreated $\beta$- and pancreatic cancer cells is compared to establish similarities and differences in their intracellular pathways leading them to their respective fates. \
-First, we determined the difference in healthy and stressed $\beta$-cells to determine which genes are influenced by the cytokine treatment. \
-To achieve this goal, we conducted a Principal Component Analysis (PCA). The optimal number of two clusters was determined by the silhouette method. Those clusters for the microarray chips were allocated by k-means. The conclusion was reached that the pancreatic-specific TRA expression overall is not considerably affected by the cytokine treatment but by the temporal component.
+First, the difference in healthy and stressed $\beta$-cells was deduced to determine which genes are influenced by the cytokine treatment. \
+To achieve this goal, a Principal Component Analysis (PCA) was conducted, which can be seen below. The optimal number of two clusters was determined by the silhouette method. Those clusters for the microarray chips were allocated by k-means. The conclusion was reached that the pancreatic-specific TRA expression overall is not considerably affected by the cytokine treatment but rather by the temporal component.
 
 ```{r}
 # ------------------------------------------------
@@ -1313,8 +1313,21 @@ fviz_nbclust(diabetes_pca$x, kmeans, method = "wss")
 fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
 ## cluster number = 2 is highest 
 
+```
+
+```{r fig.cap = "The Principal Component Analysis of the diabetes data set, in which the microarray chips were divided by their specific treatment as well as the temporal component. Dots in red represent chips of the control group and therefore untreated beta-cells, while the color blue represents beta-cells treated with cytokines. The size of the dots increases with time that has passed.", include=TRUE, eval=TRUE}
+
 # plot PC1 against PC2 
-autoplot(diabetes_pca, data = diabetes_df, colour = "treatment", size = "time_h", main = "PC analysis on ß- cell set (GSE53454)", xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1)
+autoplot(diabetes_pca, data = diabetes_df, 
+         colour = "treatment", size = "time_h", 
+         main = "PCA of diabetes data set (GSE53454)",
+         xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1) + 
+  scale_color_manual(values = c("red", "blue"),
+                     labels = c("Control", "Cytokine"))
+
+```
+
+```{r}
 
 # plot kmeans for k = 2 
 autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on ß-cell set (GSE53454)") + 
@@ -1329,9 +1342,10 @@ diabetes_df <- cbind(kmeans2 = diabetes_pca_kmeans2$cluster, kmeans4 = diabetes_
 sort(filter(diabetes_df,kmeans2 == 1)$time_h) # higher in general
 sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
 ```
-Moreover, a volcano plot was created reflecting the gene expression of treated versus untreated $\beta$-cells. We used a Wilcoxon rank-sum test to extract single genes that show a significant difference in their gene expression before and after cytokine treatment. \
 
-```{r fig.cap = "Genes that are significantly higher expressed in stressed beta-cells are represented in orange. A higher expression in the normal beta-cells leads to the blue color. Genes with a p-value higher than 0.05 in the Wilcoxon rank-sum test are marked as not significant in grey.", include=TRUE, eval=TRUE}
+Moreover, a volcano plot was created reflecting the gene expression of treated versus untreated $\beta$-cells. A Wilcoxon rank-sum test was used to extract single genes that show a significant difference in their gene expression before and after cytokine treatment. \
+
+```{r}
 
 # ------------------------------------------------
 # log2foldchange treatment vs control 
@@ -1357,11 +1371,12 @@ ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_p
 
 
 ```
-A significantly upregulated gene in the treated group is CXCL11. This gene is known to be induced by IFN-$\gamma$ (Tokunaga et al., 2018), that was part of the treatment. This gene induces leukocytic infiltration into pancreatic tissue, which leads to $\beta$-cell destruction and ultimately, to type 1 diabetes mellitus (Burke et al., 2016).
+
+A significantly upregulated gene in the treated group is CXCL11. This gene is known to be induced by IFN-$\gamma$ (Tokunaga et al., 2018), which was part of the treatment. This gene induces leukocytic infiltration into pancreatic tissue, that leads to $\beta$-cell destruction and ultimately, to type 1 diabetes mellitus (Burke et al., 2016).
 
 ### Difference in gene expression in PDAC data set
 
-We followed the same steps for the PDAC cells as for the analysis of the $\beta$-cells. This time the k-means following the PCA detected two clusters: control and treatment. There is a definite divide in the overall TRA expression between these groups though no single differing gene could be identified through Wilcoxon rank-sum test.\
+The same steps were followed for the PDAC cells as for the analysis of the $\beta$-cells. This time the k-means following the PCA detected two clusters: control and treatment. There was a definite divide in the overall TRA expression between these groups though no single differing gene could be identified through Wilcoxon rank-sum test.\
 
 ```{r}
 pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
@@ -1420,13 +1435,11 @@ arrange(pancreas_fc, -abs(log2_foldchange))[1:10,]
 ```
 
 
-
 ### Comparing the two pathways on the basis of the cytokine dependent genes
 
-After establishing the differences of the respective control and treatment data sets, we set ourselves the goal to find genes that are related to pathways which either lead cells to uncontrolled proliferation or cell death. \
+After establishing the differences of the respective control and treatment data sets, the goal was to find genes that are related to pathways which either lead cells into uncontrolled proliferation or cell death. \
 
 First, we extracted all 47 genes of the $\beta$-cell data set that showed a significant p-value in the Wilcoxon rank-sum test comparing treated and untreated cells. On the basis of a volcano plot we worked out specific genes that are significantly overexpressed in one data set, while showing little expression in the second one. The boxplot below shows the gene expression in healthy, stressed $\beta$- and pancreatic cancer cells. \
-
 
 ```{r}
 #Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
@@ -1511,8 +1524,6 @@ par(las = 2,
 
 ```
 
-
-
 ```{r fig.height=6}
 # ------------------------------------------------
 # boxplot: differentialgenesdiabetestreatment for the 3 datasets
@@ -1542,8 +1553,6 @@ par(las = 2,
           horizontal = FALSE)
   grid(NA,NULL)
 
-
-
 ```
 
 ```{r fig.width=8, fig.cap = "The boxplots depicts the 47 cytokine-dependent genes and their differing gene expression in untreated (red), treated beta- (green) and pancreatic cancer cells (blue)", include=TRUE, eval=TRUE}
@@ -1564,8 +1573,6 @@ treatm <- replace_na(treatm, "Pancreas")
 # create data frame (used for ggplot)
 boxplotmatrix2 <- cbind(treatment = treatm , mel2)
 
-
-
 ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) + 
   geom_boxplot() + 
   theme(axis.text.x = element_text(angle = 90, size = 5)) +
@@ -1573,7 +1580,6 @@ ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) +
        x = "genes", y = "gene expression") + 
   theme(axis.text.x = element_text(angle = 90, size = 5)) + 
   scale_color_manual(values = c("red", "green", "blue"), labels = c("Control", "Cytokine", "PDAC")) 
-
 
 ```
 
@@ -1584,13 +1590,13 @@ STT3A is upregulated in pancreatic cancer compared to the expression in the norm
 
 The high expression of those two genes is therefore being proven to be part of the pathways that lead cells into tumorigenesis. The related pathways are regulation of DNA replication and OST. They result in genomic instability as well as immune evasion. Hence, overexpression of GMNN and STT3A promotes tumor growth. \
 
-Meanwhile, finding genes that are highly expressed in diabetes and lowly expressed in pancreatic cancer was challenging. Some of the found genes related to pathways introducing $\beta$-cell death and therefore diabetes were ambiguous. We picked two examples to demonstrate difficulties we encountered as well as one gene which reflects the desired results. \
+Meanwhile, finding genes that are highly expressed in diabetes and lowly expressed in pancreatic cancer was challenging. Some of the found genes related to pathways introducing $\beta$-cell death and therefore diabetes, were ambiguous. Two examples were chosen to demonstrate difficulties that were encountered as well as one gene which reflects the desired results. \
 
 The highest differentially expressed gene in diabetes is SPINK1. Serine protease inhibitor Kazal type 1 (SPINK1) is a trypsin inhibitor maintaining the integrity of pancreatic tissue, which is associated with pancreatitis as well as diabetes (Muller et al., 2019). There is little information up to this date solely concerning the role of SPINK1 in diabetes. Most published scientific papers focus on the role of SPINK1 in relation to pancreatitis and how this disease correlates with diabetes and pancreatic cancer. \
 
 Another example is REG1A, which encodes a protein called Pancreatic Stone Protein (PSP). A high expression and subsequent secretion of PSP is induced by $\beta$-cells undergoing apoptosis in neighboring pancreatic cells (Bacon et al., 2012). PSP is associated with islet regeneration and proliferation as a reaction to the $\beta$-cell loss in diabetes (Yang et al., 2015). However, REG1A is also linked to pancreatic cancer. A high expression of REG1A is associated with a poor prognosis in pancreatic cancer, especially in patients with diabetes, as it promotes cell proliferation and tumor growth (Zhou et al., 2010). Evidently, that was not the case in our data set, but since the gene is associated with both diabetes and cancer, it cannot be used to predict the fate of pancreatic cells. \
 
-SPINK1 and REG1A can not be used to predict diabetes, because of insufficient research of the gene as well as a strong relation to pancreatic cancer. Nevertheless, we also found genes that are only associated with diabetes. \
+SPINK1 and REG1A can not be applicated in the prediction of diabetes, because of insufficient research of the respective genes as well as a strong relation to pancreatic cancer. Nevertheless, we also found genes that are only associated with diabetes. \
 
 A successfully identified gene is CXCL11, which was previously mentioned as upregulated in cells treated with cytokines. CXCL11 is a chemokine that regulates immune cell migration and induces inflammation (Kochumon et al., 2020). Diabetes is induced by the ensuing $\beta$-cell death (Burke et al., 2016). \
 
