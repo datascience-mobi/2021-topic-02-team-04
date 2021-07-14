@@ -1,31 +1,29 @@
 ---
 title: "TRA expression in pancreas"
-subtitle: "Analysis of TRA expression in pancreatic cancer and diabetes type 1"
 author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
-output: 
+subtitle: Analysis of TRA expression in pancreatic cancer and diabetes type 1
+output:
   pdf_document:
-    keep_tex: true
-    toc: false
-    toc_depth: 2 # section & subsection in toc 
-    number_sections: true # all sections are numbered in output
-    fig_caption: true # (true by default)
+    keep_tex: yes
+    toc: no
+    toc_depth: 2
+    number_sections: yes
+    fig_caption: yes
+  html_document:
+    toc: no
+    toc_depth: '2'
+    df_print: paged
 documentclass: article
 papersize: a4
 fontsize: 12pt
 geometry: left = 2 cm, right = 2 cm, top = 2 cm, bottom = 2 cm, headsep = 20pt
 secnumdepth: 2
 linestretch: 1
-out.width: "60%"
-fig.align: "center"
-header-includes:
-  \usepackage{float}
-  \usepackage{graphicx}
-  \usepackage[T1]{fontenc}
-  \usepackage[greek, ngerman, main=english]{babel}
-  \usepackage{helvet}
-  \renewcommand{\familydefault}{\sfdefault}
-  \usepackage{titlesec} 
-  \headsep = 5mm
+out.width: 60%
+fig.align: center
+header-includes: \usepackage{float} \usepackage{graphicx} \usepackage[T1]{fontenc}
+  \usepackage[greek, ngerman, main=english]{babel} \usepackage{helvet} \renewcommand{\familydefault}{\sfdefault}
+  \usepackage{titlesec} \headsep = 5mm
 ---
 
 ```{r setup, include=FALSE}
@@ -874,13 +872,13 @@ for (i in 1:5) {
 
 ### Introduction 
 
-The high mortality of pancreatic cancer is partly due to the cancer commonly only being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Another reason are asymptomatic or unspecific symptoms, further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments(Quelle:). \
+The high mortality of pancreatic cancer is partly due to the cancer commonly only being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Another reason are asymptomatic or unspecific symptoms, further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments(McGuigan et al.,2018). \
 
 The most widely used biomarker is Serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Hongbeom et al, 2020). \
 
 In brief, this shows why it is so important to extend the search for other biomarkers in hope of improving both the diagnostic as well as the treatment options. \
 
-In this first part of the report, we will concentrate on the two control sets and determine if we can find highly expressed pancreatic specific antigens in the cancer cells but not in the neighboring $\beta$-cells. \
+In this first part of the report, the focus is on the two control sets and determining if highly expressed pancreas specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found. \
 
 
 ###  Identifying differentially expressed genes
@@ -1072,18 +1070,6 @@ dim(Gensymbol_pvalue_differential_matrix)
 #Creating matrix that only contains differential expressed genes and their corresponding median difference between the two control sets
 
 
-# Calculating the mean values for each of the genes
-diabetescontrolmean <- apply(diabetes_GeneExprs_sub_control,1,mean)
-pancreascontrolmean <- apply(pancreas_GeneExprs_sub_control,1,mean)
-
-# Calculating the mean difference
-differencemean <-  pancreascontrolmean - diabetescontrolmean
-differencemeanabs <- abs(pancreascontrolmean - diabetescontrolmean)
-
-# Creating matrix with the mean values for each of the genes
-differencemeanmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemean,diabetescontrolmean,pancreascontrolmean)
-differencemeanmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemeanabs,diabetescontrolmean,pancreascontrolmean)
-
 # Calculating the median values for each of the genes
 diabetescontrolmedian <- apply(diabetes_GeneExprs_sub_control,1,median)
 pancreascontrolmedian <- apply(pancreas_GeneExprs_sub_control,1,median)
@@ -1096,24 +1082,23 @@ differencemedianabs <- abs(pancreascontrolmedian - diabetescontrolmedian)
 differencemedianmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedian,diabetescontrolmedian,pancreascontrolmedian)
 differencemedianmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedianabs,diabetescontrolmedian,pancreascontrolmedian)
 
-# Gene names of differentially expressed genes
+# Gene names of diferentially expressed genes
 differentialexpressedgenenames <- Gensymbol_pvalue_differential_matrix[,1]
 
 # Selecting only the genes that are differential expressed
-differentialdifferencematrix <- differencemeanmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
-differentialdifferencematrixabs <- differencemeanmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+differentialdifferencematrix <- differencemedianmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+differentialdifferencematrixabs <- differencemedianmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
 
 # Matrix in descending order
-ordermatrix <- order(differentialdifferencematrix[,2],decreasing = TRUE)
-ordermatrixabs <- order(differentialdifferencematrixabs[,2],decreasing = TRUE)
 
-differentialdifferencematrixordered <- differentialdifferencematrix[ordermatrix,]
-differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[ordermatrixabs,]
+differentialdifferencematrixordered <- differentialdifferencematrix[order(differentialdifferencematrix[,2],decreasing = TRUE),]
+differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[order(differentialdifferencematrixabs[,2],decreasing = TRUE),]
 
-colnames(differentialdifferencematrixordered) <- c("Gensymbol","Meandifference","MeanDiabetes","MeanPancreas")
-colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Meandifferenceabs","MeanDiabetes","MeanPancreas")
+colnames(differentialdifferencematrixordered) <- c("Gensymbol","Mediandifference","MedianDiabetes","MedianPancreas")
+colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Mediandifference","MedianDiabetes","MedianPancreas")
 
 ```
+
 
 
 ```{r}
@@ -1194,7 +1179,7 @@ filter(differential_control_diabetes_pancreas_fc, GeneSymbol %in% nameshigherpan
 
 ```
 
-Our approach here was to first identify differentially expressed genes between the untreated $\beta$- and PDAC cells. For this we performed a Wilcoxon rank-sum test for each gene.
+The approach here was to first identify differentially expressed genes between the untreated $\beta$- and PDAC cells. For this a Wilcoxon rank-sum test was performed for each gene.
 
 ```{r eval=FALSE, echo=TRUE, include=TRUE}
 # for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
@@ -1210,14 +1195,14 @@ for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
 
 It determined whether the difference in gene expression was significant or due to statistical fluctuation. \
 
-With the p-value set at p < 0.05 we found that 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. \
+With the p-value set at p < 0.05, 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. \
 
 
-```{r}
-differentialdifferencematrixordered[1:5,-1]
+```{r eval=TRUE, include=TRUE}
+head(differentialdifferencematrixordered[,-1])
 ```
 
-In this context we also calculated the log2 fold change (code zeigen für log2 fold change?) and created a volcano plot with that information. It shows the significance versus the magnitude, quantifying the difference in gene expression of a gene. \
+In this context  the log2 fold change was calculated and a volcano plot was created with that information. It shows the significance versus the magnitude, quantifying the difference in gene expression of a gene. \
 
 ```{r fig.cap = "Genes that are significantly higher expressed in the PDAC cells are represented in orange. A higher expression in beta-cells leads to the blue color. Genes with a p-value higher than 0.05 in the Wilcoxon Rank sum test are marked as not significant in grey.", include=TRUE, eval=TRUE}
 
@@ -1276,7 +1261,7 @@ display_venn(x, category.names = c("high in PDAC" , "high in treated ß-cells " 
 
 Now having identified the differential expressed genes - for a possible biomarker they also would have to be highly expressed in the cancer cells. For this the gene expression of the differential expressed genes was compared against the highest expressed genes in the cancer cell. \
 
-We then looked for existing literature in context of an association to pancreatic cancer with those identified genes. Out of all those genes two stood out - several publications indicate TSPAN8 and GMNN as possible biomarkers for pancreatic cancer. \
+These genes were than checked against existing literature in context of an association to (pancreatic) cancer. Out of all those genes two stood out - several publications indicate TSPAN8 and GMNN as possible biomarkers for pancreatic cancer. \
 
 TSPAN8 is a member of the tetraspanin superfamily that forms TSPAN8-mediated protein complexes by interacting with themselves and other various cellular signalling molecules. Multiple such complexes build tetraspanin-enriched microdomains that mediate intracellular signal transduction. In normal physiological conditions they are involved in the regulation of diverse biological processes like cell adhesion, proliferation and differentiation. Overexpression has been linked to the progression and metastasis of several cancers by several studies by interacting with various binding partners (Kyun Heo, Sumook Lee ,2020). \
 To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes, which could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang et al.,2013). \
@@ -1603,7 +1588,7 @@ A successfully identified gene is CXCL11, which was previously mentioned as upre
 There are quite a few genes that are expressed differently in pancreatic cancer and diabetes compared to normal $\beta$-cells. However, the most prominent ones are GMNN and STT3A for a high cancer expression as well as SPINK1 and REG1A for diabetes. They induce aforementioned pathways leading $\beta$-cells to their respective fates. 
 
 
-## regression model
+## Regression model
 
 A linear regression model was applied to emulate the influence of time on a gene in untreated $\beta$-cells. \
 To identify highly time-influenced genes we first extracted genes, which had a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then we looked at the remaining genes in a heatmap and chose the gene with the most variation: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong et. al., 2004). \
@@ -1778,3 +1763,16 @@ Tokunaga, R., Zhang, W., Naseem, M., Puccini, A., Berger, M. D., Soni, S., McSka
 Yang, J., Li, L., Raptis, D., Li, X., Li, F., Chen, B., He, J., Graf, R., & Sun, Z. (2015). Pancreatic stone protein/regenerating protein (PSP/reg): a novel secreted protein up-regulated in type 2 diabetes mellitus. Endocrine \textit{48}, 856–862. \
 
 Zhou, L., Zhang, R., Wang, L., Shen, S., Okamoto, H., Sugawara, A., Xia, L., Wang, X., Noguchi, N., Yoshikawa, T., Uruno, A., Yao, W., & Yuan, Y. (2010). Upregulation of REG Ialpha accelerates tumor progression in pancreatic cancer with diabetes. Int. J. Cancer. \textit{127}, 1795–1803. 
+
+Quellen Biomarker:
+
+Kim, H., Kang, K. N., Shin, Y. S., Byun, Y., Han, Y., Kwon, W., Kim, C. W., & Jang, J. Y. (2020). Biomarker Panel for the Diagnosis of Pancreatic Ductal Adenocarcinoma. Cancers, 12(6), 1443.
+
+
+McGuigan A, Kelly P, Turkington RC, Jones C, Coleman HG, McCain RS. Pancreatic cancer: A review of clinical diagnosis, epidemiology, treatment and outcomes. World J Gastroenterol. 2018 Nov 21;24(43):4846-4861. doi: 10.3748/wjg.v24.i43.4846. PMID: 30487695; PMCID: PMC6250924.
+
+Heo K, Lee S. TSPAN8 as a Novel Emerging Therapeutic Target in Cancer for Monoclonal Antibody Therapy. Biomolecules. 2020 Mar 3;10(3):388. doi: 10.3390/biom10030388. PMID: 32138170; PMCID: PMC7175299.
+
+Wang H, Rana S, Giese N, Büchler MW, Zöller M. Tspan8, CD44v6 and alpha6beta4 are biomarkers of migrating pancreatic cancer-initiating cells. Int J Cancer. 2013 Jul 15;133(2):416-26. doi: 10.1002/ijc.28044. Epub 2013 Feb 15. PMID: 23338841.
+
+
