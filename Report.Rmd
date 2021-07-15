@@ -1315,7 +1315,7 @@ fviz_nbclust(diabetes_pca$x, kmeans, method = "silhouette")
 # plot PC1 against PC2 
 autoplot(diabetes_pca, data = diabetes_df, 
          colour = "treatment", size = "time_h", 
-         main = "PCA of diabetes data set (GSE53454)",
+         main = "PCA of beta-cell data set (GSE53454)",
          xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1) + 
   scale_color_manual(values = c("red", "blue"),
                      labels = c("Control", "Cytokine"))
@@ -1325,7 +1325,7 @@ autoplot(diabetes_pca, data = diabetes_df,
 ```{r}
 
 # plot kmeans for k = 2 
-autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on ß-cell set (GSE53454)") + 
+autoplot(kmeans(diabetes_pca$x,2), data = diabetes_pca$x, frame = TRUE, xlim = c(-0.5,0.5), ylim = c(-0.5,0.5), asp = 1, main = "kmeans clustering (k=2) on beta-cell data set (GSE53454)") + 
   scale_color_brewer(palette = "Set1") + 
   scale_fill_brewer(palette = "Set1")
 
@@ -1341,7 +1341,6 @@ sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
 Moreover, a volcano plot was created reflecting the gene expression of treated versus untreated $\beta$-cells. A Wilcoxon rank-sum test was used to extract single genes that show a significant difference in their gene expression before and after cytokine treatment.\
 
 ```{r}
-
 # ------------------------------------------------
 # log2foldchange treatment vs control 
 # which genes are influenced by cytokine treatment
@@ -1350,11 +1349,10 @@ Moreover, a volcano plot was created reflecting the gene expression of treated v
 diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_treat, diabetes_GeneExprs_sub_control)
 # ratio = treatment / control 
 
-
 ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
-  labs(title = "Volcano plot (wilcox test) for control vs. treatment \nin diabetes type 1 data set (GSE53454)",
+  labs(title = "Volcano plot (Wilcox test) for control vs. treatment \nin diabetes type 1 data set (GSE53454)",
        subtitle = "ratio = treatment / control", 
        x = "log2 fold change", y = "-log10 (p-value)",
        colour = "trend") +
@@ -1363,7 +1361,6 @@ ggplot(data = diabetes_fc_treatment, aes(x = log2_foldchange, y = wilcox_log10_p
   scale_color_manual(values = c("navyblue", "grey", "orange"),
                      labels = c("higher in control group", "not significant", "higher in treatment group")) + 
   geom_text_repel(size = 2, max.time = 50, show.legend = FALSE)
-
 
 ```
 
@@ -1407,7 +1404,7 @@ pancreas_fc
 ggplot(data = pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") + 
-  labs(title = "Volcano plot (wilcoxon rank sum test) for PDAC data set (GSE59761)", 
+  labs(title = "Volcano plot (Wilcox test) for PDAC data set (GSE59761)", 
        x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
        subtitle = "ratio = treatment/control") +
   xlim(c(-max(abs(pancreas_fc$log2_foldchange)),
@@ -1436,7 +1433,7 @@ After establishing the differences of the respective control and treatment data 
 First, we extracted all 47 genes of the $\beta$-cell data set that showed a significant p-value in the Wilcoxon rank-sum test comparing treated and untreated cells. On the basis of a volcano plot we worked out specific genes that are significantly overexpressed in one data set, while showing little expression in the second one. The boxplot below shows the gene expression in healthy, stressed $\beta$- and pancreatic cancer cells. 
 
 ```{r}
-#Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
+#Selecting all the genes with a significant p-value for the Wilcoxon rank-sum test between the two diabetes data sets.
 
 diabetes_fc_treatment = log2.fold.change(diabetes_GeneExprs_sub_treat, diabetes_GeneExprs_sub_control)
 differentialgenesdiabetestreatment <- diabetes_fc_treatment[-which(diabetes_fc_treatment[,"wilcox_trend"]=="not significant"),1]
@@ -1444,8 +1441,7 @@ length(differentialgenesdiabetestreatment)
 # 47
 differentialgenesdiabetestreatment
 
-
-#Creating a matrix with only those 47 genes for diabetescontrol, diabetestreatment and Pancreascontrol
+#Creating a matrix with only those 47 genes for diabetescontrol, diabetestreatment and pancreascontrol
 diabetescontroldifferentialgenes <- diabetes_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
 diabetestreatmentdifferentialgenes <- diabetes_GeneExprs_sub_treat[differentialgenesdiabetestreatment,]
 pancreascontroldifferentialgenes <- pancreas_GeneExprs_sub_control[differentialgenesdiabetestreatment,]
@@ -1455,12 +1451,13 @@ pancreascontroldifferentialgenes <- pancreas_GeneExprs_sub_control[differentialg
 ```{r}
 # Creating the volcano Plot for the previously selected genes for diabetes Treatment vs. Pancreas Control
 diabetesvspancreas_fc = log2.fold.change(pancreascontroldifferentialgenes, diabetestreatmentdifferentialgenes) # ratio = pancreas/diabetes
+
 ggplot(data = diabetesvspancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
   geom_point() + 
   geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
-  labs(title = "Volcano plot (wilcox test) for PDAC control vs. beta cell treatment ", 
+  labs(title = "Volcano plot (wilcox test) for PDAC control vs. beta-cell treatment ", 
        x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
-       subtitle = "ratio = PDAC control / beta treatment") +
+       subtitle = "ratio = PDAC control / beta treatment (data sets: GSE59761 & GSE53454)") +
   xlim(c(-max(abs(diabetesvspancreas_fc$log2_foldchange)),
          max(abs(diabetesvspancreas_fc$log2_foldchange))))+ 
   scale_color_manual(values = c("navyblue", "gray50", "chartreuse4"),labels = c("lower in PDAC", "not significant", "higher in PDAC")) + 
@@ -1470,7 +1467,7 @@ ggplot(data = diabetesvspancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_p
 
 ```{r}
 # ------------------------------------------------
-# boxplot: differentialgenesdiabetestreatment for the 3 datasets
+# boxplot: differentialgenesdiabetestreatment for the 3 data sets
 # ------------------------------------------------
 
 par(las = 2, 
@@ -1480,13 +1477,13 @@ par(las = 2,
   
   boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
           col = rainbow(50),
-          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          main= paste0("Boxplot of cytokine dependent TRA gene expression in the treatment beta-cell data set"), 
           horizontal = FALSE)
   grid(NA,NULL)
   
     boxplot(t(pancreas_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(pancreas_microarrays, siRNA == "NC")$number]),
           col = rainbow(50),
-          main= paste0("boxplot of cytokine dependent TRA gene expression in the control PDAC dataset"), 
+          main= paste0("Boxplot of cytokine dependent TRA gene expression in the control PDAC data set"), 
           horizontal = FALSE)
   grid(NA,NULL)
 
@@ -1500,13 +1497,13 @@ par(las = 2,
   
   boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
           col = rainbow(50),
-          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          main= paste0("Boxplot of cytokine dependent TRA gene expression in the treatment beta-cell data set"), 
           horizontal = FALSE)
   grid(NA,NULL)
 
     boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Control")$number]),
           col = rainbow(50), 
-          main= paste0("boxplot of cytokine dependent TRA gene expression in the control beta cell dataset "), 
+          main= paste0("Boxplot of cytokine dependent TRA gene expression in the control beta-cell data set "), 
           horizontal = FALSE)
   grid(NA,NULL)
   
@@ -1520,7 +1517,7 @@ par(las = 2,
 
 ```{r fig.height=6}
 # ------------------------------------------------
-# boxplot: differentialgenesdiabetestreatment for the 3 datasets
+# boxplot: differentialgenesdiabetestreatment for the 3 data sets
 # ------------------------------------------------
 
 par(las = 2, 
@@ -1530,27 +1527,27 @@ par(las = 2,
   
   boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Cytok")$number]),
           col = rainbow(50),
-          main= paste0("boxplot of cytokine dependent TRA gene expression in the treatment beta cell dataset"), 
+          main= paste0("Boxplot of cytokine dependent TRA gene expression in the treatment beta-cell data set"), 
           horizontal = FALSE)
   grid(NA,NULL)
   
   boxplot(t(diabetes_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(diabetes_microarrays, treatment == "Control")$number]),
           col = rainbow(50), 
-          main= paste0("boxplot of cytokine dependent TRA gene expression in the control beta cell dataset "), 
+          main= paste0("Boxplot of cytokine dependent TRA gene expression in the control beta-cell data set "), 
           horizontal = FALSE)
   grid(NA,NULL)
   
   
     boxplot(t(pancreas_GeneExprs_sub_combined[differentialgenesdiabetestreatment,filter(pancreas_microarrays, siRNA == "NC")$number]),
           col = rainbow(50),
-          main= paste0("boxplot of cytokine dependent TRA gene expression in the control PDAC dataset"), 
+          main= paste0("Boxplot of cytokine dependent TRA gene expression in the control PDAC data set"), 
           horizontal = FALSE)
   grid(NA,NULL)
 
 ```
 
 ```{r fig.width=8, fig.cap = "The boxplots depicts the 47 cytokine-dependent genes and their differing gene expression in untreated (red), treated beta- (green) and pancreatic cancer cells (blue)", include=TRUE, eval=TRUE}
-# Combined Boxplot of the cytokine dependent genes of the 3 datasets
+# Combined Boxplot of the cytokine dependent genes of the 3 data sets
 
 boxplotmatrix <- cbind(diabetescontroldifferentialgenes,diabetestreatmentdifferentialgenes,pancreascontroldifferentialgenes)
 mel2 <- melt(t(boxplotmatrix))
