@@ -2,6 +2,7 @@
 title: "TRA expression in pancreas"
 author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
 subtitle: Analysis of TRA expression in pancreatic cancer and diabetes type 1
+abstract:
 output:
   pdf_document:
     keep_tex: yes
@@ -21,9 +22,17 @@ secnumdepth: 2
 linestretch: 1
 out.width: 60%
 fig.align: center
-header-includes: \usepackage{float} \usepackage{graphicx} \usepackage[T1]{fontenc}
-  \usepackage[greek, ngerman, main=english]{babel} \usepackage{helvet} \renewcommand{\familydefault}{\sfdefault}
-  \usepackage{titlesec} \headsep = 5mm
+header-includes:
+  \usepackage{float} 
+  \usepackage{graphicx} 
+  \usepackage[T1]{fontenc}
+  \usepackage[greek, ngerman, main=english]{babel} 
+  \usepackage{helvet} 
+  \renewcommand{\familydefault}{\sfdefault}
+  \usepackage{titlesec} 
+  \headsep = 5mm
+  \pagenumbering{gobble}
+  \usepackage[margin=10pt,font=small,labelfont=bf,textfont=it,labelsep=colon,width=.75\textwidth]{caption}
 ---
 
 ```{r setup, include=FALSE}
@@ -35,7 +44,7 @@ knitr::opts_chunk$set(
 	warning = FALSE, # warnings not in output
 	comment = "", # line before output (default: ##)
 	include = FALSE, # output  
-	out.width = "50%", # plot smaller
+	out.width = "70%", # plot smaller
 	fig.align = "center", # plot in center
 	highlight = TRUE
 )
@@ -62,7 +71,10 @@ library(ggrepel)
 library(RColorBrewer)
 library(factoextra)
 library(VennDiagram)
+```
 
+
+```{r}
 projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 ```
 
@@ -72,16 +84,18 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 # Introduction
 
 In this project the expression of tissue restricted antigens (TRAs) in pancreatic cells is examined, concentrating on two cell types: $\beta$-cells and pancreatic ductal adenocarcinoma (PDAC) cells. \
-TRAs are highly expressed in specific tissues and in the thymus, where they have part in establishing the central tolerance of the immune system. A malfunction in the negative selection of developing T-cells can lead to autoimmune diseases, like diabetes type 1 (Kyewski & Klein, 2006).\		 Here autoreactive T-cells attack $\beta$-cells that, as part of the endocrine pancreatic islet, synthesize and secrete the hormone insulin (Jingli et al., 2020).\					Another cause is the release of proinflammatory cytokines which, among mediating the innate immune response, can activate apoptotic pathways (Clark et al., 2017). Together this leads to the elimination of $\beta$-cells and results in insulin deficiency and hyperglycemia. \
+TRAs are highly expressed in specific tissues and in the thymus, where they have part in establishing the central tolerance of the immune system. A malfunction in the negative selection of developing T-cells can lead to autoimmune diseases, like diabetes type 1 (Kyewski & Klein, 2006).\
+Here autoreactive T-cells attack $\beta$-cells that, as part of the endocrine pancreatic islet, synthesize and secrete the hormone insulin (Jingli et al., 2020).\
+Another cause is the release of proinflammatory cytokines which, among mediating the innate immune response, can activate apoptotic pathways (Clark et al., 2017). Together this leads to the elimination of $\beta$-cells and results in insulin deficiency and hyperglycemia. \
 The other cell type are PDAC cells. Pancreatic adenocarcinoma is the most common pancreatic cancer and originates from epithelial cells from the exocrine component producing digestive enzymes. Mutations of the oncogenes and the tumor-suppressor genes stimulate cell growth, division, and survival pathways (Wolfgang et al. 2013). \
-With a 5-year survival rate of around 5% pancreatic cancer is the 4th leading cause of death by cancer in Western societies (Siegel et al., 2015). Therefore, identifying highly expressed TRAs that are, compared to healthy and stressed $\beta$-cells, unique to PDAC could be used to facilitate the diagnosis and development of new treatment options. Additionally, pathways leading to pancreatic cancer and diabetes were analyzed and differences established. \
+With a 5-year survival rate of around 5% pancreatic cancer is the 4th leading cause of death by cancer in Western societies (Siegel et al., 2015). Therefore, identifying highly expressed TRAs that are, compared to healthy and stressed $\beta$-cells, unique to PDAC could be used to facilitate the diagnosis and development of new treatment options. Additionally, pathways leading to pancreatic cancer and diabetes were analyzed and differences established. 
 
 # Information to data
 ## Pancreas specifc TRA genes 
 
 The base of the project are TRAs that are significantly higher expressed in the pancreas compared to other tissues. \
 The first step of the project was therefore to find pancreas-specific genes. The tables used were provided by Dr. Dinkelacker and came from multiple sources, all of which focused on TRA expression in human and mice tissues. By selecting all genes that were associated with the pancreas, we could gather 330 pancreas-specific TRAs in the human and 59 in mice.\
-Because we are working with TRA expression in human pancreatic cells, we are going to concentrate on human pancreas-specific TRAs. \ 
+Because we are working with TRA expression in human pancreatic cells, we are going to concentrate on human pancreas-specific TRAs.
 
 ```{r}
 # ----------------------------------------------------------
@@ -260,13 +274,11 @@ barplot(table(PancreasTRAs5ChromXorder),main="mouse pancreas specific TRAs5",xla
 
 
 ## Gene expression  measured by microarrays
-
 ### Microarray Data sets
 
 Microarrays were used to analyze the expression of a large number of genes in human pancreas cells. This was done by hybridizing labelled cDNA (target) to a specific DNA sequence (probe) with a defined position on the microarray chip. After hybridization the fluorescence emission was examined. \
-The pancreas cell types used for this project are PDAC Capan-1 cells (data set GSE59761) and $\beta$-cells (data set GSE53454). These data sets were downloaded from the GEO database. For both the same Affymetrix chip was used (HG-U133 Plus 2) which means that the same transcripts were analyzed. \ 
+The pancreas cell types used for this project are PDAC Capan-1 cells (data set GSE59761) and $\beta$-cells (data set GSE53454). These data sets were downloaded from the GEO database. For both the same Affymetrix chip was used (HG-U133 Plus 2) which means that the same transcripts were analyzed. \
 Data set GSE59761 includes six chips. For three of those, the pancreatic cancer cells were transfected with unspecified small interfering RNA (siRNA) as negative control (NC). The other three were treated with siRNA targeted against the TBL1X gene, which encodes a transcriptional cofactor. This knockout causes decreased proliferation in the pancreatic cancer cells (Stoy et al., 2015). \
-
 Data set GSE53454 consists of 24 chips. 13 of those form the control group, where the $\beta$-cells were observed over several time periods from 0 to 96 hours. The remaining eleven microarray chips provide gene expression data to $\beta$-cells that were treated with cytokines interleukin-1$\beta$ and interferon-$\gamma$ to simulate the actions of the immune system in diabetes type 1. This treatment was also conducted over a time period ranging from 1 to 96 hours (Lopes et al., 2014).
 
 
@@ -418,8 +430,14 @@ diabetes_vsnrma <- vsnrma(data_diabetes) # GSE53454
 ```
 
 This function does several steps at once: vsn normalization, background correction and summary of probesets. The resulting expression values are log 2 transformed.\
+The resulting matrix contains the expression values for all transcripts for each chip. We translated the transcripts into the corresponding gene symbols and selected the pancreas-specific TRAs. Then we combined multiples of the same gene by using the median of the respective expression values. Their expression values were included into the final expression matrix, which contains 250 out of the original 330 pancreas TRAs. 
 
-The resulting matrix contains the expression values for all transcripts for each chip. We translated the transcripts into the corresponding gene symbols and selected the pancreas-specific TRAs. Then we combined multiples of the same gene by using the median of the respective expression values. Their expression values were included into the final expression matrix, which contains 250 out of the original 330 pancreas TRAs. \
+```{r echo=FALSE, include=TRUE, eval=TRUE, collapse=TRUE}
+cat("Head of the final expression matrix of PDAC data set:")
+pancreas_GeneExprs_sub_combined[1:5,]
+
+cat("Dimensions of the matrix:", dim(pancreas_GeneExprs_sub_combined))
+```
 
 The following graphs show the histogram, mean and median obtained from expression matrices. As seen in these graphs, both sets have a right-skewed distribution and are therefore not suitable for t-tests. Instead Wilcoxon rank-sum tests were used in the following statistical analysis. 
 
@@ -614,6 +632,7 @@ for (i in seq(1,250,by = 50)){
 
 ```
 
+\newpage
 ### Quality control of chips
 
 To ensure that the used microarrays are all of high quality and the potential mistakes made by the experimenter do not interfere with the analysis, a quality control is necessary. \
@@ -873,13 +892,9 @@ for (i in 1:5) {
 ### Introduction 
 
 The high mortality of pancreatic cancer is partly due to the cancer commonly only being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Another reason are asymptomatic or unspecific symptoms, further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments(McGuigan et al.,2018). \
-
 The most widely used biomarker is Serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Hongbeom et al, 2020). \
-
 In brief, this shows why it is so important to extend the search for other biomarkers in hope of improving both the diagnostic as well as the treatment options. \
-
-In this first part of the report, the focus is on the two control sets and determining if highly expressed pancreas specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found. \
-
+In this first part of the report, the focus is on the two control sets and determining if highly expressed pancreas specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found.
 
 ###  Identifying differentially expressed genes
 
@@ -1194,15 +1209,13 @@ for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
 ```
 
 It determined whether the difference in gene expression was significant or due to statistical fluctuation. \
-
-With the p-value set at p < 0.05, 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. \
-
+With the p-value set at p < 0.05, 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. 
 
 ```{r eval=TRUE, include=TRUE}
 head(differentialdifferencematrixordered[,-1])
 ```
 
-In this context  the log2 fold change was calculated and a volcano plot was created with that information. It shows the significance versus the magnitude, quantifying the difference in gene expression of a gene. \
+In this context  the log2 fold change was calculated and a volcano plot was created with that information. It shows the significance versus the magnitude, quantifying the difference in gene expression of a gene.
 
 ```{r fig.cap = "Genes that are significantly higher expressed in the PDAC cells are represented in orange. A higher expression in beta-cells leads to the blue color. Genes with a p-value higher than 0.05 in the Wilcoxon Rank sum test are marked as not significant in grey.", include=TRUE, eval=TRUE}
 
@@ -1260,13 +1273,10 @@ display_venn(x, category.names = c("high in PDAC" , "high in treated ß-cells " 
 ### Selecting possible biomarkers 
 
 Now having identified the differential expressed genes - for a possible biomarker they also would have to be highly expressed in the cancer cells. For this the gene expression of the differential expressed genes was compared against the highest expressed genes in the cancer cell. \
-
 These genes were than checked against existing literature in context of an association to (pancreatic) cancer. Out of all those genes two stood out - several publications indicate TSPAN8 and GMNN as possible biomarkers for pancreatic cancer. \
-
 TSPAN8 is a member of the tetraspanin superfamily that forms TSPAN8-mediated protein complexes by interacting with themselves and other various cellular signalling molecules. Multiple such complexes build tetraspanin-enriched microdomains that mediate intracellular signal transduction. In normal physiological conditions they are involved in the regulation of diverse biological processes like cell adhesion, proliferation and differentiation. Overexpression has been linked to the progression and metastasis of several cancers by several studies by interacting with various binding partners (Kyun Heo, Sumook Lee ,2020). \
 To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes, which could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang et al.,2013). \
-
-Geminin (GMNN) is responsible for the regulation of DNA replication in interaction with Cdc10-dependent transcript (Cdt1). Overexpression of geminin leads to replication defects and genomic instability, which are associated with cancer formation (Kushwaha et al., 2016). An unrelated study confirmed that geminin is overexpressed in pancreatic cancer (Salabat et al., 2008).  \
+Geminin (GMNN) is responsible for the regulation of DNA replication in interaction with Cdc10-dependent transcript (Cdt1). Overexpression of geminin leads to replication defects and genomic instability, which are associated with cancer formation (Kushwaha et al., 2016). An unrelated study confirmed that geminin is overexpressed in pancreatic cancer (Salabat et al., 2008).
 
 ## Fate of pancreatic cells determined by TRA expression
 
@@ -1328,7 +1338,7 @@ sort(filter(diabetes_df,kmeans2 == 1)$time_h) # higher in general
 sort(filter(diabetes_df,kmeans2 == 2)$time_h) # lower in general
 ```
 
-Moreover, a volcano plot was created reflecting the gene expression of treated versus untreated $\beta$-cells. A Wilcoxon rank-sum test was used to extract single genes that show a significant difference in their gene expression before and after cytokine treatment. \
+Moreover, a volcano plot was created reflecting the gene expression of treated versus untreated $\beta$-cells. A Wilcoxon rank-sum test was used to extract single genes that show a significant difference in their gene expression before and after cytokine treatment.\
 
 ```{r}
 
@@ -1361,7 +1371,7 @@ A significantly upregulated gene in the treated group is CXCL11. This gene is kn
 
 ### Difference in gene expression in PDAC data set
 
-The same steps were followed for the PDAC cells as for the analysis of the $\beta$-cells. This time the k-means following the PCA detected two clusters: control and treatment. There was a definite divide in the overall TRA expression between these groups though no single differing gene could be identified through Wilcoxon rank-sum test.\
+The same steps were followed for the PDAC cells as for the analysis of the $\beta$-cells. This time the k-means following the PCA detected two clusters: control and treatment. There was a definite divide in the overall TRA expression between these groups though no single differing gene could be identified through Wilcoxon rank-sum test.
 
 ```{r}
 pancreas_df <-cbind(treatment = pancreas_microarrays[,"siRNA"],
@@ -1423,8 +1433,7 @@ arrange(pancreas_fc, -abs(log2_foldchange))[1:10,]
 ### Comparing the two pathways on the basis of the cytokine dependent genes
 
 After establishing the differences of the respective control and treatment data sets, the goal was to find genes that are related to pathways which either lead cells into uncontrolled proliferation or cell death. \
-
-First, we extracted all 47 genes of the $\beta$-cell data set that showed a significant p-value in the Wilcoxon rank-sum test comparing treated and untreated cells. On the basis of a volcano plot we worked out specific genes that are significantly overexpressed in one data set, while showing little expression in the second one. The boxplot below shows the gene expression in healthy, stressed $\beta$- and pancreatic cancer cells. \
+First, we extracted all 47 genes of the $\beta$-cell data set that showed a significant p-value in the Wilcoxon rank-sum test comparing treated and untreated cells. On the basis of a volcano plot we worked out specific genes that are significantly overexpressed in one data set, while showing little expression in the second one. The boxplot below shows the gene expression in healthy, stressed $\beta$- and pancreatic cancer cells. 
 
 ```{r}
 #Selecting all the genes with a significant p-value for the wilcoxon rank sum test between the two diabetes datasets
@@ -1570,30 +1579,19 @@ ggplot(boxplotmatrix2, aes(x = Var2, y = value, colour = treatment)) +
 
 The two genes that are the highest expressed genes in pancreatic cancer and lowly expressed in diabetes are GMNN and STT3A. \
 Geminin (GMNN) was previously discussed and plays an important role in the regulation of DNA replication. \
-
 STT3A is upregulated in pancreatic cancer compared to the expression in the normal pancreas (Pan \textit{et al.}, 2014). STT3A is a subunit of oligosaccharyltransferase (OST), which is a membrane protein complex catalyzing Asn-linked glycosylation of polypeptides (Ruiz-Canada \textit{et al.}, 2009). Epithelial-to-mesenchymal transition (EMT) in tumor cells induces upregulation of OST to ensure cell surface expression of PD-L1, leading to immune evasion (Harada \textit{et al.}, 2019). \
-
 The high expression of those two genes is therefore being proven to be part of the pathways that lead cells into tumorigenesis. The related pathways are regulation of DNA replication and OST. They result in genomic instability as well as immune evasion. Hence, overexpression of GMNN and STT3A promotes tumor growth. \
-
 Meanwhile, finding genes that are highly expressed in diabetes and lowly expressed in pancreatic cancer was challenging. Some of the found genes related to pathways introducing $\beta$-cell death and therefore diabetes, were ambiguous. Two examples were chosen to demonstrate difficulties that were encountered as well as one gene which reflects the desired results. \
-
 The highest differentially expressed gene in diabetes is SPINK1. Serine protease inhibitor Kazal type 1 (SPINK1) is a trypsin inhibitor maintaining the integrity of pancreatic tissue, which is associated with pancreatitis as well as diabetes (Muller \textit{et al.}, 2019). There is little information up to this date solely concerning the role of SPINK1 in diabetes. Most published scientific papers focus on the role of SPINK1 in relation to pancreatitis and how this disease correlates with diabetes and pancreatic cancer. \
-
 Another example is REG1A, which encodes a protein called Pancreatic Stone Protein (PSP). A high expression and subsequent secretion of PSP is induced by $\beta$-cells undergoing apoptosis in neighboring pancreatic cells (Bacon \textit{et al.}, 2012). PSP is associated with islet regeneration and proliferation as a reaction to the $\beta$-cell loss in diabetes (Yang \textit{et al.}, 2015). However, REG1A is also linked to pancreatic cancer. A high expression of REG1A is associated with a poor prognosis in pancreatic cancer, especially in patients with diabetes, as it promotes cell proliferation and tumor growth (Zhou \textit{et al.}, 2010). Evidently, that was not the case in our data set, but since the gene is associated with both diabetes and cancer, it cannot be used to predict the fate of pancreatic cells. \
-
 SPINK1 and REG1A can not be applicated in the prediction of diabetes, because of insufficient research of the respective genes as well as a strong relation to pancreatic cancer. Nevertheless, we also found genes that are only associated with diabetes. \
-
 A successfully identified gene is CXCL11, which was previously mentioned as upregulated in cells treated with cytokines. CXCL11 is a chemokine that regulates immune cell migration and induces inflammation (Kochumon \textit{et al.}, 2020). Diabetes is induced by the ensuing $\beta$-cell death (Burke \textit{et al.}, 2016). \
-
 There are quite a few genes that are expressed differently in pancreatic cancer and diabetes compared to normal $\beta$-cells. However, the most prominent ones are GMNN and STT3A for a high cancer expression as well as SPINK1 and REG1A for diabetes. They induce aforementioned pathways leading $\beta$-cells to their respective fates. 
-
 
 ## Regression model
 
 A linear regression model was applied to emulate the influence of time on a gene in untreated $\beta$-cells. \
-To identify highly time-influenced genes we first extracted genes, which had a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then we looked at the remaining genes in a heatmap and chose the gene with the most variation: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong et. al., 2004). \
-
-\newpage
+To identify highly time-influenced genes we first extracted genes, which had a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then we looked at the remaining genes in a heatmap and chose the gene with the most variation: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong et. al., 2004). 
 
 ```{r}
 # ------------------------------------------------
@@ -1733,14 +1731,14 @@ summary(CUZD1diabctr.lm)
 # Discussion
 
 
-
+\newpage
 ## References
 
 Bacon, S., Kyithar, M. P., Schmid, J., Rizvi, S. R., Bonner, C., Graf, R., Prehn, J. H., & Byrne, M. M. (2012). Serum levels of pancreatic stone protein (PSP)/reg1A as an indicator of beta-cell apoptosis suggest an increased apoptosis rate in hepatocyte nuclear factor 1 alpha (HNF1A-MODY) carriers from the third decade of life onward. BMC Endocr. Disord. \textit{12}, 13. \
 
-Burke, S. J., Karlstad, M. D., Eder, A. E., Regal, K. M., Lu, D., Burk, D. H., & Collier, J. J. (2016). Pancreatic β-Cell production of CXCR3 ligands precedes diabetes onset. BioFactors \textit{42}, 703–715. \
+Burke, S. J., Karlstad, M. D., Eder, A. E., Regal, K. M., Lu, D., Burk, D. H., & Collier, J. J. (2016). Pancreatic $\beta$-Cell production of CXCR3 ligands precedes diabetes onset. BioFactors \textit{42}, 703–715. \
 
-Eizirik, D. L., Pasquali, L., & Cnop, M. (2020). Pancreatic β-cells in type 1 and type 2 diabetes mellitus: different pathways to failure. Nat. Rev. Endocrinol. \textit{16}, 349–362. \
+Eizirik, D. L., Pasquali, L., & Cnop, M. (2020). Pancreatic $\beta$-cells in type 1 and type 2 diabetes mellitus: different pathways to failure. Nat. Rev. Endocrinol. \textit{16}, 349–362. \
 
 Harada, Y., Ohkawa, Y., Kizuka, Y., & Taniguchi, N. (2019). Oligosaccharyltransferase: A Gatekeeper of Health and Tumor Progression. Int. J. Mol. Sci. \textit{20}, 6074. \
 
