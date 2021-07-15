@@ -1109,8 +1109,8 @@ differentialdifferencematrixabs <- differencemedianmatrixabs[which((rownames(dia
 differentialdifferencematrixordered <- differentialdifferencematrix[order(differentialdifferencematrix[,2],decreasing = TRUE),]
 differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[order(differentialdifferencematrixabs[,2],decreasing = TRUE),]
 
-colnames(differentialdifferencematrixordered) <- c("Gensymbol","Mediandifference","MedianDiabetes","MedianPancreas")
-colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Mediandifference","MedianDiabetes","MedianPancreas")
+colnames(differentialdifferencematrixordered) <- c("Gensymbol","Median Difference","Median Diabetes","Median Pancreas")
+colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Median Difference","Median Diabetes","Median Pancreas")
 
 ```
 
@@ -1212,7 +1212,13 @@ It determined whether the difference in gene expression was significant or due t
 With the p-value set at p < 0.05, 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. 
 
 ```{r eval=TRUE, include=TRUE}
-head(differentialdifferencematrixordered[,-1])
+
+table1 <- head(differentialdifferencematrixordered[1:3,-1])
+
+knitr::kable(table1,
+             caption = "**Table.1:** Head of the table of the matrix with the median value and median difference of the differentially expressed genes")
+
+
 ```
 
 In this context  the log2 fold change was calculated and a volcano plot was created with that information. It shows the significance versus the magnitude, quantifying the difference in gene expression of a gene.
@@ -1274,8 +1280,9 @@ display_venn(x, category.names = c("high in PDAC" , "high in treated ß-cells " 
 
 Now having identified the differential expressed genes - for a possible biomarker they also would have to be highly expressed in the cancer cells. For this the gene expression of the differential expressed genes was compared against the highest expressed genes in the cancer cell. \
 These genes were than checked against existing literature in context of an association to (pancreatic) cancer. Out of all those genes two stood out - several publications indicate TSPAN8 and GMNN as possible biomarkers for pancreatic cancer. \
-TSPAN8 is a member of the tetraspanin superfamily that forms TSPAN8-mediated protein complexes by interacting with themselves and other various cellular signalling molecules. Multiple such complexes build tetraspanin-enriched microdomains that mediate intracellular signal transduction. In normal physiological conditions they are involved in the regulation of diverse biological processes like cell adhesion, proliferation and differentiation. Overexpression has been linked to the progression and metastasis of several cancers by several studies by interacting with various binding partners (Kyun Heo, Sumook Lee ,2020). \
-To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes, which could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang et al.,2013). \
+TSPAN8 is a member of the tetraspanin family that builds tetraspanin-enriched microdomains which are important in the signal transduction. The TSPAN8-mediated protein complexes interact with themselves and various other cellular signalling molecules.
+During their normal physiological function they are involved in the regulation of multiple processes like cell adhesion, proliferation and differentiation. But several publications have linked the overexpression of TSPAN8 to the progression and metastasis of several cancers by interacting with various binding partners (Kyun Heo, Sumook Lee ,2020). \
+To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes. This could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang et al.,2013). \
 Geminin (GMNN) is responsible for the regulation of DNA replication in interaction with Cdc10-dependent transcript (Cdt1). Overexpression of geminin leads to replication defects and genomic instability, which are associated with cancer formation (Kushwaha et al., 2016). An unrelated study confirmed that geminin is overexpressed in pancreatic cancer (Salabat et al., 2008).
 
 ## Fate of pancreatic cells determined by TRA expression
