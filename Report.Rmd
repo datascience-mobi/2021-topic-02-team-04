@@ -1137,6 +1137,7 @@ differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[order(
 
 colnames(differentialdifferencematrixordered) <- c("Gensymbol","Median Difference","Median Diabetes","Median Pancreas")
 colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Median Difference","Median Diabetes","Median Pancreas")
+
 ```
 
 
@@ -1237,13 +1238,15 @@ It determined whether the difference in gene expression was significant or due t
 With the p-value set at p < 0.05, 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. 
 
 ```{r eval=TRUE, include=TRUE}
-kbl(head(differentialdifferencematrixordered[,-1]), 
+
+kbl(head(differentialdifferencematrixordered[1:3,-1]), 
     caption = "Head of the table of the matrix with the median value and median difference of the differentially expressed genes",
     booktabs = TRUE,
     align = "rrr") %>%
   kable_styling(latex_options = c("striped",
                                   "hold_position"),
                 font_size = 10)
+
 ```
 
 In this context  the log2 fold change was calculated and a volcano plot was created with that information. It shows the significance versus the magnitude, quantifying the difference in gene expression of a gene.
