@@ -4,16 +4,16 @@ author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
 subtitle: Analysis of TRA expression in pancreatic cancer and diabetes type 1
 abstract:
 output:
+  html_document:
+    toc: no
+    toc_depth: '2'
+    df_print: paged
   pdf_document:
     keep_tex: yes
     toc: no
     toc_depth: 2
     number_sections: yes
     fig_caption: yes
-  html_document:
-    toc: no
-    toc_depth: '2'
-    df_print: paged
 documentclass: article
 papersize: a4
 fontsize: 12pt
@@ -78,10 +78,10 @@ library(knitr)
 
 
 ```{r}
-# projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 
 # used because knitting sometimes has a problem here:
-projectPath <- "C:/Users/Selina Ernst/Documents/GitHub/2021-topic-02-team-04"
+#projectPath <- "C:/Users/Selina Ernst/Documents/GitHub/2021-topic-02-team-04"
 ```
 
 \newpage
@@ -916,7 +916,7 @@ for (i in 1:5) {
 ### Introduction 
 
 The high mortality of pancreatic cancer is partly due to the cancer commonly only being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Another reason are asymptomatic or unspecific symptoms, further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments(McGuigan \textit{et al.},2018). \
-The most widely used biomarker is Serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Hongbeom et al, 2020). \
+The most widely used biomarker is Serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Kim \textit{et al.}, 2020). \
 In brief, this shows why it is so important to extend the search for other biomarkers in hope of improving both the diagnostic as well as the treatment options. \
 In this first part of the report, the focus is on the two control sets and determining if highly expressed pancreas specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found.
 
@@ -1312,8 +1312,8 @@ display_venn(x, category.names = c("high in PDAC" , "high in treated ß-cells " 
 Now having identified the differential expressed genes - for a possible biomarker they also would have to be highly expressed in the cancer cells. For this the gene expression of the differential expressed genes was compared against the highest expressed genes in the cancer cell. \
 These genes were than checked against existing literature in context of an association to (pancreatic) cancer. Out of all those genes two stood out - several publications indicate TSPAN8 and GMNN as possible biomarkers for pancreatic cancer. \
 TSPAN8 is a member of the tetraspanin family that builds tetraspanin-enriched microdomains which are important in the signal transduction. The TSPAN8-mediated protein complexes interact with themselves and various other cellular signalling molecules.
-During their normal physiological function they are involved in the regulation of multiple processes like cell adhesion, proliferation and differentiation. But several publications have linked the overexpression of TSPAN8 to the progression and metastasis of several cancers by interacting with various binding partners (Kyun Heo, Sumook Lee ,2020). \
-To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes. This could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang et al.,2013). \
+During their normal physiological function they are involved in the regulation of multiple processes like cell adhesion, proliferation and differentiation. But several publications have linked the overexpression of TSPAN8 to the progression and metastasis of several cancers by interacting with various binding partners (Heo and Lee, 2020). \
+To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes. This could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang \textit{et al.}, 2013). \
 Geminin (GMNN) is responsible for the regulation of DNA replication in interaction with Cdc10-dependent transcript (Cdt1). Overexpression of geminin leads to replication defects and genomic instability, which are associated with cancer formation (Kushwaha \textit{et al.}, 2016). An unrelated study confirmed that geminin is overexpressed in pancreatic cancer (Salabat \textit{et al.}, 2008).
 
 ## Fate of pancreatic cells determined by TRA expression
@@ -1796,9 +1796,17 @@ Eizirik, D. L., Pasquali, L., & Cnop, M. (2020). Pancreatic $\beta$-cells in typ
 
 Harada, Y., Ohkawa, Y., Kizuka, Y., & Taniguchi, N. (2019). Oligosaccharyltransferase: A Gatekeeper of Health and Tumor Progression. Int. J. Mol. Sci. \textit{20}, 6074. \
 
+#Heo, K., & Lee, S. (2020). TSPAN8 as a Novel Emerging Therapeutic Target in Cancer for Monoclonal Antibody Therapy. Biomolecules, \textit{10(3)}, 388.
+
+
+#Kim, H., Kang, K. N., Shin, Y. S., Byun, Y., Han, Y., Kwon, W., Kim, C. W., & Jang, J. Y. (2020). Biomarker Panel for the Diagnosis of Pancreatic Ductal Adenocarcinoma. Cancers, \textit{12(6)}, 1443.
+
+
 Kochumon, S., Madhoun, A. A., Al-Rashed, F., Azim, R., Al-Ozairi, E., Al-Mulla, F., & Ahmad, R. (2020). Adipose tissue gene expression of CXCL10 and CXCL11 modulates inflammatory markers in obesity: implications for metabolic inflammation and insulin resistance. Ther. Adv. Endocrinol. Metab. \textit{11}, 2042018820930902. \
 
 Kushwaha, P. P., Rapalli, K. C., & Kumar, S. (2016). Geminin a multi task protein involved in cancer pathophysiology and developmental process: A review. Biochimie \textit{131}, 115–127. \
+
+#McGuigan, A., Kelly, P., Turkington, R. C., Jones, C., Coleman, H. G., & McCain, R. S. (2018). Pancreatic cancer: A review of clinical diagnosis, epidemiology, treatment and outcomes. World J. Gastrointest. Endosc, \textit{24(43)}, 4846–4861.
 
 Muller, N., Sarantitis I., Rouanet, M., de Mestier, L., Halloran, C., Greenhalf, W., Férec, C., Masson, E., Ruszniewski, P., Lévy, P., Neoptolemos, J., Buscail, L. & Rebours V. (2019). Natural history of SPINK1 germline mutation related-pancreatitis. EBioMedicine \textit{48}, 581–591. \
 
@@ -1812,19 +1820,19 @@ Takakura, K., Shibazaki, Y., Yoneyama, H., Fujii, M., Hashiguchi, T., Ito, Z., K
 
 Tokunaga, R., Zhang, W., Naseem, M., Puccini, A., Berger, M. D., Soni, S., McSkane, M., Baba, H., & Lenz, H. J. (2018). CXCL9, CXCL10, CXCL11/CXCR3 axis for immune activation - A target for novel cancer therapy. Cancer Treat Rev. \textit{63}, 40–47. \
 
+#Wang, H., Rana, S., Giese, N., Büchler, M. W., & Zöller, M. (2013). Tspan8, CD44v6 and alpha6beta4 are biomarkers of migrating pancreatic cancer-initiating cells. Int. J. Cancer, \textit{133(2)}, 416–426.
+
 Yang, J., Li, L., Raptis, D., Li, X., Li, F., Chen, B., He, J., Graf, R., & Sun, Z. (2015). Pancreatic stone protein/regenerating protein (PSP/reg): a novel secreted protein up-regulated in type 2 diabetes mellitus. Endocrine \textit{48}, 856–862. \
 
 Zhou, L., Zhang, R., Wang, L., Shen, S., Okamoto, H., Sugawara, A., Xia, L., Wang, X., Noguchi, N., Yoshikawa, T., Uruno, A., Yao, W., & Yuan, Y. (2010). Upregulation of REG Ialpha accelerates tumor progression in pancreatic cancer with diabetes. Int. J. Cancer. \textit{127}, 1795–1803. 
 
-Quellen Biomarker:
-
-Kim, H., Kang, K. N., Shin, Y. S., Byun, Y., Han, Y., Kwon, W., Kim, C. W., & Jang, J. Y. (2020). Biomarker Panel for the Diagnosis of Pancreatic Ductal Adenocarcinoma. Cancers, 12(6), 1443.
 
 
-McGuigan A, Kelly P, Turkington RC, Jones C, Coleman HG, McCain RS. Pancreatic cancer: A review of clinical diagnosis, epidemiology, treatment and outcomes. World J Gastroenterol. 2018 Nov 21;24(43):4846-4861. doi: 10.3748/wjg.v24.i43.4846. PMID: 30487695; PMCID: PMC6250924.
 
-Heo K, Lee S. TSPAN8 as a Novel Emerging Therapeutic Target in Cancer for Monoclonal Antibody Therapy. Biomolecules. 2020 Mar 3;10(3):388. doi: 10.3390/biom10030388. PMID: 32138170; PMCID: PMC7175299.
 
-Wang H, Rana S, Giese N, Büchler MW, Zöller M. Tspan8, CD44v6 and alpha6beta4 are biomarkers of migrating pancreatic cancer-initiating cells. Int J Cancer. 2013 Jul 15;133(2):416-26. doi: 10.1002/ijc.28044. Epub 2013 Feb 15. PMID: 23338841.
+
+
+
+
 
 
