@@ -89,12 +89,13 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 
 # Introduction
 
-In this project the expression of tissue restricted antigens (TRAs) in pancreatic cells is examined, concentrating on two cell types: $\beta$-cells and pancreatic ductal adenocarcinoma (PDAC) cells. \
-TRAs are highly expressed in specific tissues and in the thymus, where they have part in establishing the central tolerance of the immune system. A malfunction in the negative selection of developing T-cells can lead to autoimmune diseases, like diabetes type 1 (Kyewski & Klein, 2006).\
-Here autoreactive T-cells attack $\beta$-cells that, as part of the endocrine pancreatic islet, synthesize and secrete the hormone insulin (Jingli \textit{et al.}, 2020).\
-Another cause is the release of proinflammatory cytokines which, among mediating the innate immune response, can activate apoptotic pathways (Clark \textit{et al.}, 2017). Together this leads to the elimination of $\beta$-cells and results in insulin deficiency and hyperglycemia. \
-The other cell type are PDAC cells. Pancreatic adenocarcinoma is the most common pancreatic cancer and originates from epithelial cells from the exocrine component producing digestive enzymes. Mutations in the oncogenes and the tumor suppressor genes stimulate cell growth, division, and survival pathways (Wolfgang \textit{et al.} 2013). \
-With a 5-year survival rate of around 5% pancreatic cancer is the 4th leading cause of death by cancer in Western societies (Siegel \textit{et al.}, 2015). Therefore, identifying highly expressed TRAs that are, compared to healthy and stressed $\beta$-cells, unique to PDAC could be used to facilitate the diagnosis and development of new treatment options. Additionally, pathways leading to pancreatic cancer and diabetes were analyzed and differences established. 
+In this project the expression of tissue restricted antigens (TRAs) in pancreatic cells was examined, concentrating on two pancreatic cell types: $\beta$-cells and pancreatic ductal adenocarcinoma (PDAC) cells. \
+TRAs are highly expressed in specific tissues and in the thymus, where they have part in establishing the central tolerance of the immune system (Kyewski and Klein 2006). A malfunction in the negative selection of developing T-cells can lead to autoimmune diseases, like diabetes type 1.\
+ Here autoreactive T-cells attack $\beta$-cells that, as part of the endocrine pancreatic islet, synthesize and secrete the hormone insulin.\
+Another cause is the release of proinflammatory cytokines which, among mediating the innate immune response, can activate apoptotic pathways. Together this leads to the elimination of $\beta$-cells and results in insulin deficiency and hyperglycemia (Clark textit{et al.} 2017). \
+The other studied cell type is PDAC cells. Pancreatic adenocarcinoma is the most common pancreatic cancer and originates from epithelial cells in the exocrine component producing digestive enzymes (Kopp and Sander 2014). Mutations of the oncogenes and the tumor-suppressor genes stimulate cell growth, division, and survival pathways (Qian textit{et al.} 2020). \
+With a 5-year survival rate of around 5% pancreatic cancer is the 4\textsuperscript{th} leading cause of death by cancer in Western societies (Siegel textit{et al.} 2015). Therefore, identifying highly expressed TRAs that are, compared to healthy and stressed $\beta$-cells, unique to PDAC could be used to facilitate the diagnosis and development of new treatment options. Additionally, pathways leading to pancreatic cancer and diabetes were analyzed and differences established. \
+
 
 # Obtaining and processing of data
 ## Pancreas-specifc TRA genes 
@@ -1636,10 +1637,12 @@ SPINK1 and REG1A can not be applicated in the prediction of diabetes, because of
 A successfully identified gene is CXCL11, which was previously mentioned as upregulated in cells treated with cytokines. CXCL11 is a chemokine that regulates immune cell migration and induces inflammation (Kochumon \textit{et al.}, 2020). Diabetes is induced by the ensuing $\beta$-cell death (Burke \textit{et al.}, 2016). \
 There are quite a few genes that are expressed differently in pancreatic cancer and diabetes compared to normal $\beta$-cells. However, the most prominent ones are GMNN and STT3A for a high cancer expression as well as SPINK1 and REG1A for diabetes. They induce aforementioned pathways leading $\beta$-cells to their respective fates. 
 
-## Linear regression model
 
-A linear regression model was applied to emulate the influence of time on a gene in untreated $\beta$-cells. \
-To identify highly time-influenced genes we first extracted genes, which had a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then we looked at the remaining genes in a heatmap and chose the gene with the most variation: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong et. al., 2004). 
+A linear regression model was applied to emulate the influence of time on a time sensitive gene in untreated $\beta$-cells. \
+To identify highly time-influenced genes, first, genes were extracted, which have a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then the remaining genes were plotted in a heatmap and the one with the most variation was chosen: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong textit{et al.} 2004). \
+
+
+\newpage
 
 ```{r}
 # ------------------------------------------------
@@ -1670,21 +1673,12 @@ pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays
 ```
 
 
-```{r fig.cap = "The heatmap shows all genes in untreated beta-cells that are highly influenced by time. CUZD1 has the most variation.", include=TRUE, eval=TRUE, fig.width=9, fig.height=5}
-
-anno <- select(filter(diabetes_microarrays, treatment == "Control"), time_h)
-rownames(anno) <- filter(diabetes_microarrays, treatment == "Control")$number
-
+```{r fig.cap = "The heatmap shows all genes in untreated $/beta$-cells that are highly influenced by time. CUZD1 has the most variation.", include=TRUE, eval=TRUE}
 pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Control"), time_h)$number], 
-         main = "gene expression over time for beta-cells",
-         cluster_rows = FALSE, 
-         cluster_cols = FALSE,
-         annotation_col = anno,
-         angle_col = 315,
-         border_color = NA,
-         fontsize = 15) 
-
-# remove(n1,n2)
+         main = "gene expression over time for untreated ß-cells",
+         cluster_rows = FALSE, cluster_cols = FALSE,
+labels_col = c("0h", "1h", "2h", "4h", "8h", "12h", "24h", "36h", "48h", "60h", "72h", "84h", "96h"))
+#remove(n1,n2)
 # suggestion for linear regression: CUZD1 (Control), PNLIP (Cytokine treatment)
 ```
 
@@ -1692,8 +1686,9 @@ pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays
 # ------------------------------------------------
 # compare linear regression and mean model
 # ------------------------------------------------
-CUZD1exprdieabcontr <- matrix(
-  c(0,1,2,4,8,12,24,36,48,60,72,84,diabetes_GeneExprs_sub_control[56,1],
+CUZD1exprdieabcontr.df <- data.frame(
+   time = c(0,1,2,4,8,12,24,36,48,60,72,84), 
+   expression = c(diabetes_GeneExprs_sub_control[56,1],
  diabetes_GeneExprs_sub_control[56,3],
 diabetes_GeneExprs_sub_control[56,5],
 diabetes_GeneExprs_sub_control[56,8],
@@ -1705,16 +1700,18 @@ diabetes_GeneExprs_sub_control[56,6],
 diabetes_GeneExprs_sub_control[56,9],
  diabetes_GeneExprs_sub_control[56,10],
 diabetes_GeneExprs_sub_control[56,11]),
-ncol=2)
-
-colnames(CUZD1exprdieabcontr) <- c("time", "expression")
+   stringsAsFactors = FALSE)
 rownames(CUZD1exprdieabcontr) <-c("GSM1293805",
  "GSM1293807","GSM1293809", "GSM1293812", "GSM1293816","GSM1293806", "GSM1293808","GSM1293810", "GSM1293811","GSM1293813", "GSM1293814", "GSM1293815")
 
-b1 = cor(CUZD1exprdieabcontr[,1], CUZD1exprdieabcontr[,2]) * (sd(CUZD1exprdieabcontr[,2])/sd(CUZD1exprdieabcontr[,1]))
-b0 = mean(CUZD1exprdieabcontr[,2]) - b1*mean(CUZD1exprdieabcontr[,1])
-modelvalue = b0 +b1*96
-modelprediction <- matrix(c(96, modelvalue), nrow = 1)
+CUZD1diabctr.lm = lm(expression ~ time, data=CUZD1exprdieabcontr.df)
+
+summary(CUZD1diabctr.lm)
+
+b1 =-0.04014 ##estimate time 
+b0 =12.48875 ##estimate intercept
+
+modelprediction <- matrix(c(96, b0 +b1*96), nrow = 1)
 colnames(modelprediction) <- c("time", "expression")
 rownames(modelprediction) <- c("modelprediciton")
 
@@ -1731,10 +1728,11 @@ realvalue <- matrix(c(96,diabetes_GeneExprs_sub_control[56,13]), nrow=1)
 colnames(realvalue) <- c("time", "expression")
 rownames(realvalue) <- c("GSM1293817")
 ```
-Using only the time points from 0h to 84h, we developed a linear regression model to predict the expression of CUZD1 at 96h and compared this value to the actual value as well as to a value predicted by a mean-based model, shown in the plot below.
+Using only the time points from 0h to 84h, a linear regression model was developed to predict the expression of CUZD1 at 96h. Next, this value was compared to the actual value as well as to a value predicted by a mean-based model, shown in the plot below. \
+
 
 ```{r fig.cap = "The expression of CUZD1 at different time points (grey) is used to develop a linear regression model (red) to predict the value at 96h. The mean-based model is depicted in blue.", include=TRUE, eval=TRUE}
-plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression \nin untreated ß-cells", xlim=c(0, 100), ylim=c(8, 13))
+plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression \nin untreated ß-cells", xlim=c(0, 100), ylim=c(8, 13), xlab = "time in h")
 points(modelprediction, col="red", pch=20)
 points(meanprediction, col="blue", pch=20)
 points(realvalue, col="black", pch=20)
@@ -1760,26 +1758,6 @@ $(p<10^{-4})$. Also, over 80% of the overall variance is explained by the model.
 
 ```{r}
 ## F-test
-
-CUZD1exprdieabcontr.df <- data.frame(
-   time = c(0,1,2,4,8,12,24,36,48,60,72,84), 
-   expression = c(diabetes_GeneExprs_sub_control[56,1],
- diabetes_GeneExprs_sub_control[56,3],
-diabetes_GeneExprs_sub_control[56,5],
-diabetes_GeneExprs_sub_control[56,8],
- diabetes_GeneExprs_sub_control[56,12],
-diabetes_GeneExprs_sub_control[56,2],
- diabetes_GeneExprs_sub_control[56,4],
-diabetes_GeneExprs_sub_control[56,6],
- diabetes_GeneExprs_sub_control[56,7],
-diabetes_GeneExprs_sub_control[56,9],
- diabetes_GeneExprs_sub_control[56,10],
-diabetes_GeneExprs_sub_control[56,11]),
-   stringsAsFactors = FALSE)
-rownames(CUZD1exprdieabcontr) <-c("GSM1293805",
- "GSM1293807","GSM1293809", "GSM1293812", "GSM1293816","GSM1293806", "GSM1293808","GSM1293810", "GSM1293811","GSM1293813", "GSM1293814", "GSM1293815")
-
-CUZD1diabctr.lm = lm(expression ~ time, data=CUZD1exprdieabcontr.df)
 
 summary(CUZD1diabctr.lm) 
 
