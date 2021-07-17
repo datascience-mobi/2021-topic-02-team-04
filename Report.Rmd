@@ -4,16 +4,16 @@ author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
 subtitle: Analysis of TRA expression in pancreatic cancer and diabetes type 1
 abstract:
 output:
-  html_document:
-    toc: no
-    toc_depth: '2'
-    df_print: paged
   pdf_document:
     keep_tex: yes
     toc: no
     toc_depth: 2
     number_sections: yes
     fig_caption: yes
+  html_document:
+    toc: no
+    toc_depth: '2'
+    df_print: paged
 documentclass: article
 papersize: a4
 fontsize: 12pt
@@ -40,11 +40,11 @@ header-includes:
 knitr::opts_chunk$set(
   eval = TRUE,
 	echo = FALSE, # source code
-	collapse = FALSE, # ouput from one chunk are separate
+	collapse = FALSE, # output from one chunk are separate
 	message = FALSE, # messages not shown in output
 	warning = FALSE, # warnings not in output
 	comment = "", # line before output (default: ##)
-	include = FALSE, # output  
+	include = FALSE, # output   
 	out.width = "70%", # plot smaller
 	fig.align = "center", # plot in center
 	highlight = TRUE
