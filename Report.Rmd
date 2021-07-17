@@ -1326,7 +1326,7 @@ Geminin (GMNN) is responsible for the regulation of DNA replication in interacti
 
 $\beta$-cells have a highly increased cell death rate in diabetes type 1 (Eizirik \textit{et al.}, 2020), while pancreatic cancer cells are known for their fast proliferation (Takakura \textit{et al.}, 2015). Here the gene expression of TRAs in treated and untreated $\beta$- and pancreatic cancer cells is compared to establish similarities and differences in their intracellular pathways leading them to their respective fates. \
 First, the difference in healthy and stressed $\beta$-cells was deduced to determine which genes are influenced by the cytokine treatment. \
-To achieve this goal, a Principal Component Analysis (PCA) was conducted, which can be seen below. The optimal number of two clusters was determined by the silhouette method. Those clusters for the microarray chips were allocated by k-means. The conclusion was reached that the pancreatic-specific TRA expression overall is not considerably affected by the cytokine treatment but rather by the temporal component.
+To achieve this goal, a Principal Component Analysis (PCA) was conducted, which can be seen below. The optimal number of two clusters was determined by the silhouette method. Those clusters for the microarray chips were allocated by k-means. The conclusion was reached that the pancreas-specific TRA expression overall is not considerably affected by the cytokine treatment but rather by the temporal component.
 
 ```{r}
 # ------------------------------------------------
