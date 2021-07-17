@@ -1773,6 +1773,8 @@ Bacon, S., Kyithar, M. P., Schmid, J., Rizvi, S. R., Bonner, C., Graf, R., Prehn
 
 Burke, S. J., Karlstad, M. D., Eder, A. E., Regal, K. M., Lu, D., Burk, D. H., & Collier, J. J. (2016). Pancreatic $\beta$-Cell production of CXCR3 ligands precedes diabetes onset. BioFactors \textit{42}, 703–715. \
 
+Clark et al.  (2017). Type 1 Diabetes: A Chronic Anti-Self-Inflammatory Response. Frontiers in immunology. \
+
 Eizirik, D. L., Pasquali, L., & Cnop, M. (2020). Pancreatic $\beta$-cells in type 1 and type 2 diabetes mellitus: different pathways to failure. Nat. Rev. Endocrinol. \textit{16}, 349–362. \
 
 Harada, Y., Ohkawa, Y., Kizuka, Y., & Taniguchi, N. (2019). Oligosaccharyltransferase: A Gatekeeper of Health and Tumor Progression. Int. J. Mol. Sci. \textit{20}, 6074. \
@@ -1783,7 +1785,13 @@ Kim, H., Kang, K. N., Shin, Y. S., Byun, Y., Han, Y., Kwon, W., Kim, C. W., & Ja
 
 Kochumon, S., Madhoun, A. A., Al-Rashed, F., Azim, R., Al-Ozairi, E., Al-Mulla, F., & Ahmad, R. (2020). Adipose tissue gene expression of CXCL10 and CXCL11 modulates inflammatory markers in obesity: implications for metabolic inflammation and insulin resistance. Ther. Adv. Endocrinol. Metab. \textit{11}, 2042018820930902. \
 
+Kopp JL, Sander M (2014). New insights into the cell lineage of pancreatic ductal adenocarcinoma: evidence for tumor stem cells in premalignant lesions?. Gastroenterology. \
+
 Kushwaha, P. P., Rapalli, K. C., & Kumar, S. (2016). Geminin a multi task protein involved in cancer pathophysiology and developmental process: A review. Biochimie \textit{131}, 115–127. \
+
+Kyewski B, Klein L (2006). A central role for central tolerance. Annu Rev Immunol. \
+
+Leong CT, Ng CY, Ong CK, Ng CP, Ma ZS, Nguyen TH, Tay SK, Huynh H (2004). Molecular cloning, characterization and isolation of novel spliced variants of the human ortholog of a rat estrogen-regulated membrane-associated protein, UO-44. Oncogene. \
 
 McGuigan, A., Kelly, P., Turkington, R. C., Jones, C., Coleman, H. G., & McCain, R. S. (2018). Pancreatic cancer: A review of clinical diagnosis, epidemiology, treatment and outcomes. World J. Gastrointest. Endosc, \textit{24}, 4846–4861. \
 
@@ -1791,9 +1799,13 @@ Muller, N., Sarantitis I., Rouanet, M., de Mestier, L., Halloran, C., Greenhalf,
 
 Pan, S., Chen, R., Tamura, Y., Crispin, D. A., Lai, L. A., May, D. H., McIntosh, M. W., Goodlett, D. R., & Brentnall, T. A. (2014). Quantitative glycoproteomics analysis reveals changes in N-glycosylation level associated with pancreatic ductal adenocarcinoma. J. Proteome Res. \textit{13}, 1293–1306. \
 
+Qian Y, Gong Y, Fan Z, Luo G, Huang Q, Deng S, Cheng H, Jin K, Ni Q, Yu X, Liu C (2020). Molecular alterations and targeted therapy in pancreatic ductal adenocarcinoma. J Hematol Oncol. \
+
 Ruiz-Canada, C., Kelleher, D. J., & Gilmore, R. (2009). Cotranslational and posttranslational N-glycosylation of polypeptides by distinct mammalian OST isoforms. Cell \textit{136}, 272–283. \
 
 Salabat, M. R., Melstrom, L. G., Strouch, M. J., Ding, X. Z., Milam, B. M., Ujiki, M. B., Chen, C., Pelling, J. C., Rao, S., Grippo, P. J., McGarry, T. J., & Bentrem, D. J. (2008). Geminin is overexpressed in human pancreatic cancer and downregulated by the bioflavanoid apigenin in pancreatic cancer cell lines. Mol. Carcinog. \textit{47}, 835–844. \
+
+Siegel RL, Miller KD, Jemal A (2018). Cancer statistics. CA Cancer J Clin. \
 
 Takakura, K., Shibazaki, Y., Yoneyama, H., Fujii, M., Hashiguchi, T., Ito, Z., Kajihara, M., Misawa, T., Homma, S., Ohkusa, T., & Koido, S. (2015). Inhibition of Cell Proliferation and Growth of Pancreatic Cancer by Silencing of Carbohydrate Sulfotransferase 15 In Vitro and in a Xenograft Model. PloS one \textit{10}, e0142981. \
 
