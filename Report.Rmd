@@ -1,8 +1,4 @@
 ---
-title: "TRA expression in pancreas"
-author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
-subtitle: Analysis of TRA expression in pancreatic cancer and diabetes type 1
-abstract:
 output:
   pdf_document:
     keep_tex: yes
@@ -15,6 +11,7 @@ output:
     toc_depth: '2'
     df_print: paged
 documentclass: article
+classoption: notitlepage
 papersize: a4
 fontsize: 12pt
 geometry: left = 2 cm, right = 2 cm, top = 2 cm, bottom = 2 cm, headsep = 20pt
@@ -76,13 +73,60 @@ library(kableExtra)
 library(knitr)
 ```
 
-
 ```{r}
-projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+# projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 
 # used because knitting sometimes has a problem here:
-#projectPath <- "C:/Users/Selina Ernst/Documents/GitHub/2021-topic-02-team-04"
+projectPath <- "C:/Users/Selina Ernst/Documents/GitHub/2021-topic-02-team-04"
 ```
+
+\thispagestyle{empty}
+\hrule
+\vspace{0.3cm}
+\begin{center}
+\LARGE
+  TRA expression in the pancreas \\
+  \Large
+	Analysis of TRA expression in pancreatic cancer and diabetes type 1
+	\vspace{0.5cm}
+	\hrule 
+	\vspace{1cm}
+  \large
+	\begin{tabular}[c]{l}
+	Group: \\
+	 \\
+	Authors: \\
+	 \\
+	 \\
+   \\
+   \\
+	Supervisor:\\
+	 \\
+	Tutor:
+	\end{tabular}
+	\hspace{1.5cm}
+	\begin{tabular}[c]{l}
+	topic 2 team 4 \\
+	 \\
+	Carolyn Blümcke \\
+	Anna Boot \\
+	Selina Ernst \\
+	Bianca Greul \\
+	 \\
+	Dr. Maria Dinkelacker \\
+	 \\
+	Nils Mechtel
+	\end{tabular}
+	\vspace{1cm}
+	\hrule
+	\vspace{0.5cm}
+	Ruprecht-Karls Universität Heidelberg \vspace{0.3cm} \\
+	19.07.2021, Heidelberg
+\end{center}
+\vspace{2cm}
+
+\section*{Abstract}
+ajjhsidabkdjbkjdc
 
 \newpage
 \pagenumbering{arabic} 
@@ -1788,6 +1832,24 @@ summary(CUZD1diabctr.lm)
 ```
 
 # Discussion
+
+In the first part we were searching for pancreas-specific TRAs applicable as biomarkers for PDAC. Therefore, the TRAs needed to be highly expressed in PDAC cells but not in healthy $\beta$-cells. We found two potential candidates: TSPAN8 and GMNN. TSPAN8 plays a part in intracellular signal transduction. Overexpressed, it leads to cancer progression and metastasis in several cancers. GMNN overexpression causes replication defects and genomic instability, possibly resulting in cancer. 
+
+In the other part we concentrated on finding TRAs that are indicators for the fate of the pancreatic cells. In diabetes type 1 cell death pathways are activated, among other things, through cytokine induced inflammation. In the $\beta$-cell data set the gene CXCL11 is significantly overexpressed in the cytokine treated group. It induces leukocytic infiltration into pancreatic tissue ending in $/beta$-cell destruction. In PDAC cells proliferation is initiated, but no specific differing pancreatic TRAs could be found within the data set. 
+
+Next, we compared the cytokine-influenced genes between the $\beta$- and PDAC cell set. Highly expressed in PDAC and lowly expressed in treated $\beta$-cells are STT3A and GMNN. STT3A is part of the OST, which facilitates immune evasion through PD-L1 surface presentation. A cytokine-influenced TRA highly expressed in stressed $\beta$- but lowly expressed in PDAC cells is CXCL11. Even higher expressed are SPINK1 and REG1A. SPINK1 is associated with maintaining the integrity of the pancreatic tissue, while high REG1A expression is induced through neighboring cell death causing regeneration and proliferation. But both genes are mainly researched in the context of pancreatic cancer. 
+
+In regard to the accuracy of the analysis, a few points have to be taken into account.\
+Part of preparing the data was combining the expression values of the same gene by median. This does not take into account the differences in expression between those transcripts and protein isoforms of the same gene. 
+
+Since the PDAC data set has only three values for each group, the small sample size makes the recognition of significant differences more difficult. This in combination with the transformation to ranks, due to the Wilcoxon rank-sum test, leads to only a restricted allocation of p-values that are difficult to classify. 
+
+It is possible that some differences in the pancreatic TRA expression are not caused by the effects we researched, but are produced by other factors. The two data sets have a different treatment and preparation protocol, which could influence the gene expression. Additionally, the $/beta$-cell set has a temporal component, which does influence the TRA expression even in the control group. In comparison to the PDAC data set the time factor was not taken into account. And although both sets contain pancreatic cells, the PDAC cells originate from the exocrine and $/beta$-cells from the endocrine compartment of the pancreas. So differences from the cancer cells to the healthy cells could be attributed to the different sources. 
+
+On the basis of our analysis, subsequent steps for further analysis and research should be taken. \
+To verify the suitability of TSPAN8 and GMNN as biomarkers the expression in all other tissue types and other PDAC cells aside from the Capan-1 cell line has to be examined. Furthermore the marker needs to be tested in context of the tumor microenvironment. Next the specificity and sensitivity of the marker can be reviewed. And also the applicability as a therapeutical target could be considered. 
+
+STT3A and GMNN appear to facilitate the proliferation of pancreatic cancer cells, but more research regarding their effects in cancer is needed. Because SPINK1 and REG1A seem to influence both cell death in PDAC and proliferation pathways in diabetes. Originating from these genes more intramolecular signaling pathways could be researched to identify the relation, of which little is known up to this date.
 
 
 \newpage
