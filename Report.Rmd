@@ -1791,7 +1791,7 @@ summary(CUZD1diabctr.lm)
 
 
 \newpage
-## References
+# References
 
 Bacon, S., Kyithar, M. P., Schmid, J., Rizvi, S. R., Bonner, C., Graf, R., Prehn, J. H., & Byrne, M. M. (2012). Serum levels of pancreatic stone protein (PSP)/reg1A as an indicator of beta-cell apoptosis suggest an increased apoptosis rate in hepatocyte nuclear factor 1 alpha (HNF1A-MODY) carriers from the third decade of life onward. BMC Endocr. Disord. \textit{12}, 13. \
 
