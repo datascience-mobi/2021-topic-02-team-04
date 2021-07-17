@@ -1,5 +1,5 @@
 ---
-title: "TRA expression in the pancreas"
+title: "TRA expression in pancreas"
 author: "Bianca Greul, Carolyn Blümcke, Anna Boot, Selina Ernst"
 subtitle: Analysis of TRA expression in pancreatic cancer and diabetes type 1
 abstract:
@@ -89,13 +89,12 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 
 # Introduction
 
-In this project the expression of tissue restricted antigens (TRAs) in pancreatic cells was examined, concentrating on two pancreatic cell types: $\beta$-cells and pancreatic ductal adenocarcinoma (PDAC) cells. \
-TRAs are highly expressed in specific tissues and in the thymus, where they have part in establishing the central tolerance of the immune system (Kyewski and Klein 2006). A malfunction in the negative selection of developing T-cells can lead to autoimmune diseases, like diabetes type 1.\
- Here autoreactive T-cells attack $\beta$-cells that, as part of the endocrine pancreatic islet, synthesize and secrete the hormone insulin.\
-Another cause is the release of proinflammatory cytokines which, among mediating the innate immune response, can activate apoptotic pathways. Together this leads to the elimination of $\beta$-cells and results in insulin deficiency and hyperglycemia (Clark textit{et al.} 2017). \
-The other studied cell type is PDAC cells. Pancreatic adenocarcinoma is the most common pancreatic cancer and originates from epithelial cells in the exocrine component producing digestive enzymes (Kopp and Sander 2014). Mutations of the oncogenes and the tumor-suppressor genes stimulate cell growth, division, and survival pathways (Qian textit{et al.} 2020). \
-With a 5-year survival rate of around 5% pancreatic cancer is the 4\textsuperscript{th} leading cause of death by cancer in Western societies (Siegel textit{et al.} 2015). Therefore, identifying highly expressed TRAs that are, compared to healthy and stressed $\beta$-cells, unique to PDAC could be used to facilitate the diagnosis and development of new treatment options. Additionally, pathways leading to pancreatic cancer and diabetes were analyzed and differences established. \
-
+In this project the expression of tissue restricted antigens (TRAs) in pancreatic cells is examined, concentrating on two cell types: $\beta$-cells and pancreatic ductal adenocarcinoma (PDAC) cells. \
+TRAs are highly expressed in specific tissues and in the thymus, where they have part in establishing the central tolerance of the immune system. A malfunction in the negative selection of developing T-cells can lead to autoimmune diseases, like diabetes type 1 (Kyewski & Klein, 2006).\
+Here autoreactive T-cells attack $\beta$-cells that, as part of the endocrine pancreatic islet, synthesize and secrete the hormone insulin (Jingli \textit{et al.}, 2020).\
+Another cause is the release of proinflammatory cytokines which, among mediating the innate immune response, can activate apoptotic pathways (Clark \textit{et al.}, 2017). Together this leads to the elimination of $\beta$-cells and results in insulin deficiency and hyperglycemia. \
+The other cell type are PDAC cells. Pancreatic adenocarcinoma is the most common pancreatic cancer and originates from epithelial cells from the exocrine component producing digestive enzymes. Mutations of the oncogenes and the tumor-suppressor genes stimulate cell growth, division, and survival pathways (Wolfgang \textit{et al.} 2013). \
+With a 5-year survival rate of around 5% pancreatic cancer is the 4th leading cause of death by cancer in Western societies (Siegel \textit{et al.}, 2015). Therefore, identifying highly expressed TRAs that are, compared to healthy and stressed $\beta$-cells, unique to PDAC could be used to facilitate the diagnosis and development of new treatment options. Additionally, pathways leading to pancreatic cancer and diabetes were analyzed and differences established. 
 
 # Obtaining and processing of data
 ## Pancreas-specifc TRA genes 
@@ -259,7 +258,7 @@ PancreasTRAs6ChromX <- gsub(x=PancreasTRAs6_human$ensembl.chrom,pattern="X",repl
 PancreasTRAs6ChromX <- as.integer(PancreasTRAs6ChromX)
 PancreasTRAs6ChromXorder <- PancreasTRAs6ChromX[order(PancreasTRAs6ChromX)]
 
-barplot(table(PancreasTRAs6ChromXorder),main="human pancreas specific TRAs (GTEX 2013 & 2015)",xlab="chromosoms", ylab="frequency", col = rainbow(23), cex.names=.5, las=2, names.arg=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X") )
+barplot(table(PancreasTRAs6ChromXorder),main="human pancreas specific TRAs (GTEX 2013 & 2015)",xlab="chromosoms", ylab="frequency", col = rainbow(23), cex.names=.5, las=2, names.arg=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X"))
 
 # TRAs4 (mouse)
 
@@ -280,11 +279,11 @@ barplot(table(PancreasTRAs5ChromXorder),main="mouse pancreas specific TRAs5",xla
 
 
 ## Gene expression  measured by microarrays
-### Microarray data sets
+### Microarray Data sets
 
 Microarrays were used to analyze the expression of a large number of genes in human pancreas cells. This was done by hybridizing labelled cDNA (target) to a specific DNA sequence (probe) with a defined position on the microarray chip. After hybridization the fluorescence emission was examined. \
 The pancreas cell types used for this project are PDAC Capan-1 cells (GEO number GSE59761) and $\beta$-cells (GEO number GSE53454). These data sets were downloaded from the GEO database. For both the same Affymetrix chip was used (HG-U133 Plus 2) which means that the same transcripts were analyzed. \
-Data set GSE59761 includes six chips. For three of those, the pancreatic cancer cells were transfected with unspecified small interfering RNA (siRNA) as a negative control (NC). The other three were treated with siRNA targeted against the TBL1X gene, which encodes a transcriptional cofactor. This knockout causes decreased proliferation in the pancreatic cancer cells (Stoy \textit{et al.}, 2015). \
+Data set GSE59761 includes six chips. For three of those, the pancreatic cancer cells were transfected with unspecified small interfering RNA (siRNA) as negative control (NC). The other three were treated with siRNA targeted against the TBL1X gene, which encodes a transcriptional cofactor. This knockout causes decreased proliferation in the pancreatic cancer cells (Stoy \textit{et al.}, 2015). \
 Data set GSE53454 consists of 24 chips. 13 of those form the control group, where the $\beta$-cells were observed over several time periods from 0 to 96 hours. The remaining eleven microarray chips provide gene expression data to $\beta$-cells that were treated with cytokines interleukin-1$\beta$ and interferon-$\gamma$ to simulate the actions of the immune system in diabetes type 1. This treatment was also conducted over a time period ranging from 1 to 96 hours (Lopes \textit{et al.}, 2014).
 
 
@@ -323,11 +322,11 @@ rownames(diabetes_vsnrma_matrix) <- str_replace(rownames(diabetes_vsnrma_matrix)
 colnames(pancreas_vsnrma_matrix) <- str_remove(colnames(pancreas_vsnrma_matrix),"_.CEL")
 colnames(diabetes_vsnrma_matrix) <- str_replace(colnames(diabetes_vsnrma_matrix),"\\..*","")
 # remove control probes (AFFX) 
-pancreas_vsnrma_matrix = pancreas_vsnrma_matrix[which(!startsWith(rownames(pancreas_vsnrma_matrix), "AFFX")),]
-diabetes_vsnrma_matrix = diabetes_vsnrma_matrix[which(!startsWith(rownames(diabetes_vsnrma_matrix), "AFFX")),]
+pancreas_vsnrma_matrix <-  pancreas_vsnrma_matrix[which(!startsWith(rownames(pancreas_vsnrma_matrix), "AFFX")),]
+diabetes_vsnrma_matrix <-  diabetes_vsnrma_matrix[which(!startsWith(rownames(diabetes_vsnrma_matrix), "AFFX")),]
 # transcript IDs
-pancreas_transcript_names = rownames(pancreas_vsnrma_matrix)
-diabetes_transcript_names = rownames(diabetes_vsnrma_matrix)
+pancreas_transcript_names <- rownames(pancreas_vsnrma_matrix)
+diabetes_transcript_names <- rownames(diabetes_vsnrma_matrix)
 
 # ----------------------------------------------------------
 # create data frames which hold information about micro arrays
@@ -532,7 +531,10 @@ pheatmap(diabetes_GeneExprs_sub_combined,
          labels_row = rep("",nrow(diabetes_GeneExprs_sub)),
          annotation_col = anno,
          treeheight_row = 0,
-         main = "TRA gene expression in beta cells (GSE53454)\nafter combining transcripts from one gene over median")
+         main = "TRA gene expression in beta-cells (GSE53454)")
+
+setwd(paste(projectPath, "plots", sep = "/"))
+# dev.copy2pdf(file = "diabetes_heatmap_TRA_combined.pdf")
 
 # ----------------------------------------------------------
 # heatmap gene expression with hclustering: PDAC data set
@@ -569,11 +571,14 @@ pheatmap(pancreas_GeneExprs_sub_combined,
          labels_row = rep("",nrow(pancreas_GeneExprs_sub_combined)),
          cluster_rows = TRUE, treeheight_row = 0,
          fontsize_row = 8, fontsize_col = 7, fontsize = 9,
-         main = "TRA gene expression in pancreatic cancer cells \n data set: GSE59761")
+         main = "TRA gene expression in pancreatic cancer cells (GSE59761)")
 
 setwd(paste(projectPath, "plots", sep = "/"))
 # dev.copy2pdf(file = "pancreas_heatmap_TRA_combined.pdf")
+```
 
+
+```{r eval=FALSE}
 # ------------------------------------------------
 # boxplots: diabetes data set
 # ------------------------------------------------
@@ -648,7 +653,7 @@ for (i in seq(1,250,by = 50)){
 ### Quality control of microarray chips
 
 To ensure that the used microarrays are all of high quality and the potential mistakes made by the experimenter do not interfere with the analysis, a quality control was necessary. \
-Looking at the images of each chip no abnormality was detected for either data set. Likewise, no considerable outliers were found between the microarrays after normalization. To determine this, boxplots of the microarrays and scatterplots were reviewed. The conclusion was to keep all chips from both data sets. 
+Looking at the images of each chip there was no abnormality detected for both data sets. Likewise, no considerable outliers were found between the microarrays after normalization. To determine this, boxplots of the microarrays and scatterplots were reviewed. The conclusion was to keep all chips from both data sets. 
 
 \begin{table}[htb]
 \resizebox{\textwidth}{!}{
@@ -916,10 +921,10 @@ for (i in 1:5) {
 
 ### Introduction 
 
-The high mortality of pancreatic cancer is partly due to the cancer commonly only being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Asymptomatic or unspecific symptoms are responsible for the late diagnosis, which is further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments (McGuigan \textit{et al.},2018).\ 
-The most widely used biomarker is serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Kim \textit{et al.}, 2020). \
-This shows why it is so important to extend the search for other biomarkers in hope of improving both the diagnostic as well as the treatment options. \
-In this first part of the analysis, the focus is on the two control sets and determining if highly expressed pancreas-specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found.
+The high mortality of pancreatic cancer is partly due to the cancer commonly only being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Another reason are asymptomatic or unspecific symptoms, further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments(McGuigan \textit{et al.},2018). \
+The most widely used biomarker is Serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Kim \textit{et al.}, 2020). \
+In brief, this shows why it is so important to extend the search for other biomarkers in hope of improving both the diagnostic as well as the treatment options. \
+In this first part of the report, the focus is on the two control sets and determining if highly expressed pancreas specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found.
 
 ###  Identifying differentially expressed genes
 
@@ -1120,7 +1125,7 @@ pancreascontrolmedian <- apply(pancreas_GeneExprs_sub_control,1,median)
 differencemedian <-  pancreascontrolmedian - diabetescontrolmedian
 differencemedianabs <- abs(pancreascontrolmedian - diabetescontrolmedian)
 
-# Creating dataframe with the median values for each of the genes
+# Creating matrix with the median values for each of the genes
 differencemedianmatrix <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedian,diabetescontrolmedian,pancreascontrolmedian)
 differencemedianmatrixabs <-  data.frame(rownames(pancreas_GeneExprs_sub_control),differencemedianabs,diabetescontrolmedian,pancreascontrolmedian)
 
@@ -1134,7 +1139,6 @@ differentialdifferencematrixabs <- differencemedianmatrixabs[which((rownames(dia
 # Matrix in descending order
 
 differentialdifferencematrixordered <- differentialdifferencematrix[order(differentialdifferencematrix[,2],decreasing = TRUE),]
-differentialdifferencematrixordered <- data.frame(differentialdifferencematrixordered)
 differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[order(differentialdifferencematrixabs[,2],decreasing = TRUE),]
 
 colnames(differentialdifferencematrixordered) <- c("Gensymbol","Median Difference","Median Diabetes","Median Pancreas")
@@ -1237,12 +1241,12 @@ for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
 ```
 
 It determined whether the difference in gene expression was significant or due to statistical fluctuation. \
-With the p-value set at p < 0.05, 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them. 
+With the p-value set at p < 0.05, 225 out of the 250 genes are significantly differentially expressed. On the basis of those genes a matrix was compiled with the median gene expression of both data sets and also the difference between them to quantify the genes. 
 
 ```{r eval=TRUE, include=TRUE}
 
 kbl(head(differentialdifferencematrixordered[1:3,-1]), 
-    caption = "Head of the data frame with the median value and median difference of the differentially expressed genes",
+    caption = "Head of the table of the matrix with the median value and median difference of the differentially expressed genes",
     booktabs = TRUE,
     align = "rrr") %>%
   kable_styling(latex_options = c("striped",
@@ -1273,7 +1277,6 @@ ggplot(data = differential_control_diabetes_pancreas_fc, aes(x = log2_foldchange
 setwd(paste(projectPath, "plots", sep = "/"))
 # dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
 ```
-
 
 ```{r}
 ###Venn-Diagramm (highly expressed ẞ-cells, highly expressed PDAC, differently expressed)
@@ -1313,11 +1316,9 @@ display_venn(x, category.names = c("high in PDAC" , "high in treated ß-cells " 
 
 Now having identified the differential expressed genes - for a possible biomarker they also would have to be highly expressed in the cancer cells. For this the gene expression of the differential expressed genes was compared against the highest expressed genes in the cancer cell. \
 These genes were than checked against existing literature in context of an association to (pancreatic) cancer. Out of all those genes two stood out - several publications indicate TSPAN8 and GMNN as possible biomarkers for pancreatic cancer. \
-
 TSPAN8 is a member of the tetraspanin family that builds tetraspanin-enriched microdomains which are important in the signal transduction. The TSPAN8-mediated protein complexes interact with themselves and various other cellular signalling molecules.
 During their normal physiological function they are involved in the regulation of multiple processes like cell adhesion, proliferation and differentiation. But several publications have linked the overexpression of TSPAN8 to the progression and metastasis of several cancers by interacting with various binding partners (Heo and Lee, 2020). \
 To note is also that tetraspanins are constitutive exosome components but a higher TSPAN8 expression could be found on exosomes. This could lead to a possible non-invasive cancer diagnostic – a blood serum test (Wang \textit{et al.}, 2013). \
-
 Geminin (GMNN) is responsible for the regulation of DNA replication in interaction with Cdc10-dependent transcript (Cdt1). Overexpression of geminin leads to replication defects and genomic instability, which are associated with cancer formation (Kushwaha \textit{et al.}, 2016). An unrelated study confirmed that geminin is overexpressed in pancreatic cancer (Salabat \textit{et al.}, 2008).
 
 ## Fate of pancreatic cells determined by TRA expression
@@ -1637,12 +1638,10 @@ SPINK1 and REG1A can not be applicated in the prediction of diabetes, because of
 A successfully identified gene is CXCL11, which was previously mentioned as upregulated in cells treated with cytokines. CXCL11 is a chemokine that regulates immune cell migration and induces inflammation (Kochumon \textit{et al.}, 2020). Diabetes is induced by the ensuing $\beta$-cell death (Burke \textit{et al.}, 2016). \
 There are quite a few genes that are expressed differently in pancreatic cancer and diabetes compared to normal $\beta$-cells. However, the most prominent ones are GMNN and STT3A for a high cancer expression as well as SPINK1 and REG1A for diabetes. They induce aforementioned pathways leading $\beta$-cells to their respective fates. 
 
+## Linear regression model
 
-A linear regression model was applied to emulate the influence of time on a time sensitive gene in untreated $\beta$-cells. \
-To identify highly time-influenced genes, first, genes were extracted, which have a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then the remaining genes were plotted in a heatmap and the one with the most variation was chosen: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong textit{et al.} 2004). \
-
-
-\newpage
+A linear regression model was applied to emulate the influence of time on a gene in untreated $\beta$-cells. \
+To identify highly time-influenced genes we first extracted genes, which had a high influence on PC1 (known to be impacted by time) and a low influence on PC2. Then we looked at the remaining genes in a heatmap and chose the gene with the most variation: CUZD1. It activates trypsinogen, the precursor of the pancreas enzyme trypsin, and may regulate cell motility, cell-cell and cell-ECM interactions (Leong et. al., 2004). 
 
 ```{r}
 # ------------------------------------------------
@@ -1673,12 +1672,21 @@ pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays
 ```
 
 
-```{r fig.cap = "The heatmap shows all genes in untreated $/beta$-cells that are highly influenced by time. CUZD1 has the most variation.", include=TRUE, eval=TRUE}
+```{r fig.cap = "The heatmap shows all genes in untreated beta-cells that are highly influenced by time. CUZD1 has the most variation.", include=TRUE, eval=TRUE, fig.width=9, fig.height=5}
+
+anno <- select(filter(diabetes_microarrays, treatment == "Control"), time_h)
+rownames(anno) <- filter(diabetes_microarrays, treatment == "Control")$number
+
 pheatmap(diabetes_GeneExprs_sub_combined[n2, arrange(filter(diabetes_microarrays, treatment == "Control"), time_h)$number], 
-         main = "gene expression over time for untreated ß-cells",
-         cluster_rows = FALSE, cluster_cols = FALSE,
-labels_col = c("0h", "1h", "2h", "4h", "8h", "12h", "24h", "36h", "48h", "60h", "72h", "84h", "96h"))
-#remove(n1,n2)
+         main = "gene expression over time for beta-cells",
+         cluster_rows = FALSE, 
+         cluster_cols = FALSE,
+         annotation_col = anno,
+         angle_col = 315,
+         border_color = NA,
+         fontsize = 15) 
+
+# remove(n1,n2)
 # suggestion for linear regression: CUZD1 (Control), PNLIP (Cytokine treatment)
 ```
 
@@ -1686,9 +1694,8 @@ labels_col = c("0h", "1h", "2h", "4h", "8h", "12h", "24h", "36h", "48h", "60h", 
 # ------------------------------------------------
 # compare linear regression and mean model
 # ------------------------------------------------
-CUZD1exprdieabcontr.df <- data.frame(
-   time = c(0,1,2,4,8,12,24,36,48,60,72,84), 
-   expression = c(diabetes_GeneExprs_sub_control[56,1],
+CUZD1exprdieabcontr <- matrix(
+  c(0,1,2,4,8,12,24,36,48,60,72,84,diabetes_GeneExprs_sub_control[56,1],
  diabetes_GeneExprs_sub_control[56,3],
 diabetes_GeneExprs_sub_control[56,5],
 diabetes_GeneExprs_sub_control[56,8],
@@ -1700,18 +1707,16 @@ diabetes_GeneExprs_sub_control[56,6],
 diabetes_GeneExprs_sub_control[56,9],
  diabetes_GeneExprs_sub_control[56,10],
 diabetes_GeneExprs_sub_control[56,11]),
-   stringsAsFactors = FALSE)
+ncol=2)
+
+colnames(CUZD1exprdieabcontr) <- c("time", "expression")
 rownames(CUZD1exprdieabcontr) <-c("GSM1293805",
  "GSM1293807","GSM1293809", "GSM1293812", "GSM1293816","GSM1293806", "GSM1293808","GSM1293810", "GSM1293811","GSM1293813", "GSM1293814", "GSM1293815")
 
-CUZD1diabctr.lm = lm(expression ~ time, data=CUZD1exprdieabcontr.df)
-
-summary(CUZD1diabctr.lm)
-
-b1 =-0.04014 ##estimate time 
-b0 =12.48875 ##estimate intercept
-
-modelprediction <- matrix(c(96, b0 +b1*96), nrow = 1)
+b1 = cor(CUZD1exprdieabcontr[,1], CUZD1exprdieabcontr[,2]) * (sd(CUZD1exprdieabcontr[,2])/sd(CUZD1exprdieabcontr[,1]))
+b0 = mean(CUZD1exprdieabcontr[,2]) - b1*mean(CUZD1exprdieabcontr[,1])
+modelvalue = b0 +b1*96
+modelprediction <- matrix(c(96, modelvalue), nrow = 1)
 colnames(modelprediction) <- c("time", "expression")
 rownames(modelprediction) <- c("modelprediciton")
 
@@ -1728,11 +1733,10 @@ realvalue <- matrix(c(96,diabetes_GeneExprs_sub_control[56,13]), nrow=1)
 colnames(realvalue) <- c("time", "expression")
 rownames(realvalue) <- c("GSM1293817")
 ```
-Using only the time points from 0h to 84h, a linear regression model was developed to predict the expression of CUZD1 at 96h. Next, this value was compared to the actual value as well as to a value predicted by a mean-based model, shown in the plot below. \
-
+Using only the time points from 0h to 84h, we developed a linear regression model to predict the expression of CUZD1 at 96h and compared this value to the actual value as well as to a value predicted by a mean-based model, shown in the plot below.
 
 ```{r fig.cap = "The expression of CUZD1 at different time points (grey) is used to develop a linear regression model (red) to predict the value at 96h. The mean-based model is depicted in blue.", include=TRUE, eval=TRUE}
-plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression \nin untreated ß-cells", xlim=c(0, 100), ylim=c(8, 13), xlab = "time in h")
+plot(CUZD1exprdieabcontr, pch=20,col='grey', main="Models of CUZD1 expression \nin untreated ß-cells", xlim=c(0, 100), ylim=c(8, 13))
 points(modelprediction, col="red", pch=20)
 points(meanprediction, col="blue", pch=20)
 points(realvalue, col="black", pch=20)
@@ -1759,6 +1763,26 @@ $(p<10^{-4})$. Also, over 80% of the overall variance is explained by the model.
 ```{r}
 ## F-test
 
+CUZD1exprdieabcontr.df <- data.frame(
+   time = c(0,1,2,4,8,12,24,36,48,60,72,84), 
+   expression = c(diabetes_GeneExprs_sub_control[56,1],
+ diabetes_GeneExprs_sub_control[56,3],
+diabetes_GeneExprs_sub_control[56,5],
+diabetes_GeneExprs_sub_control[56,8],
+ diabetes_GeneExprs_sub_control[56,12],
+diabetes_GeneExprs_sub_control[56,2],
+ diabetes_GeneExprs_sub_control[56,4],
+diabetes_GeneExprs_sub_control[56,6],
+ diabetes_GeneExprs_sub_control[56,7],
+diabetes_GeneExprs_sub_control[56,9],
+ diabetes_GeneExprs_sub_control[56,10],
+diabetes_GeneExprs_sub_control[56,11]),
+   stringsAsFactors = FALSE)
+rownames(CUZD1exprdieabcontr) <-c("GSM1293805",
+ "GSM1293807","GSM1293809", "GSM1293812", "GSM1293816","GSM1293806", "GSM1293808","GSM1293810", "GSM1293811","GSM1293813", "GSM1293814", "GSM1293815")
+
+CUZD1diabctr.lm = lm(expression ~ time, data=CUZD1exprdieabcontr.df)
+
 summary(CUZD1diabctr.lm) 
 
 ```
@@ -1779,7 +1803,7 @@ Eizirik, D. L., Pasquali, L., & Cnop, M. (2020). Pancreatic $\beta$-cells in typ
 
 Harada, Y., Ohkawa, Y., Kizuka, Y., & Taniguchi, N. (2019). Oligosaccharyltransferase: A Gatekeeper of Health and Tumor Progression. Int. J. Mol. Sci. \textit{20}, 6074. \
 
-Heo, K., & Lee, S. (2020). TSPAN8 as a Novel Emerging Therapeutic Target in Cancer for Monoclonal Antibody Therapy. Biomolecules, \textit{10}, 388. \
+Heo, K., and Lee, S. (2020). TSPAN8 as a Novel Emerging Therapeutic Target in Cancer for Monoclonal Antibody Therapy. Biomolecules \textit{10}, 388. \
 
 Kim, H., Kang, K. N., Shin, Y. S., Byun, Y., Han, Y., Kwon, W., Kim, C. W., & Jang, J. Y. (2020). Biomarker Panel for the Diagnosis of Pancreatic Ductal Adenocarcinoma. Cancers, \textit{12}, 1443. \
 
@@ -1793,7 +1817,9 @@ Kyewski B, Klein L (2006). A central role for central tolerance. Annu Rev Immuno
 
 Leong CT, Ng CY, Ong CK, Ng CP, Ma ZS, Nguyen TH, Tay SK, Huynh H (2004). Molecular cloning, characterization and isolation of novel spliced variants of the human ortholog of a rat estrogen-regulated membrane-associated protein, UO-44. Oncogene. \
 
-McGuigan, A., Kelly, P., Turkington, R. C., Jones, C., Coleman, H. G., & McCain, R. S. (2018). Pancreatic cancer: A review of clinical diagnosis, epidemiology, treatment and outcomes. World J. Gastrointest. Endosc, \textit{24}, 4846–4861. \
+Lopes, M., Kutlu, B., Miani, M., Bang-Berthelsen, C.H., Størling, J., Pociot, F., Goodman, N., Hood, L., Welsh, N., Bontempi, G., et al. (2014). Temporal profiling of cytokine-induced genes in pancreatic $\beta$-cells by meta-analysis and network inference. Genomics \textit{103}, 264-275. \
+
+McGuigan, A., Kelly, P., Turkington, R.C., Jones, C., Coleman, H.G., and McCain, R.S. (2018). Pancreatic cancer: A review of clinical diagnosis, epidemiology, treatment and outcomes. World J Gastroenterol \textit{24}, 4846-4861. \
 
 Muller, N., Sarantitis I., Rouanet, M., de Mestier, L., Halloran, C., Greenhalf, W., Férec, C., Masson, E., Ruszniewski, P., Lévy, P., Neoptolemos, J., Buscail, L. & Rebours V. (2019). Natural history of SPINK1 germline mutation related-pancreatitis. EBioMedicine \textit{48}, 581–591. \
 
@@ -1807,23 +1833,16 @@ Salabat, M. R., Melstrom, L. G., Strouch, M. J., Ding, X. Z., Milam, B. M., Ujik
 
 Siegel RL, Miller KD, Jemal A (2018). Cancer statistics. CA Cancer J Clin. \
 
+Stoy, C., Sundaram, A., Rios Garcia, M., Wang, X., Seibert, O., Zota, A., Wendler, S., Männle, D., Hinz, U., Sticht, C., et al. (2015). Transcriptional co-factor Transducin beta-like (TBL) 1 acts as a checkpoint in pancreatic cancer malignancy. EMBO Molecular Medicine \textit{7}, 1048-1062. \
+
 Takakura, K., Shibazaki, Y., Yoneyama, H., Fujii, M., Hashiguchi, T., Ito, Z., Kajihara, M., Misawa, T., Homma, S., Ohkusa, T., & Koido, S. (2015). Inhibition of Cell Proliferation and Growth of Pancreatic Cancer by Silencing of Carbohydrate Sulfotransferase 15 In Vitro and in a Xenograft Model. PloS one \textit{10}, e0142981. \
 
 Tokunaga, R., Zhang, W., Naseem, M., Puccini, A., Berger, M. D., Soni, S., McSkane, M., Baba, H., & Lenz, H. J. (2018). CXCL9, CXCL10, CXCL11/CXCR3 axis for immune activation - A target for novel cancer therapy. Cancer Treat Rev. \textit{63}, 40–47. \
 
-Wang, H., Rana, S., Giese, N., Büchler, M. W., & Zöller, M. (2013). Tspan8, CD44v6 and alpha6beta4 are biomarkers of migrating pancreatic cancer-initiating cells. Int. J. Cancer, \textit{133}, 416–426. \
+Wang, H., Rana, S., Giese, N., Büchler, M.W., and Zöller, M. (2013). Tspan8, CD44v6 and alpha6beta4 are biomarkers of migrating pancreatic cancer-initiating cells. Int J Cancer \textit{133}, 416-426.\
 
 Yang, J., Li, L., Raptis, D., Li, X., Li, F., Chen, B., He, J., Graf, R., & Sun, Z. (2015). Pancreatic stone protein/regenerating protein (PSP/reg): a novel secreted protein up-regulated in type 2 diabetes mellitus. Endocrine \textit{48}, 856–862. \
 
 Zhou, L., Zhang, R., Wang, L., Shen, S., Okamoto, H., Sugawara, A., Xia, L., Wang, X., Noguchi, N., Yoshikawa, T., Uruno, A., Yao, W., & Yuan, Y. (2010). Upregulation of REG Ialpha accelerates tumor progression in pancreatic cancer with diabetes. Int. J. Cancer. \textit{127}, 1795–1803. 
-
-
-
-
-
-
-
-
-
 
 
