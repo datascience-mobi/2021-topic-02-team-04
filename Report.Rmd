@@ -85,9 +85,9 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 \vspace{0.3cm}
 \begin{center}
 \LARGE
-  TRA expression in the pancreas \\
+  TRA expression in pancreas cells\\
   \Large
-	Analysis of TRA expression in pancreatic cancer cells and $\beta$-cells
+	Analysis of  pancreas-specifc TRA expression in PDAC and $\beta$-cells
 	\vspace{0.5cm}
 	\hrule 
 	\vspace{1cm}
@@ -126,7 +126,7 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 \vspace{2cm}
 
 \section*{Abstract}
-Cancer induced mutations and cytokine treatment lead to differences in the expression of tissue restricted antigens in pancreatic cells. These differences were used to identify the potential biomarkers for pancreatic ductal adenocarcinoma TSPAN8 and GMNN. Furthermore, genes leading pancreatic cells into proliferation or cell death were identified. Indicators of pancreatic cancer are STT3A and GMNN and a predictor of diabetes is CXCL11.
+Cancer induced mutations and cytokine treatment lead to differences in the expression of tissue restricted antigens in pancreatic cells. Gene expression differences in respective cell types were used to identify the potential biomarkers for pancreatic ductal adenocarcinoma TSPAN8 and GMNN. Furthermore, genes possibly leading pancreatic cells into proliferation or cell death were identified. Indicators of pancreatic cancer might be STT3A and GMNN and a predictor of diabetes could be CXCL11.
 
 \newpage
 \pagenumbering{arabic} 
@@ -146,7 +146,7 @@ With a 5-year survival rate of around 5% pancreatic cancer is the 4th leading ca
 ## Pancreas-specific TRA genes 
 
 The base of the project are TRAs that are significantly higher expressed in the pancreas compared to other tissues. \
-The first step of was therefore to find pancreas-specific genes. The tables used were provided by Dr. Dinkelacker and came from multiple sources, all of which focused on TRA expression in human and mice tissues. By selecting all genes that were associated with the pancreas, 330 pancreas-specific TRAs in the human and 59 in mice could be gathered.\
+The first step of was therefore to find pancreas-specific genes. The tables used were provided by Dr. Dinkelacker (Dinkelacker, 2007; Dinkelacker, 2019) and came from multiple sources, all of which focused on TRA expression in human and mice tissues. By selecting all genes that were associated with the pancreas, 330 pancreas-specific TRAs in the human and 59 in mice could be gathered.\
 As the project was about TRA expression in human pancreatic cells, the focus of the analysis layed on the human pancreas-specific TRAs found.
 
 ```{r}
@@ -706,6 +706,7 @@ Looking at the images of each chip no abnormality was detected for either data s
 Over the course of the analysis an array of packages was used which are listed in Table 2. The code was written using the 4.0.3 Version of R. 
 
 \begin{table}[htb]
+\caption{List of all packages used in R for obtaining, processing and analysis of data.}
 \resizebox{\textwidth}{!}{
 \begin{tabular}{lllll}
 \hline
@@ -715,7 +716,6 @@ hgu133plus2hsenstcdf 25.0.0  & rstudioapi 0.13 & ggrepel 0.9.1 &  reshape2 1.4.4
 hgu133plus2hsenstprobe 25.0.0  & tidyverse 1.3.1  & pheatmap 1.0.12 & factoextra 1.0.7 &  \\ 
 \hline
 \end{tabular}}
-\caption{List of all packages used in R for obtaining, processing and analysis of data.}
 \end{table}
 
 ```{r eval=FALSE}
@@ -974,7 +974,7 @@ for (i in 1:5) {
 The high mortality of pancreatic cancer is partly due to the cancer commonly being diagnosed at advanced stages, where the treatment options are limited including surgical resection due to metastasis. Asymptomatic or unspecific symptoms are responsible for the late diagnosis, which is further complicated by the absence of specific diagnostic and predictive biomarkers for early diagnosis and treatments (McGuigan \textit{et al.}, 2018).\
 The most widely used biomarker is serum carbohydrate antigen CA 19-9 but because of low sensitivity and specificity (both around 80%) it is not used as a universal screening tool. Rather CA 19-9 is utilized for high risk patients as well as for detection of recurrence and assessment of response to treatment (Kim \textit{et al.}, 2020). \
 This shows why it is so important to extend the search for other biomarkers in hope of improving both the diagnostic as well as the treatment options. \
-In this first part of the analysis, the focus is on the two control sets and determining if highly expressed pancreas specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found.
+In this first part of the analysis, the focus is on the two control sets and determining if highly expressed pancreas-specific antigens in the cancer cells but not in the neighboring $\beta$-cells can be found.
 
 ###  Identifying differentially expressed genes
 
@@ -1862,6 +1862,10 @@ Bacon, S., Kyithar, M. P., Schmid, J., Rizvi, S. R., Bonner, C., Graf, R., Prehn
 Burke, S. J., Karlstad, M. D., Eder, A. E., Regal, K. M., Lu, D., Burk, D. H., & Collier, J. J. (2016). Pancreatic $\beta$-Cell production of CXCR3 ligands precedes diabetes onset. BioFactors \textit{42}, 703–715. \
 
 Clark et al.  (2017). Type 1 Diabetes: A Chronic Anti-Self-Inflammatory Response. Frontiers in immunology. \
+
+Dinkelacker, M. (2007). A database of genes that are expressed in a tissue-restricted manner to analyse promiscous gene expression in medullary thymic epithelial cells. Diplomarbeit, Albert-Ludwigs-Universitaet, Freiburg, Germany. \
+
+Dinkelacker, M. (2019). Chromosomal clustering of tissue restricted antigens, Dissertation, University Heidelberg, Germany.\
 
 Eizirik, D. L., Pasquali, L., & Cnop, M. (2020). Pancreatic $\beta$-cells in type 1 and type 2 diabetes mellitus: different pathways to failure. Nat. Rev. Endocrinol. \textit{16}, 349–362. \
 
