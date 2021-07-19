@@ -1,5 +1,4 @@
 
-*.pdf
 *.CEL
 *.tsv
 *.rda
@@ -11,5 +10,4 @@
 *.gz
 *.toc
 *.log
-
 *.tex
