@@ -1,0 +1,15 @@
+
+*.pdf
+*.CEL
+*.tsv
+*.rda
+*.rdaTmp
+*.txt
+*.csv
+.Rhistory
+*.aux
+*.gz
+*.toc
+*.log
+
+*.tex

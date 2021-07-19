@@ -1,0 +1,290 @@
+---
+title: "StatisticalAnalysisControl2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggrepel) 
+```
+
+
+
+Selecting data for analysis
+```{r}
+# Loading the Gene Expression Matrices
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(paste(projectPath, "sessions", "RData", sep = "/"))
+load(file = "diabetes_GeneExprs_sub_combined.RData")
+load(file = "pancreas_GeneExprs_sub_combined.RData")
+
+```
+
+```{r}
+# Selecting only the control group for each dataset
+diabetes_GeneExprs_sub_control <- diabetes_GeneExprs_sub_combined[,1:13]
+pancreas_GeneExprs_sub_control <- pancreas_GeneExprs_sub_combined[,4:6]
+
+#Dimensions of the two datasets to control if right data has been selected
+dim(diabetes_GeneExprs_sub_control)
+dim(pancreas_GeneExprs_sub_control)
+
+```
+
+
+Higher and lower differential expressed genes
+```{r}
+
+#Creating a empty vector for the p-values
+Differential_TRA_values <- vector("numeric",length(diabetes_GeneExprs_sub_control[,1]))
+Differential_TRA_values2 <- vector("numeric",length(diabetes_GeneExprs_sub_control[,1]))
+
+
+
+#higher differential expressed genes
+
+# for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
+for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
+  WilcoxonTest <- wilcox.test(x=pancreas_GeneExprs_sub_control[i,],y=diabetes_GeneExprs_sub_control[i,],alternative ="greater")
+  if (WilcoxonTest$p.value < 0.05){
+    Differential_TRA_values[i] <- WilcoxonTest$p.value}
+    
+}
+# Creating a matrix for higher expressed PDAC genes with all the gene symbols and their corresponding p-values
+Gensymbol_pvalue_higher_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values),nrow=length(diabetes_GeneExprs_sub_control[,1]),byrow=FALSE)
+colnames(Gensymbol_pvalue_higher_matrix) <- c("Genesymbol","p-value")
+
+
+# Removing all rows with a p-value = 0 (the p-value was bigger than 5%)
+Gensymbol_pvalue_higher_matrix <- Gensymbol_pvalue_higher_matrix[-which(Gensymbol_pvalue_higher_matrix[,2]==0),]
+dim(Gensymbol_pvalue_higher_matrix)
+
+
+
+#lower differentially expressed genes
+
+# for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
+for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
+  WilcoxonTest2 <- wilcox.test(x=pancreas_GeneExprs_sub_control[i,],y=diabetes_GeneExprs_sub_control[i,],alternative ="less")
+  if (WilcoxonTest2$p.value < 0.05){
+    Differential_TRA_values2[i] <- WilcoxonTest2$p.value}
+    
+}
+# Creating a matrix for lower expressed PDAC genes with all the gene symbols and their corresponding p-values
+Gensymbol_pvalue_lower_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values2),nrow=length(diabetes_GeneExprs_sub_control[,1]),byrow=FALSE)
+colnames(Gensymbol_pvalue_lower_matrix) <- c("Genesymbol","p-value")
+
+# Removing all rows with a p-value = 0 (the p-value was bigger than 5%)
+Gensymbol_pvalue_lower_matrix <- Gensymbol_pvalue_lower_matrix[-which(Gensymbol_pvalue_lower_matrix[,2]==0),]
+dim(Gensymbol_pvalue_lower_matrix)
+
+
+## 40 genes are higher expressed in pancreatic cancer cells in comparison to ß cells 
+## 190 genes are lower expressed in pancreatic cancer cells in comparison to ß cells
+## 20 genes show no significant difference between the two data sets 
+
+```
+
+Selecting differential expressed genes
+```{r}
+#Creating a empty vector for the p-values
+
+Differential_TRA_values3 <- vector("numeric",length(diabetes_GeneExprs_sub_control[,1]))
+
+# for loop to calculate the p-values for each gene - selecting genes with p-value < 0.05
+
+for (i in 1:length(diabetes_GeneExprs_sub_control[,1])){
+  WilcoxonTest3 <- wilcox.test(x=diabetes_GeneExprs_sub_control[i,],y=pancreas_GeneExprs_sub_control[i,],alternative ="two.sided")
+  if (WilcoxonTest3$p.value < 0.05){
+    Differential_TRA_values3[i] <- WilcoxonTest3$p.value}
+    
+}
+
+# Creating a matrix with all the gene symbols and their corresponding p-values
+
+Gensymbol_pvalue_differential_matrix <- matrix(c(rownames(pancreas_GeneExprs_sub_control),Differential_TRA_values3),nrow=length(diabetes_GeneExprs_sub_control[,1]),byrow=FALSE)
+colnames(Gensymbol_pvalue_differential_matrix) <- c("Genesymbol","p-value")
+
+# Removing all rows with a p-value = 0 (the p-value was bigger than 5%)
+
+Gensymbol_pvalue_differential_matrix  <- Gensymbol_pvalue_differential_matrix[-which(Gensymbol_pvalue_differential_matrix[,2]==0),]
+
+dim(Gensymbol_pvalue_differential_matrix)
+
+
+## 225 genes are differential expressed with p = 5%
+```
+
+
+
+
+Creating matrix p-value + Mean Difference
+
+```{r}
+
+#Creating matrix that only contains differential expressed genes and their corresponding mean difference between the two control sets
+
+# Calculating the mean values for each of the genes
+diabetescontrolmean <- apply(diabetes_GeneExprs_sub_control,1,mean)
+pancreascontrolmean <- apply(pancreas_GeneExprs_sub_control,1,mean)
+
+# Calculating the mean difference
+differencemean <-  pancreascontrolmean - diabetescontrolmean
+differencemeanabs <- abs(pancreascontrolmean - diabetescontrolmean)
+
+# Creating matrix with the mean values for each of the genes
+differencemeanmatrix <-  matrix(c(rownames(pancreas_GeneExprs_sub_control),differencemean,diabetescontrolmean,pancreascontrolmean),nrow=250,byrow=FALSE)
+differencemeanmatrixabs <-  matrix(c(rownames(pancreas_GeneExprs_sub_control),differencemeanabs,diabetescontrolmean,pancreascontrolmean),nrow=250,byrow=FALSE)
+# Gene names of differentially expressed genes
+differentialexpressedgenenames <- Gensymbol_pvalue_differential_matrix[,1]
+
+# Selecting only the genes that are differential expressed
+differentialdifferencematrix <- differencemeanmatrix[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+differentialdifferencematrixabs <- differencemeanmatrixabs[which((rownames(diabetes_GeneExprs_sub_control) %in% differentialexpressedgenenames)),]
+```
+
+```{r}
+# Matrix in descending order
+ordermatrix <- order(differentialdifferencematrix[,2],decreasing = TRUE)
+ordermatrixabs <- order(differentialdifferencematrixabs[,2],decreasing = TRUE)
+
+differentialdifferencematrixordered <- differentialdifferencematrix[ordermatrix,]
+differentialdifferencematrixorderedabs <- differentialdifferencematrixabs[ordermatrixabs,]
+
+colnames(differentialdifferencematrixordered) <- c("Gensymbol","Meandifference","MeanDiabetes","MeanPancreas")
+colnames(differentialdifferencematrixorderedabs) <- c("Gensymbol","Meandifferenceabs","MeanDiabetes","MeanPancreas")
+
+
+View(differentialdifferencematrixordered)
+View(differentialdifferencematrixorderedabs)
+
+
+```
+
+
+```{r}
+#Distribution of the mean differences
+hist(as.integer(differentialdifferencematrixordered[,2]),breaks = "FD",xlab="Meandifference",main="Distribution of mean difference for differential expressed genes",col="orange")
+```
+log2foldchange to visualize differential expressed genes
+
+```{r}
+log2.fold.change <- function(control, test){
+  
+  # only if control have the same row numbers
+  if(nrow(control) == nrow(test)){
+    
+    # control / treatment (values combined by median)
+    ratio = sapply(1:nrow(control), function(x){
+      g1_m = median(control[x,])
+      g2_m = median(test[x,])
+      g2_m/g1_m # change of treatment to control
+    })
+    # log2 on ratio => log2(treatment/control)
+    log2_foldchange = log2(ratio)
+    # ttest control vs treatment (expression values)
+    t = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      t.test(g1, g2)$p.value
+    })
+    # wilcoxon rank sum test control vs treatment (expression values)
+    w = sapply(1:nrow(control), function(x){
+      g1 = as.numeric(control[x,])
+      g2 = as.numeric(test[x,])
+      wilcox.test(g1, g2, exact = FALSE)$p.value
+    })
+    
+  }else{print("Something has gone wronge with the dimensions of the groups (probably row numbers)!")}
+  
+  trend_t = 1:length(t)
+  trend_t[t < 0.05 & log2_foldchange > 0] = "up"
+  trend_t[t < 0.05 & log2_foldchange < 0] = "down"
+  trend_t[t >= 0.05] = "not significant"
+  
+  trend_w = 1:length(w)
+  trend_w[w < 0.05 & log2_foldchange > 0] = "up"
+  trend_w[w < 0.05 & log2_foldchange < 0] = "down"
+  trend_w[w >= 0.05] = "not significant"
+  
+  # output
+  data.frame(GeneSymbol = rownames(control), # genes
+             foldchange_ratio = ratio, # without log2
+             log2_foldchange = log2_foldchange,  # log2 foldchange
+             ttest_raw_pvalue = t,# ttest
+             ttest_log10_pvalue = -1*log10(t),
+             ttest_trend = trend_t,
+             wilcox_raw_pvalue = w, # wilcoxon rank sum test
+             wilcox_log10_pvalue = -1*log10(w),
+             wilcox_trend = trend_w
+             )
+}
+
+differentialcontrol_diabetes_pancreas_fc = log2.fold.change(diabetes_GeneExprs_sub_control, pancreas_GeneExprs_sub_control) # ratio = control PDAC cells / beta cells
+
+View(arrange(differentialcontrol_diabetes_pancreas_fc, -log2_foldchange)) # sort by how much differential expressed
+View(filter(differentialcontrol_diabetes_pancreas_fc, wilcox_trend != "not significant")) # only significant genes 
+
+ggplot(data = differentialcontrol_diabetes_pancreas_fc, aes(x = log2_foldchange, y = wilcox_log10_pvalue, label = GeneSymbol, col = wilcox_trend)) + 
+  geom_point() + 
+  geom_hline(yintercept =  -1*log10(0.05), color = "red", linetype = "dashed") +
+  labs(title = "Volcano plot (wilcox test) for control vs. control (GSE53454 & GSE59761)", 
+       x = "log2 fold change", y = "-log10 (p-value)", colour = "trend",
+       subtitle = "ratio = control PDAC cells / beta cells") +
+  xlim(c(-max(abs(differentialcontrol_diabetes_pancreas_fc$log2_foldchange)),
+         max(abs(differentialcontrol_diabetes_pancreas_fc$log2_foldchange))))+ 
+  scale_color_manual(values = c("navyblue", "grey", "orange"), 
+                     labels = c("higher in beta cells", "not significant", "higher in PDAC cells")) + 
+  geom_text_repel(size = 2, max.overlaps = 30)
+
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "controlcontrol_vulcano_wilcox.pdf")
+
+
+
+```
+
+Boxplot highly expressed TRAs PDAC
+```{r}
+
+medianpancreasgesamt <- median(pancreas_GeneExprs_sub_control)
+threshold <- 1.8*medianpancreasgesamt
+
+medianpancreas <- apply(pancreas_GeneExprs_sub_control,1,median)
+
+
+
+par(mai = c(1.1,1,0.5,0.3))
+
+boxplot(t(pancreas_GeneExprs_sub_control[(which(medianpancreas > threshold)),]),col = rainbow(8), main = "Highly expressed TRA genes in the PDAC dataset (GSE59761)",ylab="value",xlab="Genes")
+
+par(las = 2)
+par(mai = c(1.1,0.5,0.5,0.3))
+
+projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(paste(projectPath, "plots", sep = "/"))
+dev.copy2pdf(file = "pancreas_boxplot_highexpression.pdf")
+
+```
+
+
+```{r}
+# Are the highly expressed genes part of the vector with differential expressed genes
+nameshigherpanc <- rownames(pancreas_GeneExprs_sub_control[(which(medianpancreas > threshold)),])
+nameshigherpanc
+differentialdifferencematrixordered[which(differentialdifferencematrixordered[,1] %in% nameshigherpanc),]
+
+# TSPAN8 and GNAS are both highly expressed PDAC Genes and differential expressed
+# RPL5,RPL8,RPS9 are Ribosomal genes and not differential expressed 
+
+```
+```{r}
+## Eingrenzen der differentiell exprimierten Gene, durch entfernen der Gene mit einer geringeren Differenz als 1
+differentialdifferencematrixorderedabsminus <- differentialdifferencematrixorderedabs[-which(differentialdifferencematrixorderedabs[,2]<1),]
+View(differentialdifferencematrixorderedabsminus)
+```
