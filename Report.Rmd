@@ -87,7 +87,7 @@ projectPath <- dirname(rstudioapi::getSourceEditorContext()$path)
 \LARGE
   TRA expression in pancreas cells\\
   \Large
-	Analysis of  pancreas-specifc TRA expression in PDAC and $\beta$-cells
+	Analysis of  pancreas-specific TRA expression in PDAC and $\beta$-cells
 	\vspace{0.5cm}
 	\hrule 
 	\vspace{1cm}
